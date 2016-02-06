@@ -1,8 +1,10 @@
 package org.dharmaseed.androidapp;
 
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -12,6 +14,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -22,6 +29,13 @@ public class NavigationActivity extends AppCompatActivity
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        ListView talkListView = (ListView) findViewById(R.id.talksListView);
+        ArrayList<String> talkTitles = new ArrayList<String>();
+        talkTitles.add("The merits of cute girl tickling!");
+        talkTitles.add("Hello there");
+        TalkListViewAdapter adapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
+        talkListView.setAdapter(adapter);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -40,6 +54,19 @@ public class NavigationActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+//        ListView talksListView = (ListView) findViewById(R.id.talksListView);
+//        talksListView.setSelection(0);
+//        talksListView.set
+
+//        try {
+//            MediaPlayer mediaPlayer = new MediaPlayer();
+//            mediaPlayer.setDataSource("http://dharmaseed.org/teacher/305/talk/32388/20160204-Kate_Munding-IMCB-sila_virtue_additional_focus_to_wise_and_harmonious_speech_and_communication.mp3");
+//            mediaPlayer.prepare();
+//            mediaPlayer.start();
+//        } catch (IOException e) {
+//
+//        }
     }
 
     @Override
@@ -80,17 +107,11 @@ public class NavigationActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        if (id == R.id.nav_talks) {
+            Log.i("nav", "going to talks");
+        } else if (id == R.id.nav_teachers) {
 
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
+        } else if (id == R.id.nav_centers) {
 
         }
 
