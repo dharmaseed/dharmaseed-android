@@ -1,6 +1,5 @@
 package org.dharmaseed.androidapp;
 
-import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -17,13 +16,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 
 import okhttp3.MultipartBody;
@@ -36,7 +31,8 @@ public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     ListView talkListView;
-    TalkListViewAdapter adapter;
+    TalkListViewAdapter talkListViewAdapter;
+    DBManager dbManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,12 +41,14 @@ public class NavigationActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        dbManager = new DBManager(this);
+
         talkListView = (ListView) findViewById(R.id.talksListView);
         ArrayList<String> talkTitles = new ArrayList<String>();
         talkTitles.add("The merits of cute girl tickling!");
         talkTitles.add("Hello there");
-        adapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
-        talkListView.setAdapter(adapter);
+        talkListViewAdapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
+        talkListView.setAdapter(talkListViewAdapter);
         new DataFetcherTask().execute();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -138,17 +136,15 @@ public class NavigationActivity extends AppCompatActivity
 
 
 
-    class DataFetcherTask extends AsyncTask<Void, Void, ArrayList<String>> {
+    class DataFetcherTask extends AsyncTask<Void, Void, Void> {
 
         @Override
-        protected ArrayList<String> doInBackground(Void... params) {
-
-            ArrayList<String> result = new ArrayList<>();
+        protected Void doInBackground(Void... params) {
 
             OkHttpClient client = new OkHttpClient();
             RequestBody formBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("edition", "2016-02-06")
+                    .addFormDataPart("edition", "2016-02-06")  // TODO: Save the last edition in the db
                     .addFormDataPart("detail", "1")
                     .build();
             Request request = new Request.Builder()
@@ -165,27 +161,26 @@ public class NavigationActivity extends AppCompatActivity
                     while (it.hasNext()) {
                         String talkId = it.next();
                         JSONObject talk = talks.getJSONObject(talkId);
-                        try {
-                            String title = talk.getString("title");
-                            result.add(title);
-                        } catch (JSONException e) {}
+                        dbManager.insertTalk(talk);
                     }
                 } else {
-
+                    Log.e("dataFetcher", "HTTP response unsuccessful");
                 }
             } catch (Exception e) {
                 Log.e("dataFetcher", e.toString());
             }
 
-            return result;
-
+            return null;
         }
 
         @Override
-        protected void onPostExecute(ArrayList<String> result) {
-            super.onPostExecute(result);
-            adapter = new TalkListViewAdapter(NavigationActivity.this, result);
-            talkListView.setAdapter(adapter);
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            // TODO: Change to using a SimpleCursorAdapter
+            ArrayList<String> result = dbManager.getTalkTitles();
+            talkListViewAdapter = new TalkListViewAdapter(NavigationActivity.this, result);
+            talkListView.setAdapter(talkListViewAdapter);
 
         }
     }
