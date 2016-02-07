@@ -1,6 +1,7 @@
 package org.dharmaseed.androidapp;
 
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -16,12 +17,26 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    ListView talkListView;
+    TalkListViewAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,12 +45,13 @@ public class NavigationActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ListView talkListView = (ListView) findViewById(R.id.talksListView);
+        talkListView = (ListView) findViewById(R.id.talksListView);
         ArrayList<String> talkTitles = new ArrayList<String>();
         talkTitles.add("The merits of cute girl tickling!");
         talkTitles.add("Hello there");
-        TalkListViewAdapter adapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
+        adapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
         talkListView.setAdapter(adapter);
+        new DataFetcherTask().execute();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -119,4 +135,59 @@ public class NavigationActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
+
+    class DataFetcherTask extends AsyncTask<Void, Void, ArrayList<String>> {
+
+        @Override
+        protected ArrayList<String> doInBackground(Void... params) {
+
+            ArrayList<String> result = new ArrayList<>();
+
+            OkHttpClient client = new OkHttpClient();
+            RequestBody formBody = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("edition", "2016-02-06")
+                    .addFormDataPart("detail", "1")
+                    .build();
+            Request request = new Request.Builder()
+                    .url("http://www.dharmaseed.org/api/1/talks/")
+                    .post(formBody)
+                    .build();
+
+            try {
+                Response response = client.newCall(request).execute();
+                if (response.isSuccessful()) {
+                    JSONObject json = new JSONObject(response.body().string());
+                    JSONObject talks = json.getJSONObject("items");
+                    Iterator<String> it = talks.keys();
+                    while (it.hasNext()) {
+                        String talkId = it.next();
+                        JSONObject talk = talks.getJSONObject(talkId);
+                        try {
+                            String title = talk.getString("title");
+                            result.add(title);
+                        } catch (JSONException e) {}
+                    }
+                } else {
+
+                }
+            } catch (Exception e) {
+                Log.e("dataFetcher", e.toString());
+            }
+
+            return result;
+
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<String> result) {
+            super.onPostExecute(result);
+            adapter = new TalkListViewAdapter(NavigationActivity.this, result);
+            talkListView.setAdapter(adapter);
+
+        }
+    }
+
 }
