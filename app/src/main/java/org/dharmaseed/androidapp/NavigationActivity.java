@@ -1,5 +1,6 @@
 package org.dharmaseed.androidapp;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -14,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import org.json.JSONObject;
@@ -49,6 +51,17 @@ public class NavigationActivity extends AppCompatActivity
         talkTitles.add("Hello there");
         talkListViewAdapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
         talkListView.setAdapter(talkListViewAdapter);
+        talkListView.setOnItemClickListener(
+                new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        Log.d("onItemClick", "selected " + position + ", " + id);
+                        Intent intent = new Intent(view.getContext(), PlayTalkActivity.class);
+                        // TODO: this might not be the best way to get the parent (NavigationActivity) activity
+                        view.getContext().startActivity(intent);
+                    }
+                }
+        );
         new DataFetcherTask().execute();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -181,6 +194,7 @@ public class NavigationActivity extends AppCompatActivity
             ArrayList<String> result = dbManager.getTalkTitles();
             talkListViewAdapter = new TalkListViewAdapter(NavigationActivity.this, result);
             talkListView.setAdapter(talkListViewAdapter);
+
 
         }
     }
