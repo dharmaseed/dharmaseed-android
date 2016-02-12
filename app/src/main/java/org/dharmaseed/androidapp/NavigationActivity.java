@@ -62,7 +62,7 @@ public class NavigationActivity extends AppCompatActivity
                     }
                 }
         );
-        new DataFetcherTask().execute();
+        new DataFetcherTask(dbManager).execute();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -145,58 +145,6 @@ public class NavigationActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-
-
-    class DataFetcherTask extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Void... params) {
-
-            OkHttpClient client = new OkHttpClient();
-            RequestBody formBody = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("edition", "2016-02-06")  // TODO: Save the last edition in the db
-                    .addFormDataPart("detail", "1")
-                    .build();
-            Request request = new Request.Builder()
-                    .url("http://www.dharmaseed.org/api/1/talks/")
-                    .post(formBody)
-                    .build();
-
-            try {
-                Response response = client.newCall(request).execute();
-                if (response.isSuccessful()) {
-                    JSONObject json = new JSONObject(response.body().string());
-                    JSONObject talks = json.getJSONObject("items");
-                    Iterator<String> it = talks.keys();
-                    while (it.hasNext()) {
-                        String talkId = it.next();
-                        JSONObject talk = talks.getJSONObject(talkId);
-                        dbManager.insertTalk(talk);
-                    }
-                } else {
-                    Log.e("dataFetcher", "HTTP response unsuccessful");
-                }
-            } catch (Exception e) {
-                Log.e("dataFetcher", e.toString());
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-
-            // TODO: Change to using a SimpleCursorAdapter
-            ArrayList<String> result = dbManager.getTalkTitles();
-            talkListViewAdapter = new TalkListViewAdapter(NavigationActivity.this, result);
-            talkListView.setAdapter(talkListViewAdapter);
-
-
-        }
     }
 
 }
