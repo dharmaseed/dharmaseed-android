@@ -73,7 +73,7 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 JSONObject json = new JSONObject(response.body().string());
                 String newEdition = json.getString("edition");
                 JSONArray talksJSON = json.getJSONArray("items");
-                Log.d("dataFetcher", "Got "+newEdition+". "+talksJSON.length());
+                Log.d("dataFetcher", "Retrieved talks edition "+newEdition+". New talks: "+talksJSON.length());
 
                 // Fetch new talks, starting with the latest ones
                 ArrayList<Integer> talkIDs = new ArrayList<>();

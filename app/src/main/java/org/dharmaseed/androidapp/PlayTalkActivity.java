@@ -37,6 +37,10 @@ public class PlayTalkActivity extends AppCompatActivity {
             TextView title = (TextView) findViewById(R.id.play_talk);
             title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)));
 
+            // Set the talk description
+            TextView description = (TextView) findViewById(R.id.activity_play_talk_talk_title);
+            description.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)));
+
             // Save the URL
             url = "http://www.dharmaseed.org" + cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.AUDIO_URL));
         } else {
@@ -50,7 +54,7 @@ public class PlayTalkActivity extends AppCompatActivity {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         try {
-            Log.i("playTalk", "playing " + url);
+            Log.i("playTalk", "playing talk: " + url);
             mediaPlayer.setDataSource(url); //"https://archive.org/download/testmp3testfile/mpthreetest.mp3");
             // TODO: use prepareAsync instead to not block the UI thread
             mediaPlayer.prepare();
