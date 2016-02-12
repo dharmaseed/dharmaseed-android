@@ -1,5 +1,6 @@
 package org.dharmaseed.androidapp;
 
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -21,6 +22,8 @@ import android.widget.ListView;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
 
     ListView talkListView;
     TalkListViewAdapter talkListViewAdapter;
@@ -54,9 +57,10 @@ public class NavigationActivity extends AppCompatActivity
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         Log.d("onItemClick", "selected " + position + ", " + id);
-                        Intent intent = new Intent(view.getContext(), PlayTalkActivity.class);
-                        // TODO: this might not be the best way to get the parent (NavigationActivity) activity
-                        view.getContext().startActivity(intent);
+                        Context ctx = parent.getContext();
+                        Intent intent = new Intent(ctx, PlayTalkActivity.class);
+                        intent.putExtra(TALK_DETAIL_EXTRA, id);
+                        ctx.startActivity(intent);
                     }
                 }
         );
