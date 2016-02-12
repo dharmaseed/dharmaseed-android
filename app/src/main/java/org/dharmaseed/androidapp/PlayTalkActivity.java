@@ -10,11 +10,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
-public class PlayTalkActivity extends AppCompatActivity {
+public class PlayTalkActivity extends AppCompatActivity
+        implements MediaPlayer.OnPreparedListener {
 
     MediaPlayer mediaPlayer;
+    boolean mediaPrepared;
     long talkID;
     String url;
 
@@ -34,11 +35,11 @@ public class PlayTalkActivity extends AppCompatActivity {
                 +DBManager.C.Talk.ID+"="+talkID, null);
         if(cursor.moveToFirst()) {
             // Set the talk title
-            TextView title = (TextView) findViewById(R.id.play_talk);
+            TextView title = (TextView) findViewById(R.id.play_talk_talk_title);
             title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)));
 
             // Set the talk description
-            TextView description = (TextView) findViewById(R.id.activity_play_talk_talk_title);
+            TextView description = (TextView) findViewById(R.id.play_talk_talk_description);
             description.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)));
 
             // Save the URL
@@ -47,20 +48,42 @@ public class PlayTalkActivity extends AppCompatActivity {
             Log.e("PlayTalkActivity", "Could not look up talk, id="+talkID);
         }
 
+        cursor.close();
+
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setOnPreparedListener(this);
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mediaPrepared = false;
     }
 
     public void playTalk(View view) {
         Log.d("playTalk", "button pressed");
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        try {
-            Log.i("playTalk", "playing talk: " + url);
-            mediaPlayer.setDataSource(url); //"https://archive.org/download/testmp3testfile/mpthreetest.mp3");
-            // TODO: use prepareAsync instead to not block the UI thread
-            mediaPlayer.prepare();
+        if(mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        } else if(mediaPrepared) {
             mediaPlayer.start();
-        } catch (Exception e) {
-            Log.e("playTalk", e.toString());
+        } else {
+            try {
+                mediaPlayer.setDataSource(url);
+                mediaPlayer.prepareAsync();
+            } catch (Exception e) {
+                Log.e("playTalk", e.toString());
+            }
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mediaPlayer.stop();
+        mediaPlayer.release();
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        Log.i("playTalk", "playing talk");
+        mediaPrepared = true;
+        mediaPlayer.start();
+    }
+
 }

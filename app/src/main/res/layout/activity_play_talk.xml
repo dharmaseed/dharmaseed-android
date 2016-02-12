@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Play Talk"
-        android:id="@+id/play_talk"
+        android:id="@+id/play_talk_talk_title"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
@@ -24,8 +24,8 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Medium Text"
-        android:id="@+id/activity_play_talk_talk_title"
-        android:layout_below="@+id/play_talk"
+        android:id="@+id/play_talk_talk_description"
+        android:layout_below="@+id/play_talk_talk_title"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 
@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:text="Play"
         android:id="@+id/activity_play_talk_play_button"
-        android:layout_below="@+id/activity_play_talk_talk_title"
+        android:layout_below="@+id/play_talk_talk_description"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:onClick="playTalk" />

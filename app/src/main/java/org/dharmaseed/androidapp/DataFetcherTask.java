@@ -4,8 +4,10 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.ListView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,15 +30,20 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     DBManager dbManager;
     SQLiteDatabase db;
     OkHttpClient httpClient;
+    SimpleCursorAdapter cursorAdapter;
 
-    public DataFetcherTask(DBManager dbManager) {
+    public DataFetcherTask(DBManager dbManager, SimpleCursorAdapter cursorAdapter) {
         this.dbManager = dbManager;
         this.db = dbManager.getWritableDatabase();
         this.httpClient = new OkHttpClient();
+        this.cursorAdapter = cursorAdapter;
     }
 
     @Override
     protected Void doInBackground(Void... params) {
+
+        // Update the list view immediately
+        publishProgress();
 
         // Check the latest edition we have locally
         Cursor cursor = db.rawQuery("SELECT "+DBManager.C.Edition.EDITION+" FROM "+DBManager.C.Edition.TABLE_NAME
@@ -87,6 +94,7 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                     json = agg.addID(talkID);
                     if(json != null) {
                         dbManager.insertTalks(json);
+                        publishProgress();
                     }
                 }
                 // Fire any last requests still in the aggregator
@@ -107,7 +115,17 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         } catch (Exception e) {
             Log.e("dataFetcher", e.toString());
         }
+
+        publishProgress();
         return null;
+    }
+
+    @Override
+    protected void onProgressUpdate(Void... values) {
+        super.onProgressUpdate(values);
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(
+                "SELECT * FROM "+DBManager.C.Talk.TABLE_NAME+" ORDER BY "+DBManager.C.Talk.UPDATE_DATE+" DESC", null);
+        cursorAdapter.changeCursor(cursor);
     }
 
     private class RequestAggregator {
@@ -128,7 +146,6 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         // Returns the Response if the request was fired or null if the request was not fired.
         public JSONObject addID(int ID) {
             if(keyExists(ID)) {
-                Log.d("addID", "use cache for " + ID);
                 return null;
             } else {
                 IDStrings.add(Integer.toString(ID));

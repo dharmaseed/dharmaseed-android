@@ -26,7 +26,6 @@ public class NavigationActivity extends AppCompatActivity
     public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
 
     ListView talkListView;
-    TalkListViewAdapter talkListViewAdapter;
     SimpleCursorAdapter talkListCursorAdapter;
     DBManager dbManager;
 
@@ -40,18 +39,6 @@ public class NavigationActivity extends AppCompatActivity
         dbManager = new DBManager(this);
 
         talkListView = (ListView) findViewById(R.id.talksListView);
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(
-                "SELECT * FROM "+DBManager.C.Talk.TABLE_NAME+" ORDER BY "+DBManager.C.Talk.UPDATE_DATE+" DESC", null);
-        talkListCursorAdapter = new SimpleCursorAdapter(
-                getApplicationContext(),
-                R.layout.talk_list_view_item,
-                cursor,
-                new String[] {DBManager.C.Talk.TITLE},
-                new int[] {R.id.talkViewTitle}
-        );
-        talkListView.setAdapter(talkListCursorAdapter);
-
         talkListView.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
                     @Override
@@ -64,7 +51,18 @@ public class NavigationActivity extends AppCompatActivity
                     }
                 }
         );
-        new DataFetcherTask(dbManager).execute();
+        SimpleCursorAdapter talkListCursorAdapter = new SimpleCursorAdapter(
+                getApplicationContext(),
+                R.layout.talk_list_view_item,
+                null,
+                new String[] {DBManager.C.Talk.TITLE},
+                new int[] {R.id.talkViewTitle},
+                0
+        );
+        talkListView.setAdapter(talkListCursorAdapter);
+
+        // Fetch new talks from the server
+        new DataFetcherTask(dbManager, talkListCursorAdapter).execute();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
