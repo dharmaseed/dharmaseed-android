@@ -26,7 +26,7 @@ import okhttp3.Response;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 5;
+    private static final int DB_VERSION = 7;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -36,7 +36,7 @@ public class DBManager extends SQLiteOpenHelper {
         public abstract class Talk {
             public static final String TITLE = "title";
             public static final String DESCRIPTION = "description";
-            public static final String ID = "id";
+            public static final String ID = "_id";
             public static final String VENUE_ID = "venue_id";
             public static final String TEACHER_ID = "teacher_id";
             public static final String AUDIO_URL = "audio_url";

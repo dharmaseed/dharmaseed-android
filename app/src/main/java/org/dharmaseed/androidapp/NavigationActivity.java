@@ -1,10 +1,11 @@
 package org.dharmaseed.androidapp;
 
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -18,22 +19,12 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     ListView talkListView;
     TalkListViewAdapter talkListViewAdapter;
+    SimpleCursorAdapter talkListCursorAdapter;
     DBManager dbManager;
 
     @Override
@@ -46,11 +37,18 @@ public class NavigationActivity extends AppCompatActivity
         dbManager = new DBManager(this);
 
         talkListView = (ListView) findViewById(R.id.talksListView);
-        ArrayList<String> talkTitles = new ArrayList<String>();
-        talkTitles.add("The merits of cute girl tickling!");
-        talkTitles.add("Hello there");
-        talkListViewAdapter = new TalkListViewAdapter(NavigationActivity.this, talkTitles);
-        talkListView.setAdapter(talkListViewAdapter);
+
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(
+                "SELECT * FROM "+DBManager.C.Talk.TABLE_NAME+" ORDER BY "+DBManager.C.Talk.UPDATE_DATE+" DESC", null);
+        talkListCursorAdapter = new SimpleCursorAdapter(
+                getApplicationContext(),
+                R.layout.talk_list_view_item,
+                cursor,
+                new String[] {DBManager.C.Talk.TITLE},
+                new int[] {R.id.talkViewTitle}
+        );
+        talkListView.setAdapter(talkListCursorAdapter);
+
         talkListView.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
                     @Override
