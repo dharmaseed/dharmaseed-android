@@ -55,8 +55,8 @@ public class NavigationActivity extends AppCompatActivity
                 getApplicationContext(),
                 R.layout.talk_list_view_item,
                 null,
-                new String[] {DBManager.C.Talk.TITLE},
-                new int[] {R.id.talkViewTitle},
+                new String[] {DBManager.C.Talk.TITLE, DBManager.C.Teacher.NAME},
+                new int[] {R.id.talkViewTitle, R.id.talkViewTeacher},
                 0
         );
         talkListView.setAdapter(talkListCursorAdapter);
@@ -82,18 +82,6 @@ public class NavigationActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-//        ListView talksListView = (ListView) findViewById(R.id.talksListView);
-//        talksListView.setSelection(0);
-//        talksListView.set
-
-//        try {
-//            MediaPlayer mediaPlayer = new MediaPlayer();
-//            mediaPlayer.setDataSource("http://dharmaseed.org/teacher/305/talk/32388/20160204-Kate_Munding-IMCB-sila_virtue_additional_focus_to_wise_and_harmonious_speech_and_communication.mp3");
-//            mediaPlayer.prepare();
-//            mediaPlayer.start();
-//        } catch (IOException e) {
-//
-//        }
     }
 
     @Override

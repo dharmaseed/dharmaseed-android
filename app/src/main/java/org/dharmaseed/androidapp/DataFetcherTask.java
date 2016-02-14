@@ -148,8 +148,24 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected void onProgressUpdate(Void... values) {
         super.onProgressUpdate(values);
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(
-                "SELECT * FROM "+DBManager.C.Talk.TABLE_NAME+" ORDER BY "+DBManager.C.Talk.UPDATE_DATE+" DESC", null);
+        String query = String.format(
+            "SELECT %s.%s, %s.%s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s ORDER BY %s.%s DESC LIMIT 200",
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.ID,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TITLE,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.NAME,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.UPDATE_DATE
+            );
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
         cursorAdapter.changeCursor(cursor);
     }
 
