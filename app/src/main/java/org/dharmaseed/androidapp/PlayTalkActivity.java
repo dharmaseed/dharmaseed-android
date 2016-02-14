@@ -31,12 +31,31 @@ public class PlayTalkActivity extends AppCompatActivity
         // Look up this talk
         DBManager dbManager = new DBManager(this);
         SQLiteDatabase db = dbManager.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM "+DBManager.C.Talk.TABLE_NAME+" WHERE "
-                +DBManager.C.Talk.ID+"="+talkID, null);
+        String query = String.format(
+                "SELECT %s, %s, %s, %s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
+                DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.DESCRIPTION,
+                DBManager.C.Talk.AUDIO_URL,
+                DBManager.C.Teacher.NAME,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.ID,
+                talkID
+        );
+        Cursor cursor = db.rawQuery(query, null);
         if(cursor.moveToFirst()) {
             // Set the talk title
             TextView title = (TextView) findViewById(R.id.play_talk_talk_title);
             title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)));
+
+            // Set the teacher name
+            TextView teacher = (TextView) findViewById(R.id.play_talk_teacher);
+            teacher.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)));
 
             // Set the talk description
             TextView description = (TextView) findViewById(R.id.play_talk_talk_description);
