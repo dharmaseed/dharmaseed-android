@@ -26,7 +26,7 @@ import okhttp3.Response;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 10;
+    private static final int DB_VERSION = 19;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -59,6 +59,38 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
+        public abstract class Teacher {
+            public static final String WEBSITE = "website";
+            public static final String BIO = "bio";
+            public static final String ID = "_id";
+            public static final String NAME = "name";
+            public static final String PHOTO = "photo";
+
+            public static final String TABLE_NAME = "teachers";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
+                    +WEBSITE+" TEXT,"
+                    +BIO+" TEXT,"
+                    +NAME+" TEXT,"
+                    +PHOTO+" TEXT)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+
+        }
+
+        public abstract class Center {
+            public static final String WEBSITE = "website";
+            public static final String DESCRIPTION = "description";
+            public static final String ID = "_id";
+            public static final String NAME = "name";
+
+            public static final String TABLE_NAME = "centers";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
+                    +WEBSITE+" TEXT,"
+                    +DESCRIPTION+" TEXT,"
+                    +NAME+" TEXT)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+
+        }
+
         public abstract class Edition {
             public static final String TABLE = "_table";
             public static final String EDITION = "edition";
@@ -78,13 +110,25 @@ public class DBManager extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(C.Talk.CREATE_TABLE);
+        db.execSQL(C.Teacher.CREATE_TABLE);
+        db.execSQL(C.Center.CREATE_TABLE);
         db.execSQL(C.Edition.CREATE_TABLE);
+        ContentValues v = new ContentValues();
+        v.put(C.Edition.TABLE, C.Talk.TABLE_NAME);
+        db.insert(C.Edition.TABLE_NAME, null, v);
+        v.put(C.Edition.TABLE, C.Teacher.TABLE_NAME);
+        db.insert(C.Edition.TABLE_NAME, null, v);
+        v.put(C.Edition.TABLE, C.Center.TABLE_NAME);
+        db.insert(C.Edition.TABLE_NAME, null, v);
+
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("DBManager", "Upgrading database to version "+DB_VERSION);
         db.execSQL(C.Talk.DROP_TABLE);
+        db.execSQL(C.Teacher.DROP_TABLE);
+        db.execSQL(C.Center.DROP_TABLE);
         db.execSQL(C.Edition.DROP_TABLE);
         onCreate(db);
     }
@@ -98,59 +142,35 @@ public class DBManager extends SQLiteOpenHelper {
         }
     }
 
-    // Insert a talk into the database, given the JSON object for a talk returned by dharamaseed.org's API
-    public void insertTalk(String talkId, JSONObject talk) {
+    // Insert an item into the database, given the JSON object for an item returned by dharamaseed.org's API
+    public void insertItem(String itemID, JSONObject item, String tableName, String[] itemKeys) {
         SQLiteDatabase db = getWritableDatabase();
         try {
             ContentValues values = new ContentValues();
-            values.put(C.Talk.ID, talkId);
-            insertValue(values, talk, C.Talk.TITLE);
-            insertValue(values, talk, C.Talk.DESCRIPTION);
-            insertValue(values, talk, C.Talk.VENUE_ID);
-            insertValue(values, talk, C.Talk.TEACHER_ID);
-            insertValue(values, talk, C.Talk.AUDIO_URL);
-            insertValue(values, talk, C.Talk.DURATION_IN_MINUTES);
-            insertValue(values, talk, C.Talk.UPDATE_DATE);
-            insertValue(values, talk, C.Talk.RECORDING_DATE);
-            insertValue(values, talk, C.Talk.RETREAT_ID);
+            values.put(C.Talk.ID, itemID);
+            for(String itemKey : itemKeys) {
+                insertValue(values, item, itemKey);
+            }
 
-            db.insertWithOnConflict(C.Talk.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            db.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
 
         } catch (Exception e) {
             Log.e("DBInsert", e.toString());
         }
     }
 
-    public void insertTalks(JSONObject json) {
+    public void insertItems(JSONObject json, String tableName, String[] itemKeys) {
         try {
-            JSONObject talks = json.getJSONObject("items");
-            Iterator<String> it = talks.keys();
+            JSONObject items = json.getJSONObject("items");
+            Iterator<String> it = items.keys();
             while (it.hasNext()) {
-                String talkId = it.next();
-                JSONObject talk = talks.getJSONObject(talkId);
-                insertTalk(talkId, talk);
+                String itemID = it.next();
+                JSONObject item = items.getJSONObject(itemID);
+                insertItem(itemID, item, tableName, itemKeys);
             }
         } catch (JSONException e) {
-            Log.d("insertTalks", e.toString());
+            Log.d("insertItems", e.toString());
         }
-    }
-
-    // Return all talk titles
-    // TODO: Change to using a SimpleCursorAdapter
-    public ArrayList<String> getTalkTitles() {
-        ArrayList<String> result = new ArrayList<String>();
-        SQLiteDatabase db = getReadableDatabase();
-        try {
-            Cursor cursor = db.rawQuery("SELECT * FROM " + C.Talk.TABLE_NAME, null);
-            if(cursor.getCount() >= 1) {
-                while(cursor.moveToNext()) {
-                    result.add(cursor.getString(cursor.getColumnIndexOrThrow(C.Talk.TITLE)));
-                }
-            }
-        } catch (Exception e) {
-            Log.e("DBManager", e.toString());
-        }
-        return result;
     }
 
 }

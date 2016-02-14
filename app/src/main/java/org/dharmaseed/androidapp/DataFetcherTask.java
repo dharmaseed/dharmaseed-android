@@ -7,7 +7,6 @@ import android.os.AsyncTask;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.ListView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,7 +17,6 @@ import java.util.Collections;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -39,39 +37,27 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         this.cursorAdapter = cursorAdapter;
     }
 
-    @Override
-    protected Void doInBackground(Void... params) {
+    protected void updateTable(String tableName, String tableID, String apiUrl, String[] itemKeys) {
 
-        // Update the list view immediately
-        publishProgress();
-
-        // Check the latest edition we have locally
-        Cursor cursor = db.rawQuery("SELECT "+DBManager.C.Edition.EDITION+" FROM "+DBManager.C.Edition.TABLE_NAME
-                +" WHERE "+DBManager.C.Edition.TABLE+"=\""+DBManager.C.Talk.TABLE_NAME+"\"", null);
-        String talksEdition = null;
-        if(cursor.moveToFirst()) {
-            talksEdition = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
-        }
+        Cursor cursor = db.rawQuery("SELECT "+DBManager.C.Edition.EDITION+" FROM "
+                +DBManager.C.Edition.TABLE_NAME
+                +" WHERE "+DBManager.C.Edition.TABLE+"=\""+tableName+"\""
+                , null);
+        cursor.moveToFirst();
+        String edition = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
         cursor.close();
-        Log.d("DataFetcherTask", "Talks edition: "+talksEdition);
+        Log.d("DataFetcherTask", "We have "+tableName+" edition: "+edition);
 
-        // Get the IDs (but no details) of the talks we don't yet have
-        RequestBody body;
-        if(talksEdition != null && (!talksEdition.equals(""))) {
-            body = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("edition", talksEdition)
-                    .addFormDataPart("detail", "0")
-                    .build();
-        } else {
-            body = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("detail", "0")
-                    .build();
+        // Get the IDs (but no details) of the items we don't yet have
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("detail", "0");
+        if(edition != null && (!edition.equals(""))) {
+            builder.addFormDataPart("edition", edition);
         }
         Request request = new Request.Builder()
-                .url("http://www.dharmaseed.org/api/1/talks/")
-                .post(body)
+                .url("http://www.dharmaseed.org/api/1/"+apiUrl)
+                .post(builder.build())
                 .build();
 
         try {
@@ -79,35 +65,37 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
             if (response.isSuccessful()) {
                 JSONObject json = new JSONObject(response.body().string());
                 String newEdition = json.getString("edition");
-                JSONArray talksJSON = json.getJSONArray("items");
-                Log.d("dataFetcher", "Retrieved talks edition "+newEdition+". New talks: "+talksJSON.length());
+                JSONArray items = json.getJSONArray("items");
+                Log.d("dataFetcher", "Retrieved "+tableName+" edition "+newEdition+". New items: "+items.length());
 
-                // Fetch new talks, starting with the latest ones
-                ArrayList<Integer> talkIDs = new ArrayList<>();
-                for(int i = 0; i < talksJSON.length(); i++) {
-                    talkIDs.add(talksJSON.getInt(i));
+                // Fetch new items, starting with the latest ones
+                ArrayList<Integer> itemIDs = new ArrayList<>();
+                for(int i = 0; i < items.length(); i++) {
+                    itemIDs.add(items.getInt(i));
                 }
-                Collections.sort(talkIDs, Collections.<Integer>reverseOrder());
+                Collections.sort(itemIDs, Collections.<Integer>reverseOrder());
 
-                RequestAggregator agg = new RequestAggregator(100, DBManager.C.Talk.TABLE_NAME, DBManager.C.Talk.ID);
-                for(Integer talkID : talkIDs) {
-                    json = agg.addID(talkID);
-                    if(json != null) {
-                        dbManager.insertTalks(json);
+                RequestAggregator agg = new RequestAggregator(100, tableName, tableID, apiUrl);
+                JSONObject itemsWithDetails;
+                for(Integer id : itemIDs) {
+                    itemsWithDetails = agg.addID(id);
+                    if(itemsWithDetails != null) {
+                        dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
                         publishProgress();
                     }
                 }
                 // Fire any last requests still in the aggregator
-                json = agg.fireRequest();
-                if(json != null) {
-                    dbManager.insertTalks(json);
+                itemsWithDetails = agg.fireRequest();
+                if(itemsWithDetails != null) {
+                    dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
                 }
 
                 // Mark that we've successfully cached the new edition
                 ContentValues values = new ContentValues();
-                values.put(DBManager.C.Edition.TABLE, DBManager.C.Talk.TABLE_NAME);
+                values.put(DBManager.C.Edition.TABLE, tableName);
                 values.put(DBManager.C.Edition.EDITION, newEdition);
                 db.insertWithOnConflict(DBManager.C.Edition.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+                Log.i("dataFetcher", "Saved "+tableName+" edition "+newEdition);
 
             } else {
                 Log.e("dataFetcher", "HTTP response unsuccessful, code " + response.code());
@@ -115,6 +103,43 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         } catch (Exception e) {
             Log.e("dataFetcher", e.toString());
         }
+    }
+
+    @Override
+    protected Void doInBackground(Void... params) {
+
+        // Update the list view immediately
+        publishProgress();
+
+        updateTable(DBManager.C.Teacher.TABLE_NAME, DBManager.C.Teacher.ID,
+                "teachers/",
+                new String[]{
+                        DBManager.C.Teacher.WEBSITE,
+                        DBManager.C.Teacher.BIO,
+                        DBManager.C.Teacher.NAME,
+                });
+
+        updateTable(DBManager.C.Center.TABLE_NAME, DBManager.C.Center.ID,
+                "venues/",
+                new String[]{
+                        DBManager.C.Center.WEBSITE,
+                                DBManager.C.Center.DESCRIPTION,
+                                DBManager.C.Center.NAME
+                });
+
+        updateTable(DBManager.C.Talk.TABLE_NAME, DBManager.C.Talk.ID,
+            "talks/",
+            new String[]{
+                DBManager.C.Talk.TITLE,
+                    DBManager.C.Talk.DESCRIPTION,
+                    DBManager.C.Talk.VENUE_ID,
+                    DBManager.C.Talk.TEACHER_ID,
+                    DBManager.C.Talk.AUDIO_URL,
+                    DBManager.C.Talk.DURATION_IN_MINUTES,
+                    DBManager.C.Talk.UPDATE_DATE,
+                    DBManager.C.Talk.RECORDING_DATE,
+                    DBManager.C.Talk.RETREAT_ID
+              });
 
         publishProgress();
         return null;
@@ -131,14 +156,16 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     private class RequestAggregator {
         private int size;
         private String table;
-        private String tableKeyName;
+        private String tableID;
         private ArrayList<String> IDStrings;
+        private String apiUrl;
 
-        public RequestAggregator(int size, String table, String tableKeyName) {
+        public RequestAggregator(int size, String table, String tableID, String apiUrl) {
             this.size = size;
             this.table = table;
-            this.tableKeyName = tableKeyName;
+            this.tableID = tableID;
             this.IDStrings = new ArrayList<>(size);
+            this.apiUrl = apiUrl;
         }
 
         // Add a new ID to the request if it's not already present in the database.
@@ -162,14 +189,14 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 return null;
             }
 
-            Log.d("fireRequest", "getting talks "+IDStrings);
+            Log.d("fireRequest", "getting "+table+": "+IDStrings);
             MultipartBody body = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("items", TextUtils.join(",", IDStrings))
                     .addFormDataPart("detail", "1")
                     .build();
             Request request = new Request.Builder()
-                    .url("http://www.dharmaseed.org/api/1/talks/")
+                    .url("http://www.dharmaseed.org/api/1/"+apiUrl)
                     .post(body)
                     .build();
 
@@ -190,7 +217,7 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         }
 
         public boolean keyExists(int ID) {
-            Cursor cursor = db.rawQuery("SELECT 1 FROM "+table+" WHERE "+tableKeyName+"="+ID, null);
+            Cursor cursor = db.rawQuery("SELECT 1 FROM "+table+" WHERE "+ tableID +"="+ID, null);
             boolean result = cursor.getCount() == 1;
             cursor.close();
             return result;
