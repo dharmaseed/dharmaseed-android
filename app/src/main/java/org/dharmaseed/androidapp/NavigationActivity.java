@@ -52,13 +52,10 @@ public class NavigationActivity extends AppCompatActivity
                     }
                 }
         );
-        SimpleCursorAdapter talkListCursorAdapter = new SimpleCursorAdapter(
+        TalkListViewAdapter talkListCursorAdapter = new TalkListViewAdapter(
                 getApplicationContext(),
                 R.layout.talk_list_view_item,
-                null,
-                new String[] {DBManager.C.Talk.TITLE, DBManager.C.Teacher.NAME},
-                new int[] {R.id.talkViewTitle, R.id.talkViewTeacher},
-                0
+                null
         );
         talkListView.setAdapter(talkListCursorAdapter);
 

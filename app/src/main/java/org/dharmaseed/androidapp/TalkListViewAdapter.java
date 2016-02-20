@@ -1,58 +1,59 @@
 package org.dharmaseed.androidapp;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.ArrayList;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
-/**
- * Created by bbethke on 2/6/16.
- */
-public class TalkListViewAdapter extends BaseAdapter {
+public class TalkListViewAdapter extends SimpleCursorAdapter {
 
-    Context context;
-    ArrayList<String> talkTitles;
+    private Context mContext;
+    private Context appContext;
+    private int layout;
+    private Cursor cr;
+    private final LayoutInflater inflater;
 
-    public TalkListViewAdapter(Context context, ArrayList<String> talkTitles) {
-        this.context = context;
-        this.talkTitles = talkTitles;
+    public TalkListViewAdapter(Context context,int layout, Cursor c) {
+        super(context,layout,c,new String[] {},new int[] {},0);
+        this.layout=layout;
+        this.mContext = context;
+        this.inflater=LayoutInflater.from(context);
+        this.cr=c;
     }
 
     @Override
-    public int getCount() {
-        return talkTitles.size();
+    public View newView (Context context, Cursor cursor, ViewGroup parent) {
+        return inflater.inflate(layout, null);
     }
 
     @Override
-    public Object getItem(int position) {
-        return talkTitles.get(position);
-    }
+    public void bindView(View view, Context context, Cursor cursor) {
+        super.bindView(view, context, cursor);
+        TextView title=(TextView)view.findViewById(R.id.talkViewTitle);
+        TextView teacher=(TextView)view.findViewById(R.id.talkViewTeacher);
 
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
-    class ViewHolder {
-        private TextView talkViewTitle;
-    }
-    @Override
-    public View getView(int position, View view, ViewGroup viewGroup) {
-        ViewHolder viewHolder = null;
-        if(view == null){
-            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            view = inflater.inflate(R.layout.talk_list_view_item,null);
-            viewHolder = new ViewHolder();
-            viewHolder.talkViewTitle = (TextView) view.findViewById(R.id.talkViewTitle);
-            view.setTag(viewHolder);
-        }else{
-            viewHolder = (ViewHolder) view.getTag();
+        title.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Talk.TITLE)));
+        teacher.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Teacher.NAME)));
+
+        // Set teacher photo
+        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID)));
+        try {
+            FileInputStream photo = context.openFileInput(photoFilename);
+            ImageView photoView = (ImageView) view.findViewById(R.id.talkViewTeacherPhoto);
+            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
+        } catch(FileNotFoundException e) {
+
         }
-        String title = talkTitles.get(position);
-        viewHolder.talkViewTitle.setText(title);
-        return view;
+
     }
+
 }

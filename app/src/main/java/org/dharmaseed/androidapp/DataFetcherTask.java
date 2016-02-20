@@ -151,11 +151,13 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     protected void onProgressUpdate(Void... values) {
         super.onProgressUpdate(values);
         String query = String.format(
-            "SELECT %s.%s, %s.%s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s ORDER BY %s.%s DESC LIMIT 200",
+            "SELECT %s.%s, %s.%s, %s.%s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s ORDER BY %s.%s DESC LIMIT 200",
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.ID,
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
                 DBManager.C.Talk.TABLE_NAME,
