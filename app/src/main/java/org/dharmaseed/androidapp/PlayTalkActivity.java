@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import java.util.Locale;
+
 public class PlayTalkActivity extends AppCompatActivity
         implements MediaPlayer.OnPreparedListener {
 
@@ -70,9 +72,9 @@ public class PlayTalkActivity extends AppCompatActivity
             int durationSec = (int)Math.floor((duration-Math.floor(duration))*60);
             String durationStr;
             if(durationHr > 0) {
-                durationStr = String.format("%02d:%02d:%02d", durationHr, durationMin, durationSec);
+                durationStr = String.format(Locale.US, "%02d:%02d:%02d", durationHr, durationMin, durationSec);
             } else {
-                durationStr = String.format("%02d:%02d", durationMin, durationSec);
+                durationStr = String.format(Locale.US, "%02d:%02d", durationMin, durationSec);
             }
             durationView.setText(durationStr);
 
