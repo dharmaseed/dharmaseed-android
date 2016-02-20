@@ -1,6 +1,7 @@
 package org.dharmaseed.androidapp;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
@@ -117,6 +118,7 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                         DBManager.C.Teacher.WEBSITE,
                         DBManager.C.Teacher.BIO,
                         DBManager.C.Teacher.NAME,
+                        DBManager.C.Teacher.PHOTO
                 });
 
         updateTable(DBManager.C.Center.TABLE_NAME, DBManager.C.Center.ID,

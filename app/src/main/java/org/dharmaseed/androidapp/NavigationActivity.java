@@ -3,6 +3,7 @@ package org.dharmaseed.androidapp;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -61,8 +62,10 @@ public class NavigationActivity extends AppCompatActivity
         );
         talkListView.setAdapter(talkListCursorAdapter);
 
-        // Fetch new talks from the server
-        new DataFetcherTask(dbManager, talkListCursorAdapter).execute();
+        // Fetch new data from the server
+        new TeacherFetcherTask(dbManager, talkListCursorAdapter, getApplicationContext()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new CenterFetcherTask(dbManager, talkListCursorAdapter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new TalkFetcherTask(dbManager, talkListCursorAdapter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
