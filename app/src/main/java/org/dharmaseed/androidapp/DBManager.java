@@ -173,4 +173,9 @@ public class DBManager extends SQLiteOpenHelper {
         }
     }
 
+    public static String getTeacherPhotoFilename(int teacherID) {
+        return "teacher-"+teacherID+".png";
+    }
+
+
 }

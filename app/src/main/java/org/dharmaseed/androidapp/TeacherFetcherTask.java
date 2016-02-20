@@ -6,6 +6,7 @@ import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -55,24 +56,29 @@ public class TeacherFetcherTask extends DataFetcherTask {
 
         while(cursor.moveToNext()) {
             String photo = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PHOTO));
-            String id    = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID));
+            int id    = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID));
+            String filename = DBManager.getTeacherPhotoFilename(id);
             if(!photo.equals("")) {
-                Log.i("teacherFetcherTask", "Fetching teacher photo "+id);
-                Request request = requestBuilder.url("http://www.dharmaseed.org/api/1/teachers/"+id+"/"+photo+"/?maxW=120&maxH=180").build();
                 try {
-                    Response response = httpClient.newCall(request).execute();
-                    if (response.isSuccessful()) {
-                        Log.i("teacherFetcherTask", "GOT IT");
-                        ResponseBody body = response.body();
-                        FileOutputStream outputStream = context.openFileOutput("teacher-"+id+".png", Context.MODE_PRIVATE);
-                        outputStream.write(body.bytes());
-                        body.close();
-                        outputStream.close();
-                    } else {
-                        Log.e("teacherFetcherTask", "Error retrieving teacher photo: code " + response.code());
+                    context.openFileInput(filename);
+                } catch (FileNotFoundException e1) {
+                    // Only need to fetch the photo if we don't already have it
+                    Log.i("teacherFetcherTask", "Fetching teacher photo " + id);
+                    Request request = requestBuilder.url("http://www.dharmaseed.org/api/1/teachers/" + id + "/" + photo + "/?maxW=120&maxH=180").build();
+                    try {
+                        Response response = httpClient.newCall(request).execute();
+                        if (response.isSuccessful()) {
+                            ResponseBody body = response.body();
+                            FileOutputStream outputStream = context.openFileOutput(filename, Context.MODE_PRIVATE);
+                            outputStream.write(body.bytes());
+                            body.close();
+                            outputStream.close();
+                        } else {
+                            Log.e("teacherFetcherTask", "Error retrieving teacher photo: code " + response.code());
+                        }
+                    } catch (IOException e2) {
+                        Log.e("teacherFetcherTask", "Error retrieving or writing teacher photo: " + e2);
                     }
-                } catch(IOException e) {
-                    Log.e("teacherFetcherTask", "Error retrieving or writing teacher photo: " + e);
                 }
             }
         }
