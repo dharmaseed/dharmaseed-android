@@ -3,14 +3,18 @@ package org.dharmaseed.androidapp;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.Locale;
 
 public class PlayTalkActivity extends AppCompatActivity
@@ -34,12 +38,16 @@ public class PlayTalkActivity extends AppCompatActivity
         DBManager dbManager = new DBManager(this);
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
-                "SELECT %s, %s, %s, %s, %s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
+                "SELECT %s, %s, %s, %s, %s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
                 DBManager.C.Talk.TITLE,
                 DBManager.C.Talk.DESCRIPTION,
                 DBManager.C.Talk.AUDIO_URL,
                 DBManager.C.Talk.DURATION_IN_MINUTES,
                 DBManager.C.Teacher.NAME,
+
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Talk.TABLE_NAME,
@@ -80,6 +88,18 @@ public class PlayTalkActivity extends AppCompatActivity
 
             // Save the URL
             url = "http://www.dharmaseed.org" + cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.AUDIO_URL));
+
+            // Set teacher photo
+            String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
+            Log.i("PlayTalkActivity", "photoFilename: "+photoFilename);
+            try {
+                FileInputStream photo = getApplicationContext().openFileInput(photoFilename);
+                ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
+                photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
+            } catch(FileNotFoundException e) {
+
+            }
+
         } else {
             Log.e("PlayTalkActivity", "Could not look up talk, id="+talkID);
         }

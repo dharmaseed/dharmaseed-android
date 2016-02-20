@@ -58,4 +58,16 @@
         android:layout_below="@+id/activity_play_talk_play_button"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/play_talk_teacher_photo"
+        android:layout_below="@+id/play_talk_talk_duration"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:maxWidth="120dp"
+        android:maxHeight="180dp"
+        android:minHeight="180dp"
+        android:minWidth="120dp" />
 </RelativeLayout>

@@ -1,25 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:orientation="horizontal" android:layout_width="match_parent"
     android:layout_height="72dp">
 
-    <TextView
-        android:id="@+id/talkViewTitle"
+    <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="left"
-        android:text="Talk Title"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="@color/colorPrimaryDark" />
+        android:id="@+id/talkViewTeacherPhoto"
+        android:minHeight="90dp"
+        android:minWidth="60dp"
+        android:maxHeight="90dp"
+        android:maxWidth="60dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Text"
-        android:textSize="12sp"
-        android:id="@+id/talkViewTeacher"
-        android:textColor="@color/abc_primary_text_material_light" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <TextView
+            android:id="@+id/talkViewTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:text="Talk Title"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:textSize="12sp"
+            android:id="@+id/talkViewTeacher"
+            android:textColor="@color/abc_primary_text_material_light" />
+
+    </LinearLayout>
 
 
 </LinearLayout>
