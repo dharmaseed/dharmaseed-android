@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
+import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.TextUtils;
 import android.util.Log;
@@ -29,9 +30,9 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     DBManager dbManager;
     SQLiteDatabase db;
     OkHttpClient httpClient;
-    SimpleCursorAdapter cursorAdapter;
+    CursorAdapter cursorAdapter;
 
-    public DataFetcherTask(DBManager dbManager, SimpleCursorAdapter cursorAdapter) {
+    public DataFetcherTask(DBManager dbManager, CursorAdapter cursorAdapter) {
         this.dbManager = dbManager;
         this.db = dbManager.getWritableDatabase();
         this.httpClient = new OkHttpClient();

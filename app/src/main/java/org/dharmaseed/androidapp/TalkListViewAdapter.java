@@ -1,9 +1,12 @@
 package org.dharmaseed.androidapp;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
-import android.support.v4.widget.SimpleCursorAdapter;
+import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,20 +17,15 @@ import android.widget.TextView;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
-public class TalkListViewAdapter extends SimpleCursorAdapter {
+public class TalkListViewAdapter extends CursorAdapter {
 
-    private Context mContext;
-    private Context appContext;
     private int layout;
-    private Cursor cr;
     private final LayoutInflater inflater;
 
     public TalkListViewAdapter(Context context,int layout, Cursor c) {
-        super(context,layout,c,new String[] {},new int[] {},0);
+        super(context, c, 0);
         this.layout=layout;
-        this.mContext = context;
         this.inflater=LayoutInflater.from(context);
-        this.cr=c;
     }
 
     @Override
@@ -37,7 +35,6 @@ public class TalkListViewAdapter extends SimpleCursorAdapter {
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        super.bindView(view, context, cursor);
         TextView title=(TextView)view.findViewById(R.id.talkViewTitle);
         TextView teacher=(TextView)view.findViewById(R.id.talkViewTeacher);
 
@@ -46,12 +43,13 @@ public class TalkListViewAdapter extends SimpleCursorAdapter {
 
         // Set teacher photo
         String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID)));
+        ImageView photoView = (ImageView) view.findViewById(R.id.talkViewTeacherPhoto);
         try {
             FileInputStream photo = context.openFileInput(photoFilename);
-            ImageView photoView = (ImageView) view.findViewById(R.id.talkViewTeacherPhoto);
             photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
         } catch(FileNotFoundException e) {
-
+            Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
+            photoView.setImageDrawable(icon);
         }
 
     }

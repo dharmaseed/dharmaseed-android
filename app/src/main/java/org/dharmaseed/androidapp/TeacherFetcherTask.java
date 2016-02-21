@@ -2,17 +2,14 @@ package org.dharmaseed.androidapp;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import okhttp3.MultipartBody;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
@@ -23,7 +20,7 @@ public class TeacherFetcherTask extends DataFetcherTask {
 
     Context context;
 
-    public TeacherFetcherTask(DBManager dbManager, SimpleCursorAdapter cursorAdapter, Context context) {
+    public TeacherFetcherTask(DBManager dbManager, CursorAdapter cursorAdapter, Context context) {
         super(dbManager, cursorAdapter);
         this.context = context;
     }

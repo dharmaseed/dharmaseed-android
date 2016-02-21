@@ -1,13 +1,13 @@
 package org.dharmaseed.androidapp;
 
-import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v4.widget.CursorAdapter;
 
 /**
  * Created by bbethke on 2/19/16.
  */
 public class TalkFetcherTask extends DataFetcherTask {
 
-    public TalkFetcherTask(DBManager dbManager, SimpleCursorAdapter cursorAdapter) {
+    public TalkFetcherTask(DBManager dbManager, CursorAdapter cursorAdapter) {
         super(dbManager, cursorAdapter);
     }
 
