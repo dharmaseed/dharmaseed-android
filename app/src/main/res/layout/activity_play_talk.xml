@@ -17,7 +17,8 @@
         android:id="@+id/play_talk_talk_title"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:textColor="@color/colorPrimaryDark" />
 
     <TextView
         android:layout_width="wrap_content"
