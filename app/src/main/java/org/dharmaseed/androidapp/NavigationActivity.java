@@ -2,12 +2,10 @@ package org.dharmaseed.androidapp;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -27,7 +25,6 @@ public class NavigationActivity extends AppCompatActivity
     public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
 
     ListView talkListView;
-    SimpleCursorAdapter talkListCursorAdapter;
     DBManager dbManager;
 
     @Override
@@ -36,6 +33,7 @@ public class NavigationActivity extends AppCompatActivity
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("Talks");
 
         dbManager = new DBManager(this);
 
@@ -108,8 +106,11 @@ public class NavigationActivity extends AppCompatActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
+        Log.i("nav", "selected " + id);
+
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Log.i("nav", "Settings!");
             return true;
         }
 
@@ -123,11 +124,11 @@ public class NavigationActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_talks) {
-            Log.i("nav", "going to talks");
+            getSupportActionBar().setTitle("Talks");
         } else if (id == R.id.nav_teachers) {
-
+            getSupportActionBar().setTitle("Teachers");
         } else if (id == R.id.nav_centers) {
-
+            getSupportActionBar().setTitle("Centers");
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
