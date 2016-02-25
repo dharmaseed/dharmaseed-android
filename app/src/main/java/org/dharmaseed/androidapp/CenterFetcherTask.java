@@ -1,14 +1,13 @@
 package org.dharmaseed.androidapp;
 
-import android.support.v4.widget.CursorAdapter;
 
 /**
  * Created by bbethke on 2/19/16.
  */
 public class CenterFetcherTask extends DataFetcherTask {
 
-    public CenterFetcherTask(DBManager dbManager, CursorAdapter cursorAdapter) {
-        super(dbManager, cursorAdapter);
+    public CenterFetcherTask(DBManager dbManager, NavigationActivity navigationActivity) {
+        super(dbManager, navigationActivity);
     }
 
     @Override

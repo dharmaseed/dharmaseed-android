@@ -19,7 +19,16 @@
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
 
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="30sp"
+            android:id="@+id/nav_search_text"
+            android:inputType="text"
+            android:hint="Enter search keywords"
+            android:background="?attr/colorAccent" />
+
     </android.support.design.widget.AppBarLayout>
+
 
     <include layout="@layout/content_navigation" />
 

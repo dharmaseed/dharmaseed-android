@@ -2,10 +2,14 @@ package org.dharmaseed.androidapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.view.KeyEvent;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -18,14 +22,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 public class NavigationActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        TextView.OnEditorActionListener,
+        View.OnFocusChangeListener {
 
     public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
 
     ListView talkListView;
+    EditText searchBox;
+    String searchTerms;
     DBManager dbManager;
+    TalkListViewAdapter talkListCursorAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +46,12 @@ public class NavigationActivity extends AppCompatActivity
         getSupportActionBar().setTitle("Talks");
 
         dbManager = new DBManager(this);
+
+        searchBox = (EditText)findViewById(R.id.nav_search_text);
+        searchBox.setVisibility(View.GONE);
+        searchBox.setOnEditorActionListener(this);
+        searchBox.setOnFocusChangeListener(this);
+        searchTerms = "";
 
         talkListView = (ListView) findViewById(R.id.talksListView);
         talkListView.setOnItemClickListener(
@@ -50,7 +66,7 @@ public class NavigationActivity extends AppCompatActivity
                     }
                 }
         );
-        TalkListViewAdapter talkListCursorAdapter = new TalkListViewAdapter(
+        talkListCursorAdapter = new TalkListViewAdapter(
                 getApplicationContext(),
                 R.layout.talk_list_view_item,
                 null
@@ -58,9 +74,9 @@ public class NavigationActivity extends AppCompatActivity
         talkListView.setAdapter(talkListCursorAdapter);
 
         // Fetch new data from the server
-        new TeacherFetcherTask(dbManager, talkListCursorAdapter, getApplicationContext()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        new CenterFetcherTask(dbManager, talkListCursorAdapter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        new TalkFetcherTask(dbManager, talkListCursorAdapter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new TeacherFetcherTask(dbManager, this, getApplicationContext()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new CenterFetcherTask(dbManager, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new TalkFetcherTask(dbManager, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -93,9 +109,10 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(final Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.navigation, menu);
+
         return true;
     }
 
@@ -108,9 +125,16 @@ public class NavigationActivity extends AppCompatActivity
 
         Log.i("nav", "selected " + id);
 
+
+
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Log.i("nav", "Settings!");
+            return true;
+        } else if (id == R.id.action_search) {
+            Log.i("nav", "Search!");
+            EditText searchBox = (EditText)findViewById(R.id.nav_search_text);
+            searchBox.setVisibility(View.VISIBLE);
             return true;
         }
 
@@ -136,4 +160,65 @@ public class NavigationActivity extends AppCompatActivity
         return true;
     }
 
+    @Override
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        Log.i("onEditorAction", v.getText().toString());
+        searchTerms = v.getText().toString();
+
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+
+        updateDisplayedData();
+
+        return true;
+    }
+
+    @Override
+    public void onFocusChange(View v, boolean hasFocus) {
+        if (! hasFocus) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+        }
+    }
+
+    public void updateDisplayedData() {
+        String query = String.format(
+                "SELECT %s.%s, %s.%s, %s.%s, %s.%s FROM %s, %s " +
+                        "WHERE %s.%s=%s.%s AND " +
+                        "(%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') " +
+                        "ORDER BY %s.%s DESC LIMIT 200",
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.ID,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.NAME,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TITLE,
+                searchTerms,
+
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.DESCRIPTION,
+                searchTerms,
+
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.NAME,
+                searchTerms,
+                
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.UPDATE_DATE
+        );
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
+        talkListCursorAdapter.changeCursor(cursor);
+
+    }
 }

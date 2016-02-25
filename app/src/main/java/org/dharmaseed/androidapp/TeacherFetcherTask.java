@@ -2,7 +2,6 @@ package org.dharmaseed.androidapp;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 
 import java.io.FileNotFoundException;
@@ -20,8 +19,8 @@ public class TeacherFetcherTask extends DataFetcherTask {
 
     Context context;
 
-    public TeacherFetcherTask(DBManager dbManager, CursorAdapter cursorAdapter, Context context) {
-        super(dbManager, cursorAdapter);
+    public TeacherFetcherTask(DBManager dbManager, NavigationActivity navigationActivity, Context context) {
+        super(dbManager, navigationActivity);
         this.context = context;
     }
 

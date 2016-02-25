@@ -25,18 +25,18 @@ import okhttp3.Response;
  * Created by bbethke on 2/11/16.
  */
 // This tasks will fetch the latest data from dharmaseed.org and store it in the local database
-class DataFetcherTask extends AsyncTask<Void, Void, Void> {
+abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
 
     DBManager dbManager;
     SQLiteDatabase db;
     OkHttpClient httpClient;
-    CursorAdapter cursorAdapter;
+    NavigationActivity navigationActivity;
 
-    public DataFetcherTask(DBManager dbManager, CursorAdapter cursorAdapter) {
+    public DataFetcherTask(DBManager dbManager, NavigationActivity navigationActivity) {
         this.dbManager = dbManager;
         this.db = dbManager.getWritableDatabase();
         this.httpClient = new OkHttpClient();
-        this.cursorAdapter = cursorAdapter;
+        this.navigationActivity = navigationActivity;
     }
 
     protected void updateTable(String tableName, String tableID, String apiUrl, String[] itemKeys) {
@@ -108,70 +108,9 @@ class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     }
 
     @Override
-    protected Void doInBackground(Void... params) {
-
-        // Update the list view immediately
-        publishProgress();
-
-        updateTable(DBManager.C.Teacher.TABLE_NAME, DBManager.C.Teacher.ID,
-                "teachers/",
-                new String[]{
-                        DBManager.C.Teacher.WEBSITE,
-                        DBManager.C.Teacher.BIO,
-                        DBManager.C.Teacher.NAME,
-                        DBManager.C.Teacher.PHOTO
-                });
-
-        updateTable(DBManager.C.Center.TABLE_NAME, DBManager.C.Center.ID,
-                "venues/",
-                new String[]{
-                        DBManager.C.Center.WEBSITE,
-                                DBManager.C.Center.DESCRIPTION,
-                                DBManager.C.Center.NAME
-                });
-
-        updateTable(DBManager.C.Talk.TABLE_NAME, DBManager.C.Talk.ID,
-            "talks/",
-            new String[]{
-                DBManager.C.Talk.TITLE,
-                    DBManager.C.Talk.DESCRIPTION,
-                    DBManager.C.Talk.VENUE_ID,
-                    DBManager.C.Talk.TEACHER_ID,
-                    DBManager.C.Talk.AUDIO_URL,
-                    DBManager.C.Talk.DURATION_IN_MINUTES,
-                    DBManager.C.Talk.UPDATE_DATE,
-                    DBManager.C.Talk.RECORDING_DATE,
-                    DBManager.C.Talk.RETREAT_ID
-              });
-
-        publishProgress();
-        return null;
-    }
-
-    @Override
     protected void onProgressUpdate(Void... values) {
         super.onProgressUpdate(values);
-        String query = String.format(
-            "SELECT %s.%s, %s.%s, %s.%s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s ORDER BY %s.%s DESC LIMIT 200",
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.ID,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TITLE,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.UPDATE_DATE
-            );
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
+        navigationActivity.updateDisplayedData();
     }
 
     private class RequestAggregator {
