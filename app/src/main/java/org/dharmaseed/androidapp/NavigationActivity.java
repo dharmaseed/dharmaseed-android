@@ -185,7 +185,7 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     public void updateDisplayedData() {
-        String searchTerms = searchBox.getText().toString();
+        String searchTerms = searchBox.getText().toString().trim();
 
         String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s FROM %s, %s " +
