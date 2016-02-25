@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -33,6 +34,7 @@ public class NavigationActivity extends AppCompatActivity
 
     ListView talkListView;
     EditText searchBox;
+    boolean starFilterOn;
     DBManager dbManager;
     TalkListViewAdapter talkListCursorAdapter;
 
@@ -50,6 +52,7 @@ public class NavigationActivity extends AppCompatActivity
         searchBox.setVisibility(View.GONE);
         searchBox.setOnEditorActionListener(this);
         searchBox.setOnFocusChangeListener(this);
+        starFilterOn = false;
 
         talkListView = (ListView) findViewById(R.id.talksListView);
         talkListView.setOnItemClickListener(
@@ -121,25 +124,35 @@ public class NavigationActivity extends AppCompatActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        Log.i("nav", "selected " + id);
+        switch(id) {
+            case R.id.action_settings:
+                Log.i("nav", "Settings!");
+                return true;
+
+            case R.id.action_search:
+                Log.i("nav", "Search!");
+                EditText searchBox = (EditText) findViewById(R.id.nav_search_text);
+                if (searchBox.getVisibility() == View.GONE) {
+                    searchBox.setVisibility(View.VISIBLE);
+                } else {
+                    searchBox.setVisibility(View.GONE);
+                    searchBox.setText("");
+                    updateDisplayedData();
+                }
+                return true;
+
+            case R.id.action_toggle_starred:
+                int starOn  = getResources().getIdentifier("btn_star_big_on", "drawable", "android");
+                int starOff = getResources().getIdentifier("btn_star_big_off", "drawable", "android");
+                starFilterOn = ! starFilterOn;
+                if (starFilterOn) {
+                    item.setIcon(ContextCompat.getDrawable(this, starOn));
+                } else {
+                    item.setIcon(ContextCompat.getDrawable(this, starOff));
+                }
 
 
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            Log.i("nav", "Settings!");
-            return true;
-        } else if (id == R.id.action_search) {
-            Log.i("nav", "Search!");
-            EditText searchBox = (EditText)findViewById(R.id.nav_search_text);
-            if(searchBox.getVisibility() == View.GONE) {
-                searchBox.setVisibility(View.VISIBLE);
-            } else {
-                searchBox.setVisibility(View.GONE);
-                searchBox.setText("");
-                updateDisplayedData();
-            }
-            return true;
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
