@@ -38,8 +38,8 @@ public class TalkListViewAdapter extends CursorAdapter {
         TextView title=(TextView)view.findViewById(R.id.talkViewTitle);
         TextView teacher=(TextView)view.findViewById(R.id.talkViewTeacher);
 
-        title.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Talk.TITLE)));
-        teacher.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Teacher.NAME)));
+        title.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Talk.TITLE)).trim());
+        teacher.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Teacher.NAME)).trim());
 
         // Set teacher photo
         String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID)));

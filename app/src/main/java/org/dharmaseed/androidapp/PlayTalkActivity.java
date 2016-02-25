@@ -62,15 +62,15 @@ public class PlayTalkActivity extends AppCompatActivity
         if(cursor.moveToFirst()) {
             // Set the talk title
             TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);
-            titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)));
+            titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)).trim());
 
             // Set the teacher name
             TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-            teacherView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)));
+            teacherView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
 
             // Set the talk description
             TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
-            descriptionView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)));
+            descriptionView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)).trim());
 
             // Set the talk duration
             TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
