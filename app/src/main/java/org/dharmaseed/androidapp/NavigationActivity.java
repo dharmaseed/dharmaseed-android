@@ -33,7 +33,6 @@ public class NavigationActivity extends AppCompatActivity
 
     ListView talkListView;
     EditText searchBox;
-    String searchTerms;
     DBManager dbManager;
     TalkListViewAdapter talkListCursorAdapter;
 
@@ -51,7 +50,6 @@ public class NavigationActivity extends AppCompatActivity
         searchBox.setVisibility(View.GONE);
         searchBox.setOnEditorActionListener(this);
         searchBox.setOnFocusChangeListener(this);
-        searchTerms = "";
 
         talkListView = (ListView) findViewById(R.id.talksListView);
         talkListView.setOnItemClickListener(
@@ -134,7 +132,13 @@ public class NavigationActivity extends AppCompatActivity
         } else if (id == R.id.action_search) {
             Log.i("nav", "Search!");
             EditText searchBox = (EditText)findViewById(R.id.nav_search_text);
-            searchBox.setVisibility(View.VISIBLE);
+            if(searchBox.getVisibility() == View.GONE) {
+                searchBox.setVisibility(View.VISIBLE);
+            } else {
+                searchBox.setVisibility(View.GONE);
+                searchBox.setText("");
+                updateDisplayedData();
+            }
             return true;
         }
 
@@ -163,7 +167,6 @@ public class NavigationActivity extends AppCompatActivity
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
         Log.i("onEditorAction", v.getText().toString());
-        searchTerms = v.getText().toString();
 
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
@@ -182,6 +185,8 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     public void updateDisplayedData() {
+        String searchTerms = searchBox.getText().toString();
+
         String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s FROM %s, %s " +
                         "WHERE %s.%s=%s.%s AND " +
@@ -213,7 +218,7 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
                 searchTerms,
-                
+
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.UPDATE_DATE
         );
