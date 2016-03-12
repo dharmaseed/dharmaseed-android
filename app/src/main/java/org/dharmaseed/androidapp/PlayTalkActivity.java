@@ -43,24 +43,39 @@ public class PlayTalkActivity extends AppCompatActivity
         DBManager dbManager = new DBManager(this);
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
-                "SELECT %s, %s, %s, %s, %s, %s, %s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
+                "SELECT %s, %s.%s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
+                        + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
                 DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.DESCRIPTION,
                 DBManager.C.Talk.AUDIO_URL,
                 DBManager.C.Talk.DURATION_IN_MINUTES,
                 DBManager.C.Talk.RECORDING_DATE,
                 DBManager.C.Talk.UPDATE_DATE,
+                DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
+                DBManager.C.Center.TABLE_NAME,
+                DBManager.C.Center.NAME,
 
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
 
+                // FROM
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Center.TABLE_NAME,
+
+                // WHERE
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
+
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.VENUE_ID,
+                DBManager.C.Center.TABLE_NAME,
+                DBManager.C.Center.ID,
+
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.ID,
                 talkID
@@ -73,7 +88,11 @@ public class PlayTalkActivity extends AppCompatActivity
 
             // Set the teacher name
             TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-            teacherView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
+            teacherView.setText(cursor.getString(cursor.getColumnIndexOrThrow("teacher_name")).trim());
+
+            // Set the center name
+            TextView centerView = (TextView) findViewById(R.id.play_talk_center);
+            centerView.setText(cursor.getString(cursor.getColumnIndexOrThrow("center_name")).trim());
 
             // Set the talk description
             TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
