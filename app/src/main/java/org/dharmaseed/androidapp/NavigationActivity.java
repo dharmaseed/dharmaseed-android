@@ -49,7 +49,6 @@ public class NavigationActivity extends AppCompatActivity
         dbManager = new DBManager(this);
 
         searchBox = (EditText)findViewById(R.id.nav_search_text);
-        searchBox.setVisibility(View.GONE);
         searchBox.setOnEditorActionListener(this);
         searchBox.setOnFocusChangeListener(this);
         starFilterOn = false;

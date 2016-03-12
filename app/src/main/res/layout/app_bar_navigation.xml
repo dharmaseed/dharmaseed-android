@@ -25,6 +25,7 @@
             android:id="@+id/nav_search_text"
             android:inputType="text"
             android:hint="Enter search keywords"
+            android:visibility="gone"
             android:background="?attr/colorAccent" />
 
     </android.support.design.widget.AppBarLayout>
