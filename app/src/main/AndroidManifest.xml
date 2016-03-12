@@ -21,7 +21,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".PlayTalkActivity"></activity>
+        <activity android:name=".PlayTalkActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".NavigationActivity" />
+        </activity>
     </application>
 
 </manifest>
