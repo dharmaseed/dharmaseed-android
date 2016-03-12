@@ -26,7 +26,7 @@
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
             >
@@ -37,7 +37,9 @@
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="Talk Title"
                 android:id="@+id/play_talk_talk_title"
-                android:textColor="@color/colorPrimaryDark" />
+                android:textColor="@color/colorPrimaryDark"
+                android:textStyle="bold"
+                />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -47,16 +49,36 @@
                 android:id="@+id/play_talk_teacher"
                 android:textColor="@color/colorPrimary"
                 />
+
         </LinearLayout>
 
 
     </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Center"
+        android:id="@+id/play_talk_center"
+        android:textColor="@color/colorPrimary"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Date"
+        android:id="@+id/play_talk_date"
+        android:textColor="@color/colorPrimary"
+        />
 
 
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:paddingTop="10dp"
         >
         <TextView
             android:layout_width="fill_parent"

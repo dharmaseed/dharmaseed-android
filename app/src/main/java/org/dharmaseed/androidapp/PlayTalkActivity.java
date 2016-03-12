@@ -17,6 +17,9 @@ import android.widget.TextView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 public class PlayTalkActivity extends AppCompatActivity
@@ -40,11 +43,13 @@ public class PlayTalkActivity extends AppCompatActivity
         DBManager dbManager = new DBManager(this);
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
-                "SELECT %s, %s, %s, %s, %s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
+                "SELECT %s, %s, %s, %s, %s, %s, %s, %s.%s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
                 DBManager.C.Talk.TITLE,
                 DBManager.C.Talk.DESCRIPTION,
                 DBManager.C.Talk.AUDIO_URL,
                 DBManager.C.Talk.DURATION_IN_MINUTES,
+                DBManager.C.Talk.RECORDING_DATE,
+                DBManager.C.Talk.UPDATE_DATE,
                 DBManager.C.Teacher.NAME,
 
                 DBManager.C.Teacher.TABLE_NAME,
@@ -101,6 +106,20 @@ public class PlayTalkActivity extends AppCompatActivity
             } catch(FileNotFoundException e) {
                 Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
                 photoView.setImageDrawable(icon);
+            }
+
+            // Set date
+            TextView dateView = (TextView) findViewById(R.id.play_talk_date);
+            String recDate = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.RECORDING_DATE));
+            if(recDate == null) {
+                recDate = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.UPDATE_DATE));
+            }
+            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            try {
+                dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
+            } catch(ParseException e) {
+                dateView.setText("");
+                Log.w("playTalk", "Could not parse talk date for talk ID " + talkID);
             }
 
         } else {
