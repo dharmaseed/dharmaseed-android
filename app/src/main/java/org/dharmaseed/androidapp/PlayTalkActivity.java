@@ -169,7 +169,7 @@ public class PlayTalkActivity extends AppCompatActivity {
                 getResources().getIdentifier(drawableName, "drawable", "android")));
     }
 
-    public void playTalk(View view) {
+    public void playTalkButtonClicked(View view) {
         Log.d("playTalk", "button pressed");
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         if(mediaPlayer.isPlaying()) {
@@ -186,6 +186,20 @@ public class PlayTalkActivity extends AppCompatActivity {
                 Log.e("playTalk", e.toString());
             }
         }
+    }
+
+    public void fastForwardButtonClicked(View view) {
+        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+        int currentPosition = mediaPlayer.getCurrentPosition();
+        int newPosition = Math.min(currentPosition + 30000, mediaPlayer.getDuration());
+        mediaPlayer.seekTo(newPosition);
+    }
+
+    public void rewindButtonClicked(View view) {
+        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+        int currentPosition = mediaPlayer.getCurrentPosition();
+        int newPosition = Math.max(currentPosition - 30000, 0);
+        mediaPlayer.seekTo(newPosition);
     }
 
 }
