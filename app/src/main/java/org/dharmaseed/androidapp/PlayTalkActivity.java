@@ -1,14 +1,12 @@
 package org.dharmaseed.androidapp;
 
 import android.os.Handler;
-import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
@@ -27,13 +25,13 @@ import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
 
-public class PlayTalkActivity extends AppCompatActivity {
+public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
     TalkPlayerFragment talkPlayerFragment;
-    long talkID;
     String url;
+    boolean userDraggingSeekBar;
+    int userSeekBarPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +46,7 @@ public class PlayTalkActivity extends AppCompatActivity {
 
         // Get the ID of the talk to display
         Intent i = getIntent();
-        talkID = i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
+        long talkID = i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
 
         // Look up this talk
         DBManager dbManager = new DBManager(this);
@@ -157,13 +155,17 @@ public class PlayTalkActivity extends AppCompatActivity {
 
             // Start a handler to periodically update the seek bar and talk time
             final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+            seekBar.setMax((int)(duration*60*1000));
+            userDraggingSeekBar = false;
+            userSeekBarPosition = 0;
+            seekBar.setOnSeekBarChangeListener(this);
             final Handler handler = new Handler();
             final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
             handler.post(new Runnable() {
                 @Override
                 public void run() {
                     handler.postDelayed(this, 1000);
-                    if (talkPlayerFragment.getMediaPrepared()) {
+                    if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
                         try {
                             int pos = mediaPlayer.getCurrentPosition();
                             int mpDuration = mediaPlayer.getDuration();
@@ -213,15 +215,35 @@ public class PlayTalkActivity extends AppCompatActivity {
     public void fastForwardButtonClicked(View view) {
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         int currentPosition = mediaPlayer.getCurrentPosition();
-        int newPosition = Math.min(currentPosition + 30000, mediaPlayer.getDuration());
+        int newPosition = Math.min(currentPosition + 15000, mediaPlayer.getDuration());
         mediaPlayer.seekTo(newPosition);
     }
 
     public void rewindButtonClicked(View view) {
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         int currentPosition = mediaPlayer.getCurrentPosition();
-        int newPosition = Math.max(currentPosition - 30000, 0);
+        int newPosition = Math.max(currentPosition - 15000, 0);
         mediaPlayer.seekTo(newPosition);
     }
 
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        if(fromUser) {
+            userSeekBarPosition = progress;
+        }
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        userDraggingSeekBar = true;
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        userDraggingSeekBar = false;
+        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+        try {
+            mediaPlayer.seekTo(userSeekBarPosition);
+        } catch (IllegalStateException e) {}
+    }
 }
