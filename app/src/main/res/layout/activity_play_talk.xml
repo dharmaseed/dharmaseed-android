@@ -16,8 +16,8 @@
         >
 
         <ImageView
-            android:layout_width="90dp"
-            android:layout_height="90dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:id="@+id/play_talk_teacher_photo"
             android:adjustViewBounds="false"
             android:scaleType="fitCenter"
@@ -27,8 +27,8 @@
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="0dp"
             >
 
             <TextView
@@ -57,7 +57,8 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textStyle="bold"
         android:text="Center"
         android:id="@+id/play_talk_center"
         android:textColor="@color/colorPrimary"
@@ -66,7 +67,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="Date"
         android:id="@+id/play_talk_date"
         android:textColor="@color/colorPrimary"
@@ -111,8 +112,8 @@
         >
 
         <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@android:drawable/ic_media_rew"
             android:tint="@color/colorPrimary"
             android:id="@+id/activity_play_talk_rw_button"
@@ -120,8 +121,8 @@
             />
 
         <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@android:drawable/ic_media_play"
             android:tint="@color/colorPrimary"
             android:id="@+id/activity_play_talk_play_button"
@@ -129,8 +130,8 @@
             />
 
         <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@android:drawable/ic_media_ff"
             android:tint="@color/colorPrimary"
             android:id="@+id/activity_play_talk_ff_button"
