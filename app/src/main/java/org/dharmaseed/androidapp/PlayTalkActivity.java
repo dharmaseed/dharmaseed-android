@@ -1,5 +1,7 @@
 package org.dharmaseed.androidapp;
 
+import android.provider.MediaStore;
+import android.support.v4.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -22,11 +24,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-public class PlayTalkActivity extends AppCompatActivity
-        implements MediaPlayer.OnPreparedListener {
+public class PlayTalkActivity extends AppCompatActivity {
 
-    MediaPlayer mediaPlayer;
-    boolean mediaPrepared;
+    TalkPlayerFragment talkPlayerFragment;
     long talkID;
     String url;
 
@@ -149,17 +149,24 @@ public class PlayTalkActivity extends AppCompatActivity
 
         cursor.close();
 
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnPreparedListener(this);
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        mediaPrepared = false;
+        // find the retained fragment on activity restarts
+        FragmentManager fm = getSupportFragmentManager();
+        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
+
+        // create the fragment the first time
+        if (talkPlayerFragment == null) {
+            // add the fragment
+            talkPlayerFragment = new TalkPlayerFragment(url);
+            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
+        }
     }
 
     public void playTalk(View view) {
         Log.d("playTalk", "button pressed");
+        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         if(mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-        } else if(mediaPrepared) {
+        } else if(talkPlayerFragment.getMediaPrepared()) {
             mediaPlayer.start();
         } else {
             try {
@@ -169,20 +176,6 @@ public class PlayTalkActivity extends AppCompatActivity
                 Log.e("playTalk", e.toString());
             }
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mediaPlayer.stop();
-        mediaPlayer.release();
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-        Log.i("playTalk", "playing talk");
-        mediaPrepared = true;
-        mediaPlayer.start();
     }
 
 }
