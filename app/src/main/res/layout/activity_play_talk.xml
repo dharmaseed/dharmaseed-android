@@ -17,10 +17,10 @@
 
         <ImageView
             android:layout_width="90dp"
-            android:layout_height="135dp"
+            android:layout_height="90dp"
             android:id="@+id/play_talk_teacher_photo"
             android:adjustViewBounds="false"
-            android:scaleType="fitStart"
+            android:scaleType="fitCenter"
             />
 
         <LinearLayout
@@ -51,7 +51,6 @@
                 />
 
         </LinearLayout>
-
 
     </LinearLayout>
 

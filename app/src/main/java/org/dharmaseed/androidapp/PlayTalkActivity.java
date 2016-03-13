@@ -35,7 +35,6 @@ public class PlayTalkActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
 
-        getSupportActionBar().setTitle("Play Talk");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // Get the ID of the talk to display
