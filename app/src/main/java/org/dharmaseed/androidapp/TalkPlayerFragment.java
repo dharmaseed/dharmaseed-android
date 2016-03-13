@@ -50,6 +50,8 @@ public class TalkPlayerFragment extends Fragment
         Log.i("talkPlayerFragment", "playing talk");
         mediaPrepared = true;
         mediaPlayer.start();
+        PlayTalkActivity activity = (PlayTalkActivity) getActivity();
+        activity.setPPButton("ic_media_pause");
     }
 
     @Override

@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -143,22 +144,29 @@ public class PlayTalkActivity extends AppCompatActivity {
                 Log.w("playTalk", "Could not parse talk date for talk ID " + talkID);
             }
 
+            // Get/create a persistent fragment to manage the MediaPlayer instance
+            FragmentManager fm = getSupportFragmentManager();
+            talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
+            if (talkPlayerFragment == null) {
+                // add the fragment
+                talkPlayerFragment = new TalkPlayerFragment(url);
+                fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
+            } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
+                setPPButton("ic_media_pause");
+            }
+
         } else {
             Log.e("PlayTalkActivity", "Could not look up talk, id="+talkID);
         }
 
         cursor.close();
 
-        // find the retained fragment on activity restarts
-        FragmentManager fm = getSupportFragmentManager();
-        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
+    }
 
-        // create the fragment the first time
-        if (talkPlayerFragment == null) {
-            // add the fragment
-            talkPlayerFragment = new TalkPlayerFragment(url);
-            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
-        }
+    public void setPPButton(String drawableName) {
+        ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
+        playButton.setImageDrawable(ContextCompat.getDrawable(this,
+                getResources().getIdentifier(drawableName, "drawable", "android")));
     }
 
     public void playTalk(View view) {
@@ -166,8 +174,10 @@ public class PlayTalkActivity extends AppCompatActivity {
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         if(mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
+            setPPButton("ic_media_play");
         } else if(talkPlayerFragment.getMediaPrepared()) {
             mediaPlayer.start();
+            setPPButton("ic_media_pause");
         } else {
             try {
                 mediaPlayer.setDataSource(url);
