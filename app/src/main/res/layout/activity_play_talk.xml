@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingBottom="0dp"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
@@ -85,22 +85,58 @@
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="Talk Description"
             android:id="@+id/play_talk_talk_description"
-         />
+            />
     </ScrollView>
 
-    <Button
-        android:layout_width="wrap_content"
+    <SeekBar
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Play"
-        android:id="@+id/activity_play_talk_play_button"
-        android:onClick="playTalk" />
+        android:id="@+id/seekBar"
+        android:layout_gravity="center_horizontal" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="right"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="Duration"
         android:id="@+id/play_talk_talk_duration"
-     />
+        />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        >
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_rew"
+            android:tint="@color/colorPrimary"
+            android:id="@+id/activity_play_talk_rw_button"
+            android:onClick="playTalk"
+            />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_play"
+            android:tint="@color/colorPrimary"
+            android:id="@+id/activity_play_talk_play_button"
+            android:onClick="playTalk"
+            />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_media_ff"
+            android:tint="@color/colorPrimary"
+            android:id="@+id/activity_play_talk_ff_button"
+            android:onClick="playTalk"
+            />
+
+    </LinearLayout>
 
 </LinearLayout>
