@@ -230,6 +230,10 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         if(fromUser) {
             userSeekBarPosition = progress;
+            String posStr = DateUtils.formatElapsedTime(progress / 1000);
+            String mpDurStr = DateUtils.formatElapsedTime(seekBar.getMax() / 1000);
+            TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+            durationView.setText(posStr + "/" + mpDurStr);
         }
     }
 
@@ -241,6 +245,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         userDraggingSeekBar = false;
+        talkPlayerFragment.setUserSeekBarPosition(userSeekBarPosition);
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         try {
             mediaPlayer.seekTo(userSeekBarPosition);

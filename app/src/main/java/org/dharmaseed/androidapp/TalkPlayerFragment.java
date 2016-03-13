@@ -17,6 +17,7 @@ public class TalkPlayerFragment extends Fragment
 
     private MediaPlayer mediaPlayer;
     private boolean mediaPrepared;
+    private int userSeekBarPosition;
 
     public TalkPlayerFragment() {
 
@@ -27,6 +28,7 @@ public class TalkPlayerFragment extends Fragment
         mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mediaPrepared = false;
+        userSeekBarPosition = 0;
     }
 
     // this method is only called once for this fragment
@@ -45,10 +47,15 @@ public class TalkPlayerFragment extends Fragment
         return mediaPrepared;
     }
 
+    public void setUserSeekBarPosition(int userSeekBarPosition) {
+        this.userSeekBarPosition = userSeekBarPosition;
+    }
+
     @Override
     public void onPrepared(MediaPlayer mp) {
         Log.i("talkPlayerFragment", "playing talk");
         mediaPrepared = true;
+        mediaPlayer.seekTo(userSeekBarPosition);
         mediaPlayer.start();
         PlayTalkActivity activity = (PlayTalkActivity) getActivity();
         activity.setPPButton("ic_media_pause");
