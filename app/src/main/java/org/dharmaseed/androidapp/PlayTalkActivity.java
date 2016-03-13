@@ -1,5 +1,6 @@
 package org.dharmaseed.androidapp;
 
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
 import android.content.Intent;
@@ -10,12 +11,15 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.io.FileInputStream;
@@ -36,7 +40,11 @@ public class PlayTalkActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
 
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // Turn on action bar up/home button
+        ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 
         // Get the ID of the talk to display
         Intent i = getIntent();
@@ -101,20 +109,6 @@ public class PlayTalkActivity extends AppCompatActivity {
             TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
             descriptionView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)).trim());
 
-            // Set the talk duration
-            TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
-            double duration = cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES));
-            int durationHr  = (int)Math.floor(duration/60);
-            int durationMin = (int)Math.floor(duration-durationHr*60);
-            int durationSec = (int)Math.floor((duration-Math.floor(duration))*60);
-            String durationStr;
-            if(durationHr > 0) {
-                durationStr = String.format(Locale.US, "%02d:%02d:%02d", durationHr, durationMin, durationSec);
-            } else {
-                durationStr = String.format(Locale.US, "%02d:%02d", durationMin, durationSec);
-            }
-            durationView.setText(durationStr);
-
             // Save the URL
             url = "http://www.dharmaseed.org" + cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.AUDIO_URL));
 
@@ -154,6 +148,34 @@ public class PlayTalkActivity extends AppCompatActivity {
             } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
                 setPPButton("ic_media_pause");
             }
+
+            // Set the talk duration
+            final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+            double duration = cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES));
+            String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
+            durationView.setText(durationStr);
+
+            // Start a handler to periodically update the seek bar and talk time
+            final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+            final Handler handler = new Handler();
+            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    handler.postDelayed(this, 1000);
+                    if (talkPlayerFragment.getMediaPrepared()) {
+                        try {
+                            int pos = mediaPlayer.getCurrentPosition();
+                            int mpDuration = mediaPlayer.getDuration();
+                            seekBar.setMax(mpDuration);
+                            seekBar.setProgress(pos);
+                            String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                            String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                            durationView.setText(posStr + "/" + mpDurStr);
+                        } catch(IllegalStateException e) {}
+                    }
+                }
+            });
 
         } else {
             Log.e("PlayTalkActivity", "Could not look up talk, id="+talkID);

@@ -91,7 +91,7 @@
     <SeekBar
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/seekBar"
+        android:id="@+id/play_talk_seek_bar"
         android:layout_gravity="center_horizontal" />
 
     <TextView
