@@ -24,8 +24,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
@@ -83,6 +81,7 @@ public class NavigationActivity extends AppCompatActivity
                         intent.putExtra(TALK_DETAIL_EXTRA, id);
                         ctx.startActivity(intent);
                     }
+
                 }
         );
         talkListCursorAdapter = new TalkListViewAdapter(
@@ -210,10 +209,12 @@ public class NavigationActivity extends AppCompatActivity
         String searchTerms = searchBox.getText().toString().trim();
 
         String query = String.format(
-                "SELECT %s.%s, %s.%s, %s.%s, %s.%s FROM %s, %s " +
+                "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
+                        "FROM %s, %s " +
                         "WHERE %s.%s=%s.%s AND " +
                         "(%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') " +
                         "ORDER BY %s.%s DESC LIMIT 200",
+                // SELECT
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.ID,
                 DBManager.C.Talk.TABLE_NAME,
@@ -222,25 +223,33 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
+
+                // FROM
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME,
+
+                // WHERE
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
 
+                // AND
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.TITLE,
                 searchTerms,
 
+                // OR
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.DESCRIPTION,
                 searchTerms,
 
+                // OR
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
                 searchTerms,
 
+                // ORDER BY
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.UPDATE_DATE
         );
@@ -248,4 +257,5 @@ public class NavigationActivity extends AppCompatActivity
         talkListCursorAdapter.changeCursor(cursor);
 
     }
+
 }

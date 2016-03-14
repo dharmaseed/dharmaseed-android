@@ -82,7 +82,7 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String TALK_ID = "talk_id";
 
             public static final String TABLE_NAME = "talk_stars";
-            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+TALK_ID+" INTEGER)";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+TALK_ID+" INTEGER PRIMARY KEY)";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
@@ -208,5 +208,27 @@ public class DBManager extends SQLiteOpenHelper {
         return "teacher-"+teacherID+".png";
     }
 
+    public boolean isTalkStarred(int talkId) {
+        SQLiteDatabase db = getReadableDatabase();
+        String query = String.format("SELECT %s FROM %s WHERE %s=%s",
+                C.TalkStars.TALK_ID,
+                C.TalkStars.TABLE_NAME,
+                C.TalkStars.TALK_ID,
+                talkId);
+        Cursor cursor = db.rawQuery(query, null);
+        return (cursor.getCount() != 0);
+    }
+
+    public void starTalk(int talkId) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(C.TalkStars.TALK_ID, talkId);
+        db.insert(C.TalkStars.TABLE_NAME, null, v);
+    }
+
+    public void unstarTalk(int talkId) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(C.TalkStars.TABLE_NAME, C.TalkStars.TALK_ID+"="+talkId, null);
+    }
 
 }

@@ -68,10 +68,12 @@
         android:layout_width="30dp"
         android:layout_height="wrap_content">
 
-        <ImageButton
+        <ImageView
             android:layout_width="25dp"
             android:layout_height="25dp"
-            android:src="@android:drawable/btn_star_big_off" />
+            android:id="@+id/talk_list_item_star"
+            android:src="@android:drawable/btn_star_big_off"
+            />
 
     </LinearLayout>
 
