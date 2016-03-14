@@ -20,13 +20,11 @@
 package org.dharmaseed.androidapp;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.CursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,6 +55,7 @@ public class TalkListViewAdapter extends CursorAdapter {
         TextView title=(TextView)view.findViewById(R.id.talkViewTitle);
         TextView teacher=(TextView)view.findViewById(R.id.talkViewTeacher);
 
+        // Set talk title and teacher name
         title.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Talk.TITLE)).trim());
         teacher.setText(cursor.getString(cursor.getColumnIndex(DBManager.C.Teacher.NAME)).trim());
 
