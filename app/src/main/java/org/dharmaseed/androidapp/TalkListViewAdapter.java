@@ -21,12 +21,10 @@ package org.dharmaseed.androidapp;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.CursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,12 +39,14 @@ public class TalkListViewAdapter extends CursorAdapter {
     private int layout;
     private final LayoutInflater inflater;
     private DBManager dbManager;
+    private NavigationActivity navigationActivity;
 
-    public TalkListViewAdapter(Context context, int layout, Cursor c) {
+    public TalkListViewAdapter(NavigationActivity context, int layout, Cursor c) {
         super(context, c, 0);
         this.layout=layout;
         this.inflater=LayoutInflater.from(context);
         dbManager = new DBManager(context);
+        this.navigationActivity = context;
     }
 
     @Override
@@ -99,6 +99,9 @@ public class TalkListViewAdapter extends CursorAdapter {
                     dbManager.starTalk(talkId);
                     star.setImageDrawable(ContextCompat.getDrawable(ctx,
                             ctx.getResources().getIdentifier("btn_star_big_on", "drawable", "android")));
+                }
+                if(navigationActivity.starFilterOn) {
+                    navigationActivity.updateDisplayedData();
                 }
             }
         });

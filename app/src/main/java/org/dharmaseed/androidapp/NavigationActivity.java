@@ -87,14 +87,14 @@ public class NavigationActivity extends AppCompatActivity
                 }
         );
         talkListCursorAdapter = new TalkListViewAdapter(
-                getApplicationContext(),
+                this,
                 R.layout.talk_list_view_item,
                 null
         );
         talkListView.setAdapter(talkListCursorAdapter);
 
         // Fetch new data from the server
-        new TeacherFetcherTask(dbManager, this, getApplicationContext()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new TeacherFetcherTask(dbManager, this, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         new CenterFetcherTask(dbManager, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         new TalkFetcherTask(dbManager, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 

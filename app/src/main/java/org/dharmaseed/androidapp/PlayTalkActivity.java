@@ -141,7 +141,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
             Log.i("PlayTalkActivity", "photoFilename: "+photoFilename);
             try {
-                FileInputStream photo = getApplicationContext().openFileInput(photoFilename);
+                FileInputStream photo = openFileInput(photoFilename);
                 photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
             } catch(FileNotFoundException e) {
                 Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
@@ -254,7 +254,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
                 // Notify main activity to update its data
                 LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("updateDisplayedData"));
-                
+
                 return true;
         }
 
