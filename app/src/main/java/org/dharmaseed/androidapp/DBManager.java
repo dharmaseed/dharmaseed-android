@@ -45,7 +45,7 @@ import okhttp3.Response;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 25;
+    private static final int DB_VERSION = 26;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -75,6 +75,14 @@ public class DBManager extends SQLiteOpenHelper {
                     +UPDATE_DATE+" TEXT,"
                     +RECORDING_DATE+" TEXT,"
                     +RETREAT_ID+" INTEGER)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+        }
+
+        public abstract class TalkStars {
+            public static final String TALK_ID = "talk_id";
+
+            public static final String TABLE_NAME = "talk_stars";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+TALK_ID+" INTEGER)";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
@@ -129,9 +137,12 @@ public class DBManager extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(C.Talk.CREATE_TABLE);
+        db.execSQL(C.TalkStars.CREATE_TABLE);
         db.execSQL(C.Teacher.CREATE_TABLE);
         db.execSQL(C.Center.CREATE_TABLE);
         db.execSQL(C.Edition.CREATE_TABLE);
+
+        // Populate editions table with initial data
         ContentValues v = new ContentValues();
         v.put(C.Edition.TABLE, C.Talk.TABLE_NAME);
         db.insert(C.Edition.TABLE_NAME, null, v);
@@ -146,6 +157,7 @@ public class DBManager extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("DBManager", "Upgrading database to version "+DB_VERSION);
         db.execSQL(C.Talk.DROP_TABLE);
+        db.execSQL(C.TalkStars.DROP_TABLE);
         db.execSQL(C.Teacher.DROP_TABLE);
         db.execSQL(C.Center.DROP_TABLE);
         db.execSQL(C.Edition.DROP_TABLE);
