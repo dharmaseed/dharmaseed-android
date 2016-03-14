@@ -19,12 +19,15 @@
 
 package org.dharmaseed.androidapp;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -81,7 +84,6 @@ public class NavigationActivity extends AppCompatActivity
                         intent.putExtra(TALK_DETAIL_EXTRA, id);
                         ctx.startActivity(intent);
                     }
-
                 }
         );
         talkListCursorAdapter = new TalkListViewAdapter(
@@ -104,6 +106,14 @@ public class NavigationActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.i("navigationActivity", "Received update broadcast");
+                updateDisplayedData();
+            }
+        }, new IntentFilter("updateDisplayedData"));
 
     }
 

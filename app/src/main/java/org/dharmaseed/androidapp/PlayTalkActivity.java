@@ -28,11 +28,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -49,6 +52,8 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
     TalkPlayerFragment talkPlayerFragment;
     String url;
+    int talkID;
+    DBManager dbManager;
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
 
@@ -56,6 +61,8 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
+
+        dbManager = new DBManager(this);
 
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
@@ -65,7 +72,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
         // Get the ID of the talk to display
         Intent i = getIntent();
-        long talkID = i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
+        talkID = (int) i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
 
         // Look up this talk
         DBManager dbManager = new DBManager(this);
@@ -205,6 +212,55 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         cursor.close();
 
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.play_talk, menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(final Menu menu) {
+        MenuItem star = menu.findItem(R.id.play_talk_action_toggle_starred);
+        if(dbManager.isTalkStarred(talkID)) {
+            star.setIcon(ContextCompat.getDrawable(this,
+                    getResources().getIdentifier("btn_star_big_on", "drawable", "android")));
+        } else {
+            star.setIcon(ContextCompat.getDrawable(this,
+                    getResources().getIdentifier("btn_star_big_off", "drawable", "android")));
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        switch(id) {
+            case R.id.play_talk_action_toggle_starred:
+                if(dbManager.isTalkStarred(talkID)) {
+                    dbManager.unstarTalk(talkID);
+                    item.setIcon(getResources().getIdentifier("btn_star_big_off", "drawable", "android"));
+                } else {
+                    dbManager.starTalk(talkID);
+                    item.setIcon(getResources().getIdentifier("btn_star_big_on", "drawable", "android"));
+                }
+
+                // Notify main activity to update its data
+                LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent("updateDisplayedData"));
+                
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 
     public void setPPButton(String drawableName) {
         ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
