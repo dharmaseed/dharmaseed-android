@@ -158,7 +158,7 @@ public class NavigationActivity extends AppCompatActivity
                 } else {
                     item.setIcon(ContextCompat.getDrawable(this, starOff));
                 }
-
+                updateDisplayedData();
 
                 return true;
         }
@@ -208,11 +208,23 @@ public class NavigationActivity extends AppCompatActivity
     public void updateDisplayedData() {
         String searchTerms = searchBox.getText().toString().trim();
 
+        String starFilterTable = "";
+        String starFilterSubquery = "";
+        if(starFilterOn) {
+            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
+            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
+                    DBManager.C.Talk.TABLE_NAME,
+                    DBManager.C.Talk.ID,
+                    DBManager.C.TalkStars.TABLE_NAME,
+                    DBManager.C.TalkStars.TALK_ID
+            );
+        }
+
         String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
-                        "FROM %s, %s " +
+                        "FROM %s, %s %s " +
                         "WHERE %s.%s=%s.%s AND " +
-                        "(%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') " +
+                        "(%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') %s " +
                         "ORDER BY %s.%s DESC LIMIT 200",
                 // SELECT
                 DBManager.C.Talk.TABLE_NAME,
@@ -227,6 +239,7 @@ public class NavigationActivity extends AppCompatActivity
                 // FROM
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME,
+                starFilterTable,
 
                 // WHERE
                 DBManager.C.Talk.TABLE_NAME,
@@ -248,6 +261,9 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
                 searchTerms,
+
+                // Star filter sub-query
+                starFilterSubquery,
 
                 // ORDER BY
                 DBManager.C.Talk.TABLE_NAME,
