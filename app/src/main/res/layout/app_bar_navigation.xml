@@ -43,6 +43,7 @@
             android:layout_height="30sp"
             android:id="@+id/nav_search_text"
             android:inputType="text"
+            android:textCursorDrawable="@null"
             android:hint="Enter search keywords"
             android:visibility="gone"
             android:background="?attr/colorAccent" />

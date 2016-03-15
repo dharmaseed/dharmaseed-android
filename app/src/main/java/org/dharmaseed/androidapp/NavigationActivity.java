@@ -29,6 +29,7 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.KeyEvent;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.util.Log;
@@ -152,6 +153,11 @@ public class NavigationActivity extends AppCompatActivity
                 EditText searchBox = (EditText) findViewById(R.id.nav_search_text);
                 if (searchBox.getVisibility() == View.GONE) {
                     searchBox.setVisibility(View.VISIBLE);
+                    searchBox.requestFocus();
+                    searchBox.setCursorVisible(true);
+                    InputMethodManager keyboard = (InputMethodManager)
+                            getSystemService(Context.INPUT_METHOD_SERVICE);
+                    keyboard.showSoftInput(searchBox, 0);
                 } else {
                     searchBox.setVisibility(View.GONE);
                     searchBox.setText("");
@@ -199,17 +205,27 @@ public class NavigationActivity extends AppCompatActivity
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
         Log.i("onEditorAction", v.getText().toString());
 
+        // Close keyboard
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
+        // Give up focus (which will invoke onFocusChange below to hide the cursor and keyboard)
+        v.clearFocus();
+
+        // Search for talks meeting the new criteria
         updateDisplayedData();
 
-        return true;
+        return false;
     }
 
+    // Search box edit text focus listener
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
-        if (! hasFocus) {
+        Log.i("focusChange", hasFocus+"");
+        if (hasFocus) {
+            ((EditText)v).setCursorVisible(true);
+        } else {
+            ((EditText)v).setCursorVisible(false);
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
         }
