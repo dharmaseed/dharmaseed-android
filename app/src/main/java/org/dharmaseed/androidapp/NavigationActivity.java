@@ -28,6 +28,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -232,7 +233,27 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     public void updateDisplayedData() {
-        String searchTerms = searchBox.getText().toString().trim();
+        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
+        String[] subqueries = new String[searchTerms.length];
+        for(int i=0; i < searchTerms.length; i++) {
+            String subquery = String.format(" (%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') ",
+                    DBManager.C.Talk.TABLE_NAME,
+                    DBManager.C.Talk.TITLE,
+                    searchTerms[i],
+
+                    // OR
+                    DBManager.C.Talk.TABLE_NAME,
+                    DBManager.C.Talk.DESCRIPTION,
+                    searchTerms[i],
+
+                    // OR
+                    DBManager.C.Teacher.TABLE_NAME,
+                    DBManager.C.Teacher.NAME,
+                    searchTerms[i]);
+
+            subqueries[i] = subquery;
+        }
+        String searchSubquery = TextUtils.join(" AND ", subqueries);
 
         String starFilterTable = "";
         String starFilterSubquery = "";
@@ -249,8 +270,8 @@ public class NavigationActivity extends AppCompatActivity
         String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
                         "FROM %s, %s %s " +
-                        "WHERE %s.%s=%s.%s AND " +
-                        "(%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') %s " +
+                        "WHERE %s.%s=%s.%s " +
+                        "AND %s %s " +
                         "ORDER BY %s.%s DESC LIMIT 200",
                 // SELECT
                 DBManager.C.Talk.TABLE_NAME,
@@ -274,19 +295,8 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Teacher.ID,
 
                 // AND
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TITLE,
-                searchTerms,
-
-                // OR
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.DESCRIPTION,
-                searchTerms,
-
-                // OR
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-                searchTerms,
+                // Search filter sub-query
+                searchSubquery,
 
                 // Star filter sub-query
                 starFilterSubquery,
