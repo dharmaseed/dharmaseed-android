@@ -23,7 +23,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.util.Log;
 
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -75,8 +75,9 @@ public class TeacherFetcherTask extends DataFetcherTask {
             String filename = DBManager.getTeacherPhotoFilename(id);
             if(!photo.equals("")) {
                 try {
-                    context.openFileInput(filename);
-                } catch (FileNotFoundException e1) {
+                    FileInputStream file = context.openFileInput(filename);
+                    file.close();
+                } catch (IOException e1) {
                     // Only need to fetch the photo if we don't already have it
                     Log.i("teacherFetcherTask", "Fetching teacher photo " + id);
                     Request request = requestBuilder.url("http://www.dharmaseed.org/api/1/teachers/" + id + "/" + photo + "/?maxW=120&maxH=180").build();
