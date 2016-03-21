@@ -28,9 +28,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.TextUtils;
 import android.view.KeyEvent;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.util.Log;
@@ -46,6 +46,7 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -59,6 +60,11 @@ public class NavigationActivity extends AppCompatActivity
     boolean starFilterOn;
     DBManager dbManager;
     TalkListViewAdapter talkListCursorAdapter;
+    SwipeRefreshLayout refreshLayout;
+
+    TalkFetcherTask talkFetcherTask;
+    TeacherFetcherTask teacherFetcherTask;
+    CenterFetcherTask centerFetcherTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +81,8 @@ public class NavigationActivity extends AppCompatActivity
         searchBox.setOnFocusChangeListener(this);
         starFilterOn = false;
 
-        talkListView = (ListView) findViewById(R.id.talksListView);
+        // Configure talks list view
+        talkListView = (ListView) findViewById(R.id.talks_list_view);
         talkListView.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
                     @Override
@@ -95,10 +102,19 @@ public class NavigationActivity extends AppCompatActivity
         );
         talkListView.setAdapter(talkListCursorAdapter);
 
-        // Fetch new data from the server
-        new TeacherFetcherTask(dbManager, this, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        new CenterFetcherTask(dbManager, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        new TalkFetcherTask(dbManager, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        // Set swipe refresh listener
+        refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Log.i("refresh", "onrefresh");
+                fetchNewDataFromServer();
+            }
+        });
+
+        // Get the latest data from dharmaseed.org
+        fetchNewDataFromServer();
+        updateDisplayedData();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -117,6 +133,27 @@ public class NavigationActivity extends AppCompatActivity
             }
         }, new IntentFilter("updateDisplayedData"));
 
+    }
+
+    public void fetchNewDataFromServer() {
+
+        // Fetch new data from the server
+        Log.i("navigationActivity", "fetchNewDataFromServer()");
+        if(teacherFetcherTask == null || teacherFetcherTask.getStatus() == AsyncTask.Status.FINISHED) {
+            refreshLayout.setRefreshing(true);
+            teacherFetcherTask = new TeacherFetcherTask(dbManager, this, this);
+            teacherFetcherTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+        if(centerFetcherTask == null || centerFetcherTask.getStatus() == AsyncTask.Status.FINISHED) {
+            refreshLayout.setRefreshing(true);
+            centerFetcherTask = new CenterFetcherTask(dbManager, this);
+            centerFetcherTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+        if(talkFetcherTask == null || talkFetcherTask.getStatus() == AsyncTask.Status.FINISHED) {
+            refreshLayout.setRefreshing(true);
+            talkFetcherTask = new TalkFetcherTask(dbManager, this);
+            talkFetcherTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
     }
 
     @Override
@@ -147,6 +184,10 @@ public class NavigationActivity extends AppCompatActivity
         switch(id) {
             case R.id.action_settings:
                 Log.i("nav", "Settings!");
+                return true;
+
+            case R.id.action_refresh_server_data:
+                fetchNewDataFromServer();
                 return true;
 
             case R.id.action_search:
@@ -267,12 +308,12 @@ public class NavigationActivity extends AppCompatActivity
             );
         }
 
-        String query = String.format(
+        final String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
                         "FROM %s, %s %s " +
                         "WHERE %s.%s=%s.%s " +
                         "AND %s %s " +
-                        "ORDER BY %s.%s DESC LIMIT 200",
+                        "ORDER BY %s.%s DESC",
                 // SELECT
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.ID,
@@ -305,6 +346,7 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.UPDATE_DATE
         );
+
         Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
         talkListCursorAdapter.changeCursor(cursor);
 

@@ -32,9 +32,6 @@ public class CenterFetcherTask extends DataFetcherTask {
     @Override
     protected Void doInBackground(Void... params) {
 
-        // Update the list view immediately
-        publishProgress();
-
         updateTable(DBManager.C.Center.TABLE_NAME, DBManager.C.Center.ID,
                 "venues/",
                 new String[]{

@@ -26,6 +26,11 @@
         android:title="@string/action_settings"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_refresh_server_data"
+        android:orderInCategory="90"
+        android:title="@string/action_refresh_server_data"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_search"
         android:orderInCategory="10"
         android:icon="@android:drawable/ic_menu_search"

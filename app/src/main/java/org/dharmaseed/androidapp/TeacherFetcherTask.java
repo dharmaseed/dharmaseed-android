@@ -46,9 +46,6 @@ public class TeacherFetcherTask extends DataFetcherTask {
     @Override
     protected Void doInBackground(Void... params) {
 
-        // Update the list view immediately
-        publishProgress();
-
         updateTable(DBManager.C.Teacher.TABLE_NAME, DBManager.C.Teacher.ID,
                 "teachers/",
                 new String[]{

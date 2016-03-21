@@ -96,7 +96,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 }
                 Collections.sort(itemIDs, Collections.<Integer>reverseOrder());
 
-                RequestAggregator agg = new RequestAggregator(100, tableName, tableID, apiUrl);
+                RequestAggregator agg = new RequestAggregator(500, tableName, tableID, apiUrl);
                 JSONObject itemsWithDetails;
                 for(Integer id : itemIDs) {
                     itemsWithDetails = agg.addID(id);
@@ -129,7 +129,19 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected void onProgressUpdate(Void... values) {
         super.onProgressUpdate(values);
+        Log.i("OPU", "Update");
+        navigationActivity.refreshLayout.setRefreshing(true);
         navigationActivity.updateDisplayedData();
+    }
+
+    @Override
+    protected void onPostExecute(Void values) {
+        if( (navigationActivity.teacherFetcherTask == null || this == navigationActivity.teacherFetcherTask || navigationActivity.teacherFetcherTask.getStatus() == Status.FINISHED) &&
+            (navigationActivity.centerFetcherTask == null || this == navigationActivity.centerFetcherTask || navigationActivity.centerFetcherTask.getStatus() == Status.FINISHED) &&
+            (navigationActivity.talkFetcherTask == null || this == navigationActivity.talkFetcherTask || navigationActivity.talkFetcherTask.getStatus() == Status.FINISHED) ) {
+            Log.i("OPE", "STOP REFRESHING!");
+            navigationActivity.refreshLayout.setRefreshing(false);
+        }
     }
 
     private class RequestAggregator {

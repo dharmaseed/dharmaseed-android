@@ -31,9 +31,6 @@ public class TalkFetcherTask extends DataFetcherTask {
     @Override
     protected Void doInBackground(Void... params) {
 
-        // Update the list view immediately
-        publishProgress();
-
         updateTable(DBManager.C.Talk.TABLE_NAME, DBManager.C.Talk.ID,
                 "talks/",
                 new String[]{

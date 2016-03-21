@@ -45,7 +45,7 @@ import okhttp3.Response;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 26;
+    private static final int DB_VERSION = 27;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class

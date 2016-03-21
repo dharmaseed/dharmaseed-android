@@ -32,9 +32,19 @@
     tools:showIn="@layout/app_bar_navigation"
     android:orientation="vertical">
 
-    <ListView
+    <android.support.v4.widget.SwipeRefreshLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/talks_list_view_swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/talksListView"
-        />
+        android:layout_height="wrap_content">
+
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/talks_list_view"
+            android:clickable="true"
+            />
+
+    </android.support.v4.widget.SwipeRefreshLayout>
+
 </LinearLayout>
