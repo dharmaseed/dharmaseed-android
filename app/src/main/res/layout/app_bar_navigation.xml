@@ -45,7 +45,6 @@
             android:inputType="text"
             android:textCursorDrawable="@null"
             android:hint="Enter search keywords"
-            android:visibility="gone"
             android:background="?attr/colorAccent" />
 
     </android.support.design.widget.AppBarLayout>

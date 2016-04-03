@@ -46,7 +46,6 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -58,6 +57,7 @@ public class NavigationActivity extends AppCompatActivity
     ListView talkListView;
     EditText searchBox;
     boolean starFilterOn;
+    Menu menu;
     DBManager dbManager;
     TalkListViewAdapter talkListCursorAdapter;
     SwipeRefreshLayout refreshLayout;
@@ -65,6 +65,14 @@ public class NavigationActivity extends AppCompatActivity
     TalkFetcherTask talkFetcherTask;
     TeacherFetcherTask teacherFetcherTask;
     CenterFetcherTask centerFetcherTask;
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("SearchBoxVisible", searchBox.getVisibility() == View.VISIBLE);
+        outState.putString("SearchTerms", searchBox.getText().toString());
+        outState.putBoolean("StarFilterOn", starFilterOn);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +87,15 @@ public class NavigationActivity extends AppCompatActivity
         searchBox = (EditText)findViewById(R.id.nav_search_text);
         searchBox.setOnEditorActionListener(this);
         searchBox.setOnFocusChangeListener(this);
-        starFilterOn = false;
+
+        if(savedInstanceState == null) {
+            starFilterOn = false;
+            searchBox.setVisibility(View.GONE);
+        } else {
+            starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
+            searchBox.setVisibility(savedInstanceState.getBoolean("SearchBoxVisible") ? View.VISIBLE : View.GONE);
+            searchBox.setText(savedInstanceState.getString("SearchTerms"));
+        }
 
         // Configure talks list view
         talkListView = (ListView) findViewById(R.id.talks_list_view);
@@ -170,7 +186,8 @@ public class NavigationActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(final Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.navigation, menu);
-
+        this.menu = menu;
+        setStarButton();
         return true;
     }
 
@@ -204,24 +221,44 @@ public class NavigationActivity extends AppCompatActivity
                     searchBox.setVisibility(View.GONE);
                     searchBox.setText("");
                     updateDisplayedData();
+                    resetListToTop();
                 }
                 return true;
 
             case R.id.action_toggle_starred:
-                int starOn  = getResources().getIdentifier("btn_star_big_on", "drawable", "android");
-                int starOff = getResources().getIdentifier("btn_star_big_off", "drawable", "android");
                 starFilterOn = ! starFilterOn;
-                if (starFilterOn) {
-                    item.setIcon(ContextCompat.getDrawable(this, starOn));
-                } else {
-                    item.setIcon(ContextCompat.getDrawable(this, starOff));
-                }
+                setStarButton();
                 updateDisplayedData();
-
+                resetListToTop();
                 return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    // Reset the list to show the first item. Still not entirely sure why it's necessary to do it
+    // this way, but see https://groups.google.com/forum/#!topic/android-developers/EnyldBQDUwE
+    // and http://stackoverflow.com/questions/1446373/android-listview-setselection-does-not-seem-to-work
+    private void resetListToTop() {
+        talkListView.clearFocus();
+        talkListView.post(new Runnable() {
+            @Override
+            public void run() {
+                talkListView.setSelection(0);
+            }
+        });
+    }
+
+    public void setStarButton() {
+        int icon;
+        if(starFilterOn) {
+            icon  = getResources().getIdentifier("btn_star_big_on", "drawable", "android");
+        } else {
+            icon = getResources().getIdentifier("btn_star_big_off", "drawable", "android");
+        }
+        MenuItem starButton = menu.findItem(R.id.action_toggle_starred);
+        starButton.setIcon(ContextCompat.getDrawable(this, icon));
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -256,6 +293,9 @@ public class NavigationActivity extends AppCompatActivity
 
         // Search for talks meeting the new criteria
         updateDisplayedData();
+
+        // Scroll to the top of the list
+        resetListToTop();
 
         return false;
     }
