@@ -161,6 +161,7 @@ public class NavigationActivity extends AppCompatActivity
 
             case VIEW_MODE_CENTERS:
                 getSupportActionBar().setTitle("Centers");
+                cursorAdapter = new CenterCursorAdapter(this, R.layout.main_list_view_item, null);
                 break;
 
         }
@@ -350,10 +351,14 @@ public class NavigationActivity extends AppCompatActivity
             case VIEW_MODE_TEACHERS:
                 updateDisplayedTeachers();
                 break;
+            case VIEW_MODE_CENTERS:
+                updateDisplayedCenters();
+                break;
         }
     }
 
     void updateDisplayedTeachers() {
+        // TODO: refactor common logic in updateDisplayedXXX methods
         String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
         String[] subqueries = new String[searchTerms.length];
         for(int i=0; i < searchTerms.length; i++) {
@@ -403,6 +408,58 @@ public class NavigationActivity extends AppCompatActivity
         cursorAdapter.changeCursor(cursor);
 
     }
+
+    void updateDisplayedCenters() {
+        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
+        String[] subqueries = new String[searchTerms.length];
+        for(int i=0; i < searchTerms.length; i++) {
+            String subquery = String.format(" (%s LIKE '%%%s%%') ",
+                    DBManager.C.Center.NAME,
+                    searchTerms[i]);
+
+            subqueries[i] = subquery;
+        }
+        String searchSubquery = TextUtils.join(" AND ", subqueries);
+
+        // TODO: add star filter
+        /*
+        String starFilterTable = "";
+        String starFilterSubquery = "";
+        if(starFilterOn) {
+            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
+            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
+                    DBManager.C.Talk.TABLE_NAME,
+                    DBManager.C.Talk.ID,
+                    DBManager.C.TalkStars.TABLE_NAME,
+                    DBManager.C.TalkStars.TALK_ID
+            );
+        }
+        */
+
+        final String query = String.format(
+                "SELECT %s, %s " +
+                        "FROM %s " +
+                        "WHERE %s " +
+                        "ORDER BY %s ASC",
+                // SELECT
+                DBManager.C.Center.ID,
+                DBManager.C.Center.NAME,
+
+                // FROM
+                DBManager.C.Center.TABLE_NAME,
+
+                // WHERE
+                searchSubquery,
+
+                // ORDER BY
+                DBManager.C.Center.NAME
+        );
+
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
+        cursorAdapter.changeCursor(cursor);
+
+    }
+
 
     void updateDisplayedTalks() {
         String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");

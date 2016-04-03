@@ -34,14 +34,14 @@ import android.widget.TextView;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
-public class TalkCursorAdapter extends CursorAdapter {
+public class CenterCursorAdapter extends CursorAdapter {
 
     private int layout;
     private final LayoutInflater inflater;
     private DBManager dbManager;
     private NavigationActivity navigationActivity;
 
-    public TalkCursorAdapter(NavigationActivity context, int layout, Cursor c) {
+    public CenterCursorAdapter(NavigationActivity context, int layout, Cursor c) {
         super(context, c, 0);
         this.layout=layout;
         this.inflater=LayoutInflater.from(context);
@@ -56,25 +56,19 @@ public class TalkCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        // TODO: refactor common logic in XXXCursorAdapter classes
 
-        // Set talk title and teacher name
+        // Set center name
         TextView title=(TextView)view.findViewById(R.id.item_view_title);
-        TextView teacher=(TextView)view.findViewById(R.id.item_view_subtitle);
-        title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)).trim());
-        teacher.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
+        TextView subtitle=(TextView)view.findViewById(R.id.item_view_subtitle);
+        title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.NAME)).trim());
+        subtitle.setText("");
 
-        // Set teacher photo
-        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID)));
+        // Set photo
         ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
-        try {
-            FileInputStream photo = context.openFileInput(photoFilename);
-            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch(FileNotFoundException e) {
-            Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
-            photoView.setImageDrawable(icon);
-        }
+        Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
+        photoView.setImageDrawable(icon);
 
+        /* TODO: Add star logic
         // Set talk star status
         final ImageView star = (ImageView) view.findViewById(R.id.item_view_star);
         final int talkId = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
@@ -106,6 +100,7 @@ public class TalkCursorAdapter extends CursorAdapter {
                 }
             }
         });
+        */
 
     }
 
