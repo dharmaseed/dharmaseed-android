@@ -23,15 +23,15 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_talks"
-            android:icon="@drawable/ic_menu_camera"
+            android:icon="@drawable/mic"
             android:title="Talks" />
         <item
             android:id="@+id/nav_teachers"
-            android:icon="@drawable/ic_menu_gallery"
+            android:icon="@drawable/teacher"
             android:title="Teachers" />
         <item
             android:id="@+id/nav_centers"
-            android:icon="@drawable/ic_menu_slideshow"
+            android:icon="@drawable/home"
             android:title="Centers" />
     </group>
 
