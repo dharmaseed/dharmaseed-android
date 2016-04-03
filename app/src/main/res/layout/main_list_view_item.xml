@@ -27,7 +27,7 @@
     <ImageView
         android:layout_width="60dp"
         android:layout_height="90dp"
-        android:id="@+id/talkViewTeacherPhoto"
+        android:id="@+id/item_view_photo"
         android:minHeight="90dp"
         android:minWidth="60dp"
         android:maxHeight="90dp"
@@ -42,7 +42,7 @@
         android:paddingLeft="5dp">
 
         <TextView
-            android:id="@+id/talkViewTitle"
+            android:id="@+id/item_view_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="left"
@@ -56,7 +56,7 @@
             android:layout_height="wrap_content"
             android:text="Teacher"
             android:textAppearance="?android:attr/textAppearanceListItem"
-            android:id="@+id/talkViewTeacher"
+            android:id="@+id/item_view_subtitle"
             android:textColor="@color/colorPrimary" />
 
     </LinearLayout>
@@ -71,7 +71,7 @@
         <ImageView
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:id="@+id/talk_list_item_star"
+            android:id="@+id/item_view_star"
             android:src="@android:drawable/btn_star_big_off"
             />
 

@@ -28,6 +28,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -50,17 +51,21 @@ import android.widget.TextView;
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         TextView.OnEditorActionListener,
+        AdapterView.OnItemClickListener,
         View.OnFocusChangeListener {
 
     public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
 
-    ListView talkListView;
+    ListView listView;
     EditText searchBox;
     boolean starFilterOn;
     Menu menu;
     DBManager dbManager;
-    TalkListViewAdapter talkListCursorAdapter;
+    CursorAdapter cursorAdapter;
     SwipeRefreshLayout refreshLayout;
+
+    static final int VIEW_MODE_TALKS = 0, VIEW_MODE_TEACHERS = 1, VIEW_MODE_CENTERS = 2;
+    int viewMode;
 
     TalkFetcherTask talkFetcherTask;
     TeacherFetcherTask teacherFetcherTask;
@@ -72,6 +77,7 @@ public class NavigationActivity extends AppCompatActivity
         outState.putBoolean("SearchBoxVisible", searchBox.getVisibility() == View.VISIBLE);
         outState.putString("SearchTerms", searchBox.getText().toString());
         outState.putBoolean("StarFilterOn", starFilterOn);
+        outState.putInt("ViewMode", viewMode);
     }
 
     @Override
@@ -80,43 +86,34 @@ public class NavigationActivity extends AppCompatActivity
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("Talks");
 
         dbManager = new DBManager(this);
 
+        // Configure search box
         searchBox = (EditText)findViewById(R.id.nav_search_text);
         searchBox.setOnEditorActionListener(this);
         searchBox.setOnFocusChangeListener(this);
 
+        // Configure navigation view
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        // Configure list view
+        listView = (ListView) findViewById(R.id.talks_list_view);
+        listView.setOnItemClickListener(this);
+
         if(savedInstanceState == null) {
             starFilterOn = false;
             searchBox.setVisibility(View.GONE);
+            setViewMode(VIEW_MODE_TALKS);
+            navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
+
         } else {
             starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
             searchBox.setVisibility(savedInstanceState.getBoolean("SearchBoxVisible") ? View.VISIBLE : View.GONE);
             searchBox.setText(savedInstanceState.getString("SearchTerms"));
+            setViewMode(savedInstanceState.getInt("ViewMode"));
         }
-
-        // Configure talks list view
-        talkListView = (ListView) findViewById(R.id.talks_list_view);
-        talkListView.setOnItemClickListener(
-                new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        Log.d("onItemClick", "selected " + position + ", " + id);
-                        Context ctx = parent.getContext();
-                        Intent intent = new Intent(ctx, PlayTalkActivity.class);
-                        intent.putExtra(TALK_DETAIL_EXTRA, id);
-                        ctx.startActivity(intent);
-                    }
-                }
-        );
-        talkListCursorAdapter = new TalkListViewAdapter(
-                this,
-                R.layout.talk_list_view_item,
-                null
-        );
-        talkListView.setAdapter(talkListCursorAdapter);
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -128,18 +125,11 @@ public class NavigationActivity extends AppCompatActivity
             }
         });
 
-        // Get the latest data from dharmaseed.org
-        fetchNewDataFromServer();
-        updateDisplayedData();
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
@@ -149,6 +139,32 @@ public class NavigationActivity extends AppCompatActivity
             }
         }, new IntentFilter("updateDisplayedData"));
 
+        // Get the latest data from dharmaseed.org
+        fetchNewDataFromServer();
+        updateDisplayedData();
+
+    }
+
+    void setViewMode(int viewMode) {
+        this.viewMode = viewMode;
+        switch(viewMode) {
+
+            case VIEW_MODE_TALKS:
+                getSupportActionBar().setTitle("Talks");
+                cursorAdapter = new TalkCursorAdapter(this, R.layout.main_list_view_item, null);
+                break;
+
+            case VIEW_MODE_TEACHERS:
+                getSupportActionBar().setTitle("Teachers");
+                cursorAdapter = new TeacherCursorAdapter(this, R.layout.main_list_view_item, null);
+                break;
+
+            case VIEW_MODE_CENTERS:
+                getSupportActionBar().setTitle("Centers");
+                break;
+
+        }
+        listView.setAdapter(cursorAdapter);
     }
 
     public void fetchNewDataFromServer() {
@@ -236,16 +252,27 @@ public class NavigationActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    // Called when an item in the main list view is clicked
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Log.d("onItemClick", "selected " + position + ", " + id);
+        Context ctx = parent.getContext();
+
+        // TODO: switch on viewMode
+        Intent intent = new Intent(ctx, PlayTalkActivity.class);
+        intent.putExtra(TALK_DETAIL_EXTRA, id);
+        ctx.startActivity(intent);
+    }
 
     // Reset the list to show the first item. Still not entirely sure why it's necessary to do it
     // this way, but see https://groups.google.com/forum/#!topic/android-developers/EnyldBQDUwE
     // and http://stackoverflow.com/questions/1446373/android-listview-setselection-does-not-seem-to-work
     private void resetListToTop() {
-        talkListView.clearFocus();
-        talkListView.post(new Runnable() {
+        listView.clearFocus();
+        listView.post(new Runnable() {
             @Override
             public void run() {
-                talkListView.setSelection(0);
+                listView.setSelection(0);
             }
         });
     }
@@ -268,12 +295,14 @@ public class NavigationActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_talks) {
-            getSupportActionBar().setTitle("Talks");
+            setViewMode(VIEW_MODE_TALKS);
         } else if (id == R.id.nav_teachers) {
-            getSupportActionBar().setTitle("Teachers");
+            setViewMode(VIEW_MODE_TEACHERS);
         } else if (id == R.id.nav_centers) {
-            getSupportActionBar().setTitle("Centers");
+            setViewMode(VIEW_MODE_CENTERS);
         }
+
+        updateDisplayedData();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -314,6 +343,68 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     public void updateDisplayedData() {
+        switch (viewMode) {
+            case VIEW_MODE_TALKS:
+                updateDisplayedTalks();
+                break;
+            case VIEW_MODE_TEACHERS:
+                updateDisplayedTeachers();
+                break;
+        }
+    }
+
+    void updateDisplayedTeachers() {
+        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
+        String[] subqueries = new String[searchTerms.length];
+        for(int i=0; i < searchTerms.length; i++) {
+            String subquery = String.format(" (%s LIKE '%%%s%%') ",
+                    DBManager.C.Teacher.NAME,
+                    searchTerms[i]);
+
+            subqueries[i] = subquery;
+        }
+        String searchSubquery = TextUtils.join(" AND ", subqueries);
+
+        // TODO: add star filter
+        /*
+        String starFilterTable = "";
+        String starFilterSubquery = "";
+        if(starFilterOn) {
+            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
+            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
+                    DBManager.C.Talk.TABLE_NAME,
+                    DBManager.C.Talk.ID,
+                    DBManager.C.TalkStars.TABLE_NAME,
+                    DBManager.C.TalkStars.TALK_ID
+            );
+        }
+        */
+
+        final String query = String.format(
+                "SELECT %s, %s " +
+                        "FROM %s " +
+                        "WHERE %s " +
+                        "ORDER BY %s ASC",
+                // SELECT
+                DBManager.C.Teacher.ID,
+                DBManager.C.Teacher.NAME,
+
+                // FROM
+                DBManager.C.Teacher.TABLE_NAME,
+
+                // WHERE
+                searchSubquery,
+
+                // ORDER BY
+                DBManager.C.Teacher.NAME
+        );
+
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
+        cursorAdapter.changeCursor(cursor);
+
+    }
+
+    void updateDisplayedTalks() {
         String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
         String[] subqueries = new String[searchTerms.length];
         for(int i=0; i < searchTerms.length; i++) {
@@ -388,7 +479,7 @@ public class NavigationActivity extends AppCompatActivity
         );
 
         Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        talkListCursorAdapter.changeCursor(cursor);
+        cursorAdapter.changeCursor(cursor);
 
     }
 
