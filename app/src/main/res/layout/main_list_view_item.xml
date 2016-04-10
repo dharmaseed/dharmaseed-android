@@ -22,7 +22,7 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="100dp">
+    android:minHeight="90dp">
 
     <ImageView
         android:layout_width="60dp"
