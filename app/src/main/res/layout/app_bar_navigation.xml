@@ -38,14 +38,37 @@
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-        <EditText
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
-            android:layout_height="30sp"
-            android:id="@+id/nav_search_text"
-            android:inputType="text"
-            android:textCursorDrawable="@null"
-            android:hint="Enter search keywords"
-            android:background="?attr/colorAccent" />
+            android:layout_height="wrap_content"
+            android:id="@+id/nav_search_cluster"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:layout_width="30sp"
+                android:layout_height="30sp"
+                android:src="@android:drawable/ic_menu_search"
+                android:background="@color/colorAccent" />
+
+            <EditText
+                android:layout_width="0dp"
+                android:layout_height="30sp"
+                android:layout_weight="1"
+                android:id="@+id/nav_search_text"
+                android:inputType="text"
+                android:textCursorDrawable="@null"
+                android:hint="Enter search keywords"
+                android:background="?attr/colorAccent" />
+
+            <ImageButton
+                android:layout_width="30sp"
+                android:layout_height="30sp"
+                android:src="@drawable/abc_ic_clear_mtrl_alpha"
+                android:background="@color/colorAccent"
+                android:clickable="true"
+                android:onClick="clearSearch" />
+
+        </LinearLayout>
 
     </android.support.design.widget.AppBarLayout>
 

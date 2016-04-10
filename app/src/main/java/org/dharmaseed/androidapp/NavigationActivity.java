@@ -45,6 +45,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -58,6 +59,7 @@ public class NavigationActivity extends AppCompatActivity
 
     ListView listView;
     EditText searchBox;
+    LinearLayout searchCluster;
     boolean starFilterOn;
     Menu menu;
     DBManager dbManager;
@@ -93,6 +95,7 @@ public class NavigationActivity extends AppCompatActivity
         searchBox = (EditText)findViewById(R.id.nav_search_text);
         searchBox.setOnEditorActionListener(this);
         searchBox.setOnFocusChangeListener(this);
+        searchCluster = (LinearLayout)findViewById(R.id.nav_search_cluster);
 
         // Configure navigation view
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -104,13 +107,13 @@ public class NavigationActivity extends AppCompatActivity
 
         if(savedInstanceState == null) {
             starFilterOn = false;
-            searchBox.setVisibility(View.GONE);
+            searchCluster.setVisibility(View.GONE);
             setViewMode(VIEW_MODE_TALKS);
             navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
 
         } else {
             starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
-            searchBox.setVisibility(savedInstanceState.getBoolean("SearchBoxVisible") ? View.VISIBLE : View.GONE);
+            searchCluster.setVisibility(savedInstanceState.getBoolean("SearchBoxVisible") ? View.VISIBLE : View.GONE);
             searchBox.setText(savedInstanceState.getString("SearchTerms"));
             setViewMode(savedInstanceState.getInt("ViewMode"));
         }
@@ -208,6 +211,13 @@ public class NavigationActivity extends AppCompatActivity
         return true;
     }
 
+    public void clearSearch(View v) {
+        searchCluster.setVisibility(View.GONE);
+        searchBox.setText("");
+        updateDisplayedData();
+        resetListToTop();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -227,18 +237,15 @@ public class NavigationActivity extends AppCompatActivity
             case R.id.action_search:
                 Log.i("nav", "Search!");
                 EditText searchBox = (EditText) findViewById(R.id.nav_search_text);
-                if (searchBox.getVisibility() == View.GONE) {
-                    searchBox.setVisibility(View.VISIBLE);
+                if (searchCluster.getVisibility() == View.GONE) {
+                    searchCluster.setVisibility(View.VISIBLE);
                     searchBox.requestFocus();
                     searchBox.setCursorVisible(true);
                     InputMethodManager keyboard = (InputMethodManager)
                             getSystemService(Context.INPUT_METHOD_SERVICE);
                     keyboard.showSoftInput(searchBox, 0);
                 } else {
-                    searchBox.setVisibility(View.GONE);
-                    searchBox.setText("");
-                    updateDisplayedData();
-                    resetListToTop();
+                    clearSearch(searchCluster);
                 }
                 return true;
 
