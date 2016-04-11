@@ -49,6 +49,10 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         TextView.OnEditorActionListener,
@@ -59,7 +63,9 @@ public class NavigationActivity extends AppCompatActivity
 
     ListView listView;
     EditText searchBox;
-    LinearLayout searchCluster;
+    String extraSearchTerms;
+    LinearLayout searchCluster, header;
+    TextView headerPrimary, headerDescription;
     boolean starFilterOn;
     Menu menu;
     DBManager dbManager;
@@ -78,6 +84,8 @@ public class NavigationActivity extends AppCompatActivity
         super.onSaveInstanceState(outState);
         outState.putBoolean("SearchBoxVisible", searchBox.getVisibility() == View.VISIBLE);
         outState.putString("SearchTerms", searchBox.getText().toString());
+        outState.putString("ExtraSearchTerms", extraSearchTerms);
+        outState.putBoolean("HeaderVisible", header.getVisibility() == View.VISIBLE);
         outState.putBoolean("StarFilterOn", starFilterOn);
         outState.putInt("ViewMode", viewMode);
     }
@@ -97,6 +105,11 @@ public class NavigationActivity extends AppCompatActivity
         searchBox.setOnFocusChangeListener(this);
         searchCluster = (LinearLayout)findViewById(R.id.nav_search_cluster);
 
+        // Configure header
+        header = (LinearLayout)findViewById(R.id.nav_sub_header);
+        headerPrimary = (TextView)findViewById(R.id.nav_sub_header_primary);
+        headerDescription = (TextView)findViewById(R.id.nav_sub_header_description);
+
         // Configure navigation view
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -108,13 +121,17 @@ public class NavigationActivity extends AppCompatActivity
         if(savedInstanceState == null) {
             starFilterOn = false;
             searchCluster.setVisibility(View.GONE);
+            header.setVisibility(View.GONE);
             setViewMode(VIEW_MODE_TALKS);
+            extraSearchTerms = "";
             navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
 
         } else {
             starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
             searchCluster.setVisibility(savedInstanceState.getBoolean("SearchBoxVisible") ? View.VISIBLE : View.GONE);
             searchBox.setText(savedInstanceState.getString("SearchTerms"));
+            extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
+            header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
             setViewMode(savedInstanceState.getInt("ViewMode"));
         }
 
@@ -150,6 +167,8 @@ public class NavigationActivity extends AppCompatActivity
 
     void setViewMode(int viewMode) {
         this.viewMode = viewMode;
+        header.setVisibility(View.GONE);
+        extraSearchTerms = "";
         switch(viewMode) {
 
             case VIEW_MODE_TALKS:
@@ -266,10 +285,38 @@ public class NavigationActivity extends AppCompatActivity
         Log.d("onItemClick", "selected " + position + ", " + id);
         Context ctx = parent.getContext();
 
-        // TODO: switch on viewMode
-        Intent intent = new Intent(ctx, PlayTalkActivity.class);
-        intent.putExtra(TALK_DETAIL_EXTRA, id);
-        ctx.startActivity(intent);
+        switch(viewMode) {
+            case VIEW_MODE_TALKS:
+                Intent intent = new Intent(ctx, PlayTalkActivity.class);
+                intent.putExtra(TALK_DETAIL_EXTRA, id);
+                ctx.startActivity(intent);
+                break;
+
+            case VIEW_MODE_TEACHERS:
+                setViewMode(VIEW_MODE_TALKS);
+                getSupportActionBar().setTitle("Teacher Detail");
+                header.setVisibility(View.VISIBLE);
+
+                String query = String.format("SELECT * FROM %s WHERE %s=%s",
+                        DBManager.C.Teacher.TABLE_NAME,
+                        DBManager.C.Teacher.ID, id);
+                Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
+                if(cursor.moveToFirst()) {
+                    String teacherName = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME));
+                    String teacherBio = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.BIO));
+                    headerPrimary.setText(teacherName);
+                    headerDescription.setText(teacherBio);
+                    extraSearchTerms = teacherName;
+                }
+                updateDisplayedData();
+                break;  // TODO
+
+            case VIEW_MODE_CENTERS:
+                setViewMode(VIEW_MODE_TALKS);
+                getSupportActionBar().setTitle("Center Detail");
+                header.setVisibility(View.VISIBLE);
+                break;  // TODO
+        }
     }
 
     // Reset the list to show the first item. Still not entirely sure why it's necessary to do it
@@ -469,23 +516,24 @@ public class NavigationActivity extends AppCompatActivity
 
 
     void updateDisplayedTalks() {
-        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
-        String[] subqueries = new String[searchTerms.length];
-        for(int i=0; i < searchTerms.length; i++) {
+        ArrayList<String> searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
+        if(!extraSearchTerms.equals("")) searchTerms.add(extraSearchTerms);
+        String[] subqueries = new String[searchTerms.size()];
+        for(int i=0; i < searchTerms.size(); i++) {
             String subquery = String.format(" (%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') ",
                     DBManager.C.Talk.TABLE_NAME,
                     DBManager.C.Talk.TITLE,
-                    searchTerms[i],
+                    searchTerms.get(i),
 
                     // OR
                     DBManager.C.Talk.TABLE_NAME,
                     DBManager.C.Talk.DESCRIPTION,
-                    searchTerms[i],
+                    searchTerms.get(i),
 
                     // OR
                     DBManager.C.Teacher.TABLE_NAME,
                     DBManager.C.Teacher.NAME,
-                    searchTerms[i]);
+                    searchTerms.get(i));
 
             subqueries[i] = subquery;
         }

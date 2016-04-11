@@ -70,6 +70,37 @@
 
         </LinearLayout>
 
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:background="@color/background_material_light"
+            android:id="@+id/nav_sub_header">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:text="Heading"
+                android:id="@+id/nav_sub_header_primary"
+                android:textColor="@color/colorPrimaryDark"
+                android:textStyle="bold"
+                />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="This is a description of the sub item. It might be very very very long and should wrap."
+                android:id="@+id/nav_sub_header_description"
+                android:textColor="@color/colorPrimaryDark" />
+
+
+        </LinearLayout>
+
+
     </android.support.design.widget.AppBarLayout>
 
 
