@@ -45,8 +45,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.lang.reflect.Array;
@@ -61,6 +63,7 @@ public class NavigationActivity extends AppCompatActivity
 
     public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
 
+    NavigationView navigationView;
     ListView listView;
     EditText searchBox;
     String extraSearchTerms;
@@ -82,12 +85,21 @@ public class NavigationActivity extends AppCompatActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean("SearchBoxVisible", searchBox.getVisibility() == View.VISIBLE);
-        outState.putString("SearchTerms", searchBox.getText().toString());
+        outState.putBoolean("SearchClusterVisible", searchCluster.getVisibility() == View.VISIBLE);
         outState.putString("ExtraSearchTerms", extraSearchTerms);
         outState.putBoolean("HeaderVisible", header.getVisibility() == View.VISIBLE);
         outState.putBoolean("StarFilterOn", starFilterOn);
         outState.putInt("ViewMode", viewMode);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
+        searchCluster.setVisibility(savedInstanceState.getBoolean("SearchClusterVisible") ? View.VISIBLE : View.GONE);
+        extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
+        header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
+        setViewMode(savedInstanceState.getInt("ViewMode"));
     }
 
     @Override
@@ -111,29 +123,19 @@ public class NavigationActivity extends AppCompatActivity
         headerDescription = (TextView)findViewById(R.id.nav_sub_header_description);
 
         // Configure navigation view
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         // Configure list view
         listView = (ListView) findViewById(R.id.talks_list_view);
         listView.setOnItemClickListener(this);
 
-        if(savedInstanceState == null) {
-            starFilterOn = false;
-            searchCluster.setVisibility(View.GONE);
-            header.setVisibility(View.GONE);
-            setViewMode(VIEW_MODE_TALKS);
-            extraSearchTerms = "";
-            navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
-
-        } else {
-            starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
-            searchCluster.setVisibility(savedInstanceState.getBoolean("SearchBoxVisible") ? View.VISIBLE : View.GONE);
-            searchBox.setText(savedInstanceState.getString("SearchTerms"));
-            extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
-            header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
-            setViewMode(savedInstanceState.getInt("ViewMode"));
-        }
+        // Initialize UI state
+        starFilterOn = false;
+        searchCluster.setVisibility(View.GONE);
+        header.setVisibility(View.GONE);
+        setViewMode(VIEW_MODE_TALKS);
+        extraSearchTerms = "";
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -174,16 +176,19 @@ public class NavigationActivity extends AppCompatActivity
             case VIEW_MODE_TALKS:
                 getSupportActionBar().setTitle("Talks");
                 cursorAdapter = new TalkCursorAdapter(this, R.layout.main_list_view_item, null);
+                navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
                 break;
 
             case VIEW_MODE_TEACHERS:
                 getSupportActionBar().setTitle("Teachers");
                 cursorAdapter = new TeacherCursorAdapter(this, R.layout.main_list_view_item, null);
+                navigationView.getMenu().findItem(R.id.nav_teachers).setChecked(true);
                 break;
 
             case VIEW_MODE_CENTERS:
                 getSupportActionBar().setTitle("Centers");
                 cursorAdapter = new CenterCursorAdapter(this, R.layout.main_list_view_item, null);
+                navigationView.getMenu().findItem(R.id.nav_centers).setChecked(true);
                 break;
 
         }
@@ -216,7 +221,16 @@ public class NavigationActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        }
+        else if (getSupportActionBar().getTitle().equals("Teacher Detail")) {
+            setViewMode(VIEW_MODE_TEACHERS);
+            updateDisplayedData();
+        }
+        else if (getSupportActionBar().getTitle().equals("Center Detail")) {
+            setViewMode(VIEW_MODE_CENTERS);
+            updateDisplayedData();
+        }
+        else {
             super.onBackPressed();
         }
     }
@@ -308,6 +322,7 @@ public class NavigationActivity extends AppCompatActivity
                     headerDescription.setText(teacherBio);
                     extraSearchTerms = teacherName;
                 }
+                cursor.close();
                 updateDisplayedData();
                 break;  // TODO
 
@@ -362,6 +377,20 @@ public class NavigationActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    public void headingDetailCollapseExpandButtonClicked(View view) {
+        ScrollView scrollView = (ScrollView) findViewById(R.id.nav_sub_header_description_scroll);
+        ImageButton button = (ImageButton) findViewById(R.id.heading_detail_collapse_expand_button);
+        if(scrollView.getVisibility() == View.VISIBLE) {
+            scrollView.setVisibility(View.GONE);
+            button.setImageDrawable(ContextCompat.getDrawable(this,
+                    getResources().getIdentifier("arrow_down_float", "drawable", "android")));
+        } else {
+            scrollView.setVisibility(View.VISIBLE);
+            button.setImageDrawable(ContextCompat.getDrawable(this,
+                    getResources().getIdentifier("arrow_up_float", "drawable", "android")));
+        }
     }
 
     @Override

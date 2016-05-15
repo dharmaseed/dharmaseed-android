@@ -29,6 +29,7 @@
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:layout_scrollFlags=""
         android:theme="@style/AppTheme.AppBarOverlay">
 
         <android.support.v7.widget.Toolbar
@@ -38,71 +39,39 @@
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/nav_search_cluster"
-            android:orientation="horizontal">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/nav_search_cluster"
+        android:orientation="horizontal">
 
-            <ImageButton
-                android:layout_width="30sp"
-                android:layout_height="30sp"
-                android:src="@android:drawable/ic_menu_search"
-                android:background="@color/colorAccent" />
+        <ImageButton
+            android:layout_width="30sp"
+            android:layout_height="30sp"
+            android:src="@android:drawable/ic_menu_search"
+            android:background="@color/colorAccent" />
 
-            <EditText
-                android:layout_width="0dp"
-                android:layout_height="30sp"
-                android:layout_weight="1"
-                android:id="@+id/nav_search_text"
-                android:inputType="text"
-                android:textCursorDrawable="@null"
-                android:hint="Enter search keywords"
-                android:background="?attr/colorAccent" />
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="30sp"
+            android:layout_weight="1"
+            android:id="@+id/nav_search_text"
+            android:inputType="text"
+            android:textCursorDrawable="@null"
+            android:hint="Enter search keywords"
+            android:background="?attr/colorAccent" />
 
-            <ImageButton
-                android:layout_width="30sp"
-                android:layout_height="30sp"
-                android:src="@drawable/abc_ic_clear_mtrl_alpha"
-                android:background="@color/colorAccent"
-                android:clickable="true"
-                android:onClick="clearSearch" />
+        <ImageButton
+            android:layout_width="30sp"
+            android:layout_height="30sp"
+            android:src="@drawable/abc_ic_clear_mtrl_alpha"
+            android:background="@color/colorAccent"
+            android:clickable="true"
+            android:onClick="clearSearch" />
 
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="5dp"
-            android:background="@color/background_material_light"
-            android:id="@+id/nav_sub_header">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Heading"
-                android:id="@+id/nav_sub_header_primary"
-                android:textColor="@color/colorPrimaryDark"
-                android:textStyle="bold"
-                />
-
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="This is a description of the sub item. It might be very very very long and should wrap."
-                android:id="@+id/nav_sub_header_description"
-                android:textColor="@color/colorPrimaryDark" />
-
-
-        </LinearLayout>
-
+    </LinearLayout>
 
     </android.support.design.widget.AppBarLayout>
-
 
     <include layout="@layout/content_navigation" />
 
