@@ -31,6 +31,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -138,6 +139,15 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
             (navigationActivity.talkFetcherTask == null || this == navigationActivity.talkFetcherTask || navigationActivity.talkFetcherTask.getStatus() == Status.FINISHED) ) {
             Log.i("OPE", "STOP REFRESHING!");
             navigationActivity.refreshLayout.setRefreshing(false);
+
+            // Mark the successful data sync in the database
+            Date now = new Date();
+            ContentValues v = new ContentValues();
+            v.put(DBManager.C.Edition.TABLE, DBManager.C.Edition.LAST_SYNC);
+            v.put(DBManager.C.Edition.EDITION, now.getTime());
+            dbManager.getWritableDatabase().insertWithOnConflict(
+                    DBManager.C.Edition.TABLE_NAME, null, v,
+                    SQLiteDatabase.CONFLICT_REPLACE);
         }
     }
 

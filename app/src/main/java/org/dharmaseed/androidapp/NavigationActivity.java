@@ -54,6 +54,8 @@ import android.widget.TextView;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -107,6 +109,12 @@ public class NavigationActivity extends AppCompatActivity
         header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
         setViewMode(savedInstanceState.getInt("ViewMode"));
         setDetailMode(savedInstanceState.getInt("DetailMode"), savedInstanceState.getLong("DetailId"));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateDisplayedData();
     }
 
     @Override
@@ -170,9 +178,31 @@ public class NavigationActivity extends AppCompatActivity
         }, new IntentFilter("updateDisplayedData"));
 
         // Get the latest data from dharmaseed.org
-        fetchNewDataFromServer();
-        updateDisplayedData();
+        if(editionOutOfDate()) {
+            fetchNewDataFromServer();
+        } else {
+            Log.i("onCreate", "Don't need to fetch new data from server");
+        }
+    }
 
+    boolean editionOutOfDate() {
+        String query = String.format("SELECT %s FROM %s WHERE %s=\"%s\"",
+                DBManager.C.Edition.EDITION,
+                DBManager.C.Edition.TABLE_NAME,
+                DBManager.C.Edition.TABLE,
+                DBManager.C.Edition.LAST_SYNC);
+        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
+        boolean outOfDate = false;
+        if(cursor.moveToFirst()) {
+            long lastSync = cursor.getLong(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
+            Date nowDate = new Date();
+            long now = nowDate.getTime();
+            if(now - lastSync > 1000*60*60*12) { // Update every 12 hours
+                outOfDate = true;
+            }
+        }
+        cursor.close();
+        return outOfDate;
     }
 
     void setViewMode(int viewMode) {

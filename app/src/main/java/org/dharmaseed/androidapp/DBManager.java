@@ -36,7 +36,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 27;
+    private static final int DB_VERSION = 28;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -117,6 +117,8 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("
                     +TABLE+" TEXT PRIMARY KEY,"+EDITION+" TEXT)";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+
+            public static final String LAST_SYNC = "last_sync";
         }
 
     }
@@ -140,6 +142,9 @@ public class DBManager extends SQLiteOpenHelper {
         v.put(C.Edition.TABLE, C.Teacher.TABLE_NAME);
         db.insert(C.Edition.TABLE_NAME, null, v);
         v.put(C.Edition.TABLE, C.Center.TABLE_NAME);
+        db.insert(C.Edition.TABLE_NAME, null, v);
+        v.put(C.Edition.TABLE, C.Edition.LAST_SYNC);
+        v.put(C.Edition.EDITION, 0);
         db.insert(C.Edition.TABLE_NAME, null, v);
 
     }
