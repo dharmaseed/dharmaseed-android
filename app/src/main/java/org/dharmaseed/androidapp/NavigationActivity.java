@@ -78,6 +78,10 @@ public class NavigationActivity extends AppCompatActivity
     static final int VIEW_MODE_TALKS = 0, VIEW_MODE_TEACHERS = 1, VIEW_MODE_CENTERS = 2;
     int viewMode;
 
+    static final int DETAIL_MODE_NONE = 0, DETAIL_MODE_TEACHER = 1, DETAIL_MODE_CENTER = 2;
+    int detailMode;
+    long detailId;
+
     TalkFetcherTask talkFetcherTask;
     TeacherFetcherTask teacherFetcherTask;
     CenterFetcherTask centerFetcherTask;
@@ -90,6 +94,8 @@ public class NavigationActivity extends AppCompatActivity
         outState.putBoolean("HeaderVisible", header.getVisibility() == View.VISIBLE);
         outState.putBoolean("StarFilterOn", starFilterOn);
         outState.putInt("ViewMode", viewMode);
+        outState.putInt("DetailMode", detailMode);
+        outState.putLong("DetailId", detailId);
     }
 
     @Override
@@ -100,6 +106,7 @@ public class NavigationActivity extends AppCompatActivity
         extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
         header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
         setViewMode(savedInstanceState.getInt("ViewMode"));
+        setDetailMode(savedInstanceState.getInt("DetailMode"), savedInstanceState.getLong("DetailId"));
     }
 
     @Override
@@ -135,6 +142,7 @@ public class NavigationActivity extends AppCompatActivity
         searchCluster.setVisibility(View.GONE);
         header.setVisibility(View.GONE);
         setViewMode(VIEW_MODE_TALKS);
+        setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
 
         // Set swipe refresh listener
@@ -168,6 +176,9 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     void setViewMode(int viewMode) {
+        setViewMode(viewMode, true);
+    }
+    void setViewMode(int viewMode, boolean setMenuCheck) {
         this.viewMode = viewMode;
         header.setVisibility(View.GONE);
         extraSearchTerms = "";
@@ -176,23 +187,81 @@ public class NavigationActivity extends AppCompatActivity
             case VIEW_MODE_TALKS:
                 getSupportActionBar().setTitle("Talks");
                 cursorAdapter = new TalkCursorAdapter(this, R.layout.main_list_view_item, null);
-                navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
+                if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
                 break;
 
             case VIEW_MODE_TEACHERS:
                 getSupportActionBar().setTitle("Teachers");
                 cursorAdapter = new TeacherCursorAdapter(this, R.layout.main_list_view_item, null);
-                navigationView.getMenu().findItem(R.id.nav_teachers).setChecked(true);
+                if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_teachers).setChecked(true);
                 break;
 
             case VIEW_MODE_CENTERS:
                 getSupportActionBar().setTitle("Centers");
                 cursorAdapter = new CenterCursorAdapter(this, R.layout.main_list_view_item, null);
-                navigationView.getMenu().findItem(R.id.nav_centers).setChecked(true);
+                if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_centers).setChecked(true);
                 break;
-
         }
         listView.setAdapter(cursorAdapter);
+    }
+
+    void setDetailMode(int detailMode) {
+        setDetailMode(detailMode, 0);
+    }
+    void setDetailMode(int detailMode, long id) {
+        this.detailMode = detailMode;
+        this.detailId = id;
+
+        if(detailMode == DETAIL_MODE_NONE) {
+            header.setVisibility(View.GONE);
+        } else {
+
+            setViewMode(VIEW_MODE_TALKS, false);
+            header.setVisibility(View.VISIBLE);
+
+            // Clear search and star filters
+            starFilterOn = false;
+            setStarButton();
+            clearSearch(searchCluster);
+
+            String query="", header, detail;
+            String headerIdx="", detailIdx="";
+            Cursor cursor;
+
+            switch (detailMode) {
+
+                case DETAIL_MODE_TEACHER:
+                    getSupportActionBar().setTitle("Teacher Detail");
+                    query = String.format("SELECT * FROM %s WHERE %s=%s",
+                            DBManager.C.Teacher.TABLE_NAME,
+                            DBManager.C.Teacher.ID, id);
+                    headerIdx = DBManager.C.Teacher.NAME;
+                    detailIdx = DBManager.C.Teacher.BIO;
+                    break;
+
+                case DETAIL_MODE_CENTER:
+                    getSupportActionBar().setTitle("Center Detail");
+                    query = String.format("SELECT * FROM %s WHERE %s=%s",
+                            DBManager.C.Center.TABLE_NAME,
+                            DBManager.C.Center.ID, id);
+                    headerIdx = DBManager.C.Center.NAME;
+                    detailIdx = DBManager.C.Center.DESCRIPTION;
+                    break;
+
+            }
+
+            cursor = dbManager.getReadableDatabase().rawQuery(query, null);
+            if (cursor.moveToFirst()) {
+                header = cursor.getString(cursor.getColumnIndexOrThrow(headerIdx));
+                detail = cursor.getString(cursor.getColumnIndexOrThrow(detailIdx));
+                headerPrimary.setText(header);
+                headerDescription.setText(detail);
+                extraSearchTerms = header;
+            }
+            cursor.close();
+            updateDisplayedData();
+
+        }
     }
 
     public void fetchNewDataFromServer() {
@@ -222,11 +291,11 @@ public class NavigationActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         }
-        else if (getSupportActionBar().getTitle().equals("Teacher Detail")) {
+        else if (detailMode == DETAIL_MODE_TEACHER) {
             setViewMode(VIEW_MODE_TEACHERS);
             updateDisplayedData();
         }
-        else if (getSupportActionBar().getTitle().equals("Center Detail")) {
+        else if (detailMode == DETAIL_MODE_CENTER) {
             setViewMode(VIEW_MODE_CENTERS);
             updateDisplayedData();
         }
@@ -307,30 +376,12 @@ public class NavigationActivity extends AppCompatActivity
                 break;
 
             case VIEW_MODE_TEACHERS:
-                setViewMode(VIEW_MODE_TALKS);
-                getSupportActionBar().setTitle("Teacher Detail");
-                header.setVisibility(View.VISIBLE);
-
-                String query = String.format("SELECT * FROM %s WHERE %s=%s",
-                        DBManager.C.Teacher.TABLE_NAME,
-                        DBManager.C.Teacher.ID, id);
-                Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-                if(cursor.moveToFirst()) {
-                    String teacherName = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME));
-                    String teacherBio = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.BIO));
-                    headerPrimary.setText(teacherName);
-                    headerDescription.setText(teacherBio);
-                    extraSearchTerms = teacherName;
-                }
-                cursor.close();
-                updateDisplayedData();
-                break;  // TODO
+                setDetailMode(DETAIL_MODE_TEACHER, id);
+                break;
 
             case VIEW_MODE_CENTERS:
-                setViewMode(VIEW_MODE_TALKS);
-                getSupportActionBar().setTitle("Center Detail");
-                header.setVisibility(View.VISIBLE);
-                break;  // TODO
+                setDetailMode(DETAIL_MODE_CENTER, id);
+                break;
         }
     }
 
@@ -354,8 +405,10 @@ public class NavigationActivity extends AppCompatActivity
         } else {
             icon = getResources().getIdentifier("btn_star_big_off", "drawable", "android");
         }
-        MenuItem starButton = menu.findItem(R.id.action_toggle_starred);
-        starButton.setIcon(ContextCompat.getDrawable(this, icon));
+        if(menu != null) {
+            MenuItem starButton = menu.findItem(R.id.action_toggle_starred);
+            starButton.setIcon(ContextCompat.getDrawable(this, icon));
+        }
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -371,6 +424,7 @@ public class NavigationActivity extends AppCompatActivity
         } else if (id == R.id.nav_centers) {
             setViewMode(VIEW_MODE_CENTERS);
         }
+        setDetailMode(DETAIL_MODE_NONE);
 
         updateDisplayedData();
 
@@ -549,7 +603,7 @@ public class NavigationActivity extends AppCompatActivity
         if(!extraSearchTerms.equals("")) searchTerms.add(extraSearchTerms);
         String[] subqueries = new String[searchTerms.size()];
         for(int i=0; i < searchTerms.size(); i++) {
-            String subquery = String.format(" (%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') ",
+            String subquery = String.format(" (%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') ",
                     DBManager.C.Talk.TABLE_NAME,
                     DBManager.C.Talk.TITLE,
                     searchTerms.get(i),
@@ -562,6 +616,11 @@ public class NavigationActivity extends AppCompatActivity
                     // OR
                     DBManager.C.Teacher.TABLE_NAME,
                     DBManager.C.Teacher.NAME,
+                    searchTerms.get(i),
+
+                    // OR
+                    DBManager.C.Center.TABLE_NAME,
+                    DBManager.C.Center.NAME,
                     searchTerms.get(i));
 
             subqueries[i] = subquery;
@@ -582,8 +641,9 @@ public class NavigationActivity extends AppCompatActivity
 
         final String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
-                        "FROM %s, %s %s " +
+                        "FROM %s, %s, %s %s " +
                         "WHERE %s.%s=%s.%s " +
+                        "AND %s.%s=%s.%s " +
                         "AND %s %s " +
                         "ORDER BY %s.%s DESC",
                 // SELECT
@@ -599,6 +659,7 @@ public class NavigationActivity extends AppCompatActivity
                 // FROM
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Center.TABLE_NAME,
                 starFilterTable,
 
                 // WHERE
@@ -606,6 +667,12 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
+
+                // AND
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.VENUE_ID,
+                DBManager.C.Center.TABLE_NAME,
+                DBManager.C.Center.ID,
 
                 // AND
                 // Search filter sub-query
