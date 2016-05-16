@@ -537,35 +537,37 @@ public class NavigationActivity extends AppCompatActivity
         }
         String searchSubquery = TextUtils.join(" AND ", subqueries);
 
-        // TODO: add star filter
-        /*
         String starFilterTable = "";
         String starFilterSubquery = "";
         if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
+            starFilterTable = String.format(" , %s ", DBManager.C.TeacherStars.TABLE_NAME);
             starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.ID,
-                    DBManager.C.TalkStars.TABLE_NAME,
-                    DBManager.C.TalkStars.TALK_ID
+                    DBManager.C.Teacher.TABLE_NAME,
+                    DBManager.C.Teacher.ID,
+                    DBManager.C.TeacherStars.TABLE_NAME,
+                    DBManager.C.TeacherStars.ID
             );
         }
-        */
+
 
         final String query = String.format(
-                "SELECT %s, %s " +
-                        "FROM %s " +
-                        "WHERE %s " +
+                "SELECT %s.%s, %s.%s " +
+                        "FROM %s %s " +
+                        "WHERE %s %s " +
                         "ORDER BY %s ASC",
                 // SELECT
+                DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
+                DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
 
                 // FROM
                 DBManager.C.Teacher.TABLE_NAME,
+                starFilterTable,
 
                 // WHERE
                 searchSubquery,
+                starFilterSubquery,
 
                 // ORDER BY
                 DBManager.C.Teacher.NAME
@@ -588,35 +590,36 @@ public class NavigationActivity extends AppCompatActivity
         }
         String searchSubquery = TextUtils.join(" AND ", subqueries);
 
-        // TODO: add star filter
-        /*
         String starFilterTable = "";
         String starFilterSubquery = "";
         if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
+            starFilterTable = String.format(" , %s ", DBManager.C.CenterStars.TABLE_NAME);
             starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.ID,
-                    DBManager.C.TalkStars.TABLE_NAME,
-                    DBManager.C.TalkStars.TALK_ID
+                    DBManager.C.Center.TABLE_NAME,
+                    DBManager.C.Center.ID,
+                    DBManager.C.CenterStars.TABLE_NAME,
+                    DBManager.C.CenterStars.ID
             );
         }
-        */
 
         final String query = String.format(
-                "SELECT %s, %s " +
-                        "FROM %s " +
-                        "WHERE %s " +
+                "SELECT %s.%s, %s.%s " +
+                        "FROM %s %s " +
+                        "WHERE %s %s " +
                         "ORDER BY %s ASC",
                 // SELECT
+                DBManager.C.Center.TABLE_NAME,
                 DBManager.C.Center.ID,
+                DBManager.C.Center.TABLE_NAME,
                 DBManager.C.Center.NAME,
 
                 // FROM
                 DBManager.C.Center.TABLE_NAME,
+                starFilterTable,
 
                 // WHERE
                 searchSubquery,
+                starFilterSubquery,
 
                 // ORDER BY
                 DBManager.C.Center.NAME
