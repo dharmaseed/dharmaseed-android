@@ -69,14 +69,6 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
-        public abstract class TalkStars {
-            public static final String TALK_ID = "talk_id";
-
-            public static final String TABLE_NAME = "talk_stars";
-            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+TALK_ID+" INTEGER PRIMARY KEY)";
-            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
-        }
-
         public abstract class Teacher {
             public static final String WEBSITE = "website";
             public static final String BIO = "bio";
@@ -109,6 +101,30 @@ public class DBManager extends SQLiteOpenHelper {
 
         }
 
+        public abstract class TalkStars {
+            public static final String ID = "_id";
+
+            public static final String TABLE_NAME = "talk_stars";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+        }
+
+        public abstract class TeacherStars {
+            public static final String ID = "_id";
+
+            public static final String TABLE_NAME = "teacher_stars";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+        }
+
+        public abstract class CenterStars {
+            public static final String ID = "_id";
+
+            public static final String TABLE_NAME = "center_stars";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+        }
+
         public abstract class Edition {
             public static final String TABLE = "_table";
             public static final String EDITION = "edition";
@@ -130,9 +146,11 @@ public class DBManager extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(C.Talk.CREATE_TABLE);
-        db.execSQL(C.TalkStars.CREATE_TABLE);
         db.execSQL(C.Teacher.CREATE_TABLE);
         db.execSQL(C.Center.CREATE_TABLE);
+        db.execSQL(C.TalkStars.CREATE_TABLE);
+        db.execSQL(C.TeacherStars.CREATE_TABLE);
+        db.execSQL(C.CenterStars.CREATE_TABLE);
         db.execSQL(C.Edition.CREATE_TABLE);
 
         // Populate editions table with initial data
@@ -153,9 +171,11 @@ public class DBManager extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("DBManager", "Upgrading database to version "+DB_VERSION);
         db.execSQL(C.Talk.DROP_TABLE);
-        db.execSQL(C.TalkStars.DROP_TABLE);
         db.execSQL(C.Teacher.DROP_TABLE);
         db.execSQL(C.Center.DROP_TABLE);
+        db.execSQL(C.TalkStars.DROP_TABLE);
+        db.execSQL(C.TeacherStars.DROP_TABLE);
+        db.execSQL(C.CenterStars.DROP_TABLE);
         db.execSQL(C.Edition.DROP_TABLE);
         onCreate(db);
     }
@@ -204,27 +224,25 @@ public class DBManager extends SQLiteOpenHelper {
         return "teacher-"+teacherID+".png";
     }
 
-    public boolean isTalkStarred(int talkId) {
+    public boolean isStarred(String starTableName, int id) {
         SQLiteDatabase db = getReadableDatabase();
-        String query = String.format("SELECT %s FROM %s WHERE %s=%s",
-                C.TalkStars.TALK_ID,
-                C.TalkStars.TABLE_NAME,
-                C.TalkStars.TALK_ID,
-                talkId);
+        String query = String.format("SELECT _id FROM %s WHERE _id=%s",
+                starTableName,
+                id);
         Cursor cursor = db.rawQuery(query, null);
         return (cursor.getCount() != 0);
     }
 
-    public void starTalk(int talkId) {
+    public void addStar(String starTableName, int id) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues v = new ContentValues();
-        v.put(C.TalkStars.TALK_ID, talkId);
-        db.insert(C.TalkStars.TABLE_NAME, null, v);
+        v.put("_id", id);
+        db.insert(starTableName, null, v);
     }
 
-    public void unstarTalk(int talkId) {
+    public void removeStar(String starTableName, int id) {
         SQLiteDatabase db = getWritableDatabase();
-        db.delete(C.TalkStars.TABLE_NAME, C.TalkStars.TALK_ID+"="+talkId, null);
+        db.delete(starTableName, "_id="+id, null);
     }
 
 }

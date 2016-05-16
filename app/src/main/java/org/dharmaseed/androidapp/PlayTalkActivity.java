@@ -224,7 +224,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     @Override
     public boolean onPrepareOptionsMenu(final Menu menu) {
         MenuItem star = menu.findItem(R.id.play_talk_action_toggle_starred);
-        if(dbManager.isTalkStarred(talkID)) {
+        if(dbManager.isStarred(DBManager.C.TalkStars.TABLE_NAME, talkID)) {
             star.setIcon(ContextCompat.getDrawable(this,
                     getResources().getIdentifier("btn_star_big_on", "drawable", "android")));
         } else {
@@ -244,11 +244,11 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
         switch(id) {
             case R.id.play_talk_action_toggle_starred:
-                if(dbManager.isTalkStarred(talkID)) {
-                    dbManager.unstarTalk(talkID);
+                if(dbManager.isStarred(DBManager.C.TalkStars.TABLE_NAME, talkID)) {
+                    dbManager.removeStar(DBManager.C.TalkStars.TABLE_NAME, talkID);
                     item.setIcon(getResources().getIdentifier("btn_star_big_off", "drawable", "android"));
                 } else {
-                    dbManager.starTalk(talkID);
+                    dbManager.addStar(DBManager.C.TalkStars.TABLE_NAME, talkID);
                     item.setIcon(getResources().getIdentifier("btn_star_big_on", "drawable", "android"));
                 }
 

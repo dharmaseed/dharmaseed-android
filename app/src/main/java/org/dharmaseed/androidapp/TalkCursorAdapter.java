@@ -24,7 +24,6 @@ import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,19 +33,10 @@ import android.widget.TextView;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
-public class TalkCursorAdapter extends CursorAdapter {
-
-    private int layout;
-    private final LayoutInflater inflater;
-    private DBManager dbManager;
-    private NavigationActivity navigationActivity;
+public class TalkCursorAdapter extends StarCursorAdapter {
 
     public TalkCursorAdapter(NavigationActivity context, int layout, Cursor c) {
-        super(context, c, 0);
-        this.layout=layout;
-        this.inflater=LayoutInflater.from(context);
-        dbManager = new DBManager(context);
-        this.navigationActivity = context;
+        super(DBManager.C.TalkStars.TABLE_NAME, context, layout, c);
     }
 
     @Override
@@ -56,7 +46,6 @@ public class TalkCursorAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        // TODO: refactor common logic in XXXCursorAdapter classes
 
         // Set talk title and teacher name
         TextView title=(TextView)view.findViewById(R.id.item_view_title);
@@ -75,38 +64,8 @@ public class TalkCursorAdapter extends CursorAdapter {
             photoView.setImageDrawable(icon);
         }
 
-        // Set talk star status
-        final ImageView star = (ImageView) view.findViewById(R.id.item_view_star);
-        final int talkId = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
-        boolean isStarred = dbManager.isTalkStarred(talkId);
-        final Context ctx = view.getContext();
-        if(isStarred) {
-            star.setImageDrawable(ContextCompat.getDrawable(ctx,
-                    ctx.getResources().getIdentifier("btn_star_big_on", "drawable", "android")));
-        } else {
-            star.setImageDrawable(ContextCompat.getDrawable(ctx,
-                    ctx.getResources().getIdentifier("btn_star_big_off", "drawable", "android")));
-        }
-
-        // Set click handler
-        star.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(dbManager.isTalkStarred(talkId)) {
-                    dbManager.unstarTalk(talkId);
-                    star.setImageDrawable(ContextCompat.getDrawable(ctx,
-                            ctx.getResources().getIdentifier("btn_star_big_off", "drawable", "android")));
-                } else {
-                    dbManager.starTalk(talkId);
-                    star.setImageDrawable(ContextCompat.getDrawable(ctx,
-                            ctx.getResources().getIdentifier("btn_star_big_on", "drawable", "android")));
-                }
-                if(navigationActivity.starFilterOn) {
-                    navigationActivity.updateDisplayedData();
-                }
-            }
-        });
-
+        // Set talk stars
+        handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID)));
     }
 
 

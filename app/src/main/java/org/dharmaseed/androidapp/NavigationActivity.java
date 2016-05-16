@@ -665,7 +665,7 @@ public class NavigationActivity extends AppCompatActivity
                     DBManager.C.Talk.TABLE_NAME,
                     DBManager.C.Talk.ID,
                     DBManager.C.TalkStars.TABLE_NAME,
-                    DBManager.C.TalkStars.TALK_ID
+                    DBManager.C.TalkStars.ID
             );
         }
 
