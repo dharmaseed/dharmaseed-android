@@ -67,6 +67,7 @@ public class NavigationActivity extends AppCompatActivity
 
     NavigationView navigationView;
     ListView listView;
+    int savedListPosition;
     EditText searchBox;
     String extraSearchTerms;
     LinearLayout searchCluster, header;
@@ -98,6 +99,7 @@ public class NavigationActivity extends AppCompatActivity
         outState.putInt("ViewMode", viewMode);
         outState.putInt("DetailMode", detailMode);
         outState.putLong("DetailId", detailId);
+        outState.putInt("ListViewPosition", listView.getFirstVisiblePosition());
     }
 
     @Override
@@ -109,12 +111,14 @@ public class NavigationActivity extends AppCompatActivity
         header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
         setViewMode(savedInstanceState.getInt("ViewMode"));
         setDetailMode(savedInstanceState.getInt("DetailMode"), savedInstanceState.getLong("DetailId"));
+        savedListPosition = savedInstanceState.getInt("ListViewPosition");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         updateDisplayedData();
+        listView.setSelectionFromTop(savedListPosition, 0);
     }
 
     @Override
