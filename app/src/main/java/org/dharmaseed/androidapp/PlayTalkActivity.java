@@ -167,7 +167,8 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
             if (talkPlayerFragment == null) {
                 // add the fragment
-                talkPlayerFragment = new TalkPlayerFragment(url);
+                talkPlayerFragment = new TalkPlayerFragment();
+                talkPlayerFragment.setUrl(url);
                 fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
             } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
                 setPPButton("ic_media_pause");
