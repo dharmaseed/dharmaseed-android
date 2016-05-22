@@ -29,6 +29,11 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 
 /**
@@ -141,6 +146,30 @@ public class DBManager extends SQLiteOpenHelper {
 
     public DBManager(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
+
+        File dbFile = context.getDatabasePath(DB_NAME);
+        if(! dbFile.exists()) {
+            Log.i("dbManager", "Trying to populate with pre-seeded database");
+            try {
+                // Copy the pre-seeded database if it exists
+
+                InputStream dbIn = context.getAssets().open(DB_NAME);
+                dbFile.getParentFile().mkdirs();
+                OutputStream dbOut = new FileOutputStream(dbFile);
+
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = dbIn.read(buf)) > 0) {
+                    dbOut.write(buf, 0, len);
+                }
+
+                dbOut.flush();
+                dbOut.close();
+                dbIn.close();
+            } catch (IOException ioe) {
+                Log.e("dbManager", ioe.toString());
+            }
+        }
     }
 
     @Override
