@@ -362,9 +362,6 @@ public class NavigationActivity extends AppCompatActivity
         int id = item.getItemId();
 
         switch(id) {
-            case R.id.action_settings:
-                Log.i("nav", "Settings!");
-                return true;
 
             case R.id.action_refresh_server_data:
                 fetchNewDataFromServer();
