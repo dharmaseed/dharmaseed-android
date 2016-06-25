@@ -99,7 +99,12 @@ public class NavigationActivity extends AppCompatActivity
         outState.putInt("ViewMode", viewMode);
         outState.putInt("DetailMode", detailMode);
         outState.putLong("DetailId", detailId);
-        outState.putInt("ListViewPosition", listView.getFirstVisiblePosition());
+
+        // Save list position in the object as well to handle the case when the activity is
+        // only being paused, not destroyed. This happens, for example, when navigating to
+        // the play talk activity
+        savedListPosition = listView.getFirstVisiblePosition();
+        outState.putInt("ListViewPosition", savedListPosition);
     }
 
     @Override
@@ -117,7 +122,16 @@ public class NavigationActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+
+        // Get the latest data from dharmaseed.org if necessary
+        if(editionOutOfDate()) {
+            fetchNewDataFromServer();
+        } else {
+            Log.i("onResume", "Don't need to fetch new data from server");
+        }
         updateDisplayedData();
+
+        // Restore list position
         listView.setSelectionFromTop(savedListPosition, 0);
     }
 
@@ -181,12 +195,6 @@ public class NavigationActivity extends AppCompatActivity
             }
         }, new IntentFilter("updateDisplayedData"));
 
-        // Get the latest data from dharmaseed.org
-        if(editionOutOfDate()) {
-            fetchNewDataFromServer();
-        } else {
-            Log.i("onCreate", "Don't need to fetch new data from server");
-        }
     }
 
     boolean editionOutOfDate() {
