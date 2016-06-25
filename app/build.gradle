@@ -27,8 +27,8 @@ android {
         applicationId "org.dharmaseed.androidapp"
         minSdkVersion 15
         targetSdkVersion 23
-        versionCode 4
-        versionName "1.0.0-rc1"
+        versionCode 5
+        versionName "1.0.0-rc2"
     }
     buildTypes {
         release {
