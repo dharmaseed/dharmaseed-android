@@ -39,10 +39,6 @@ public class TalkPlayerFragment extends Fragment
     private int userSeekBarPosition;
 
     public TalkPlayerFragment() {
-
-    }
-
-    public void setUrl(String url) {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
