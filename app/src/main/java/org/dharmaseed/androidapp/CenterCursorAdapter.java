@@ -32,8 +32,8 @@ import android.widget.TextView;
 
 public class CenterCursorAdapter extends StarCursorAdapter {
 
-    public CenterCursorAdapter(NavigationActivity context, int layout, Cursor c) {
-        super(DBManager.C.CenterStars.TABLE_NAME, context, layout, c);
+    public CenterCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
+        super(dbManager, DBManager.C.CenterStars.TABLE_NAME, context, layout, c);
     }
 
     @Override

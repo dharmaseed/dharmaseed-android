@@ -52,7 +52,9 @@ public class TeacherFetcherTask extends DataFetcherTask {
                         DBManager.C.Teacher.WEBSITE,
                         DBManager.C.Teacher.BIO,
                         DBManager.C.Teacher.NAME,
-                        DBManager.C.Teacher.PHOTO
+                        DBManager.C.Teacher.PHOTO,
+                        DBManager.C.Teacher.PUBLIC,
+                        DBManager.C.Teacher.MONASTIC
                 });
 
         // Download teacher photos

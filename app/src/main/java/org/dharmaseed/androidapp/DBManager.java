@@ -41,7 +41,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 28;
+    private static final int DB_VERSION = 29;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -80,12 +80,17 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String ID = "_id";
             public static final String NAME = "name";
             public static final String PHOTO = "photo";
+            public static final String PUBLIC = "public";
+            public static final String MONASTIC = "monastic";
+
 
             public static final String TABLE_NAME = "teachers";
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
                     +WEBSITE+" TEXT,"
                     +BIO+" TEXT,"
                     +NAME+" TEXT,"
+                    +PUBLIC+" INTEGER,"
+                    +MONASTIC+" INTEGER,"
                     +PHOTO+" TEXT)";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
 
@@ -175,7 +180,6 @@ public class DBManager extends SQLiteOpenHelper {
     @Override
     public void onConfigure(SQLiteDatabase db) {
         super.onConfigure(db);
-        db.enableWriteAheadLogging();
     }
 
     @Override
@@ -205,14 +209,28 @@ public class DBManager extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("DBManager", "Upgrading database to version "+DB_VERSION);
-        db.execSQL(C.Talk.DROP_TABLE);
-        db.execSQL(C.Teacher.DROP_TABLE);
-        db.execSQL(C.Center.DROP_TABLE);
-        db.execSQL(C.TalkStars.DROP_TABLE);
-        db.execSQL(C.TeacherStars.DROP_TABLE);
-        db.execSQL(C.CenterStars.DROP_TABLE);
-        db.execSQL(C.Edition.DROP_TABLE);
-        onCreate(db);
+
+        if(oldVersion < 29) {
+            // DB version 29 introduced "public" and "monastic" fields into the teachers table
+            // (See #21)
+            db.execSQL(C.Teacher.DROP_TABLE);
+            db.execSQL(C.Teacher.CREATE_TABLE);
+
+            // Clear teachers edition to force reloading from server
+            ContentValues v = new ContentValues();
+            v.put(C.Edition.TABLE, C.Teacher.TABLE_NAME);
+            v.putNull(C.Edition.EDITION);
+            db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
+        }
+
+//        db.execSQL(C.Talk.DROP_TABLE);
+//        db.execSQL(C.Teacher.DROP_TABLE);
+//        db.execSQL(C.Center.DROP_TABLE);
+//        db.execSQL(C.TalkStars.DROP_TABLE);
+//        db.execSQL(C.TeacherStars.DROP_TABLE);
+//        db.execSQL(C.CenterStars.DROP_TABLE);
+//        db.execSQL(C.Edition.DROP_TABLE);
+//        onCreate(db);
     }
 
     private void insertValue(ContentValues values, JSONObject obj, String key) {

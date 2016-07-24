@@ -62,8 +62,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
 
-        dbManager = new DBManager(this);
-
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
@@ -75,7 +73,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         talkID = (int) i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
 
         // Look up this talk
-        DBManager dbManager = new DBManager(this);
+        dbManager = new DBManager(this);
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
                 "SELECT %s, %s.%s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "

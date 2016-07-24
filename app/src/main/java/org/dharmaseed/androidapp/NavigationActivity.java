@@ -228,19 +228,19 @@ public class NavigationActivity extends AppCompatActivity
 
             case VIEW_MODE_TALKS:
                 getSupportActionBar().setTitle("Talks");
-                cursorAdapter = new TalkCursorAdapter(this, R.layout.main_list_view_item, null);
+                cursorAdapter = new TalkCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
                 break;
 
             case VIEW_MODE_TEACHERS:
                 getSupportActionBar().setTitle("Teachers");
-                cursorAdapter = new TeacherCursorAdapter(this, R.layout.main_list_view_item, null);
+                cursorAdapter = new TeacherCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_teachers).setChecked(true);
                 break;
 
             case VIEW_MODE_CENTERS:
                 getSupportActionBar().setTitle("Centers");
-                cursorAdapter = new CenterCursorAdapter(this, R.layout.main_list_view_item, null);
+                cursorAdapter = new CenterCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_centers).setChecked(true);
                 break;
         }
@@ -563,7 +563,8 @@ public class NavigationActivity extends AppCompatActivity
                 "SELECT %s.%s, %s.%s " +
                         "FROM %s %s " +
                         "WHERE %s %s " +
-                        "ORDER BY %s ASC",
+                        "AND %s='true' " +
+                        "ORDER BY %s DESC, %s ASC",
                 // SELECT
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
@@ -578,7 +579,11 @@ public class NavigationActivity extends AppCompatActivity
                 searchSubquery,
                 starFilterSubquery,
 
+                // AND
+                DBManager.C.Teacher.PUBLIC,
+
                 // ORDER BY
+                DBManager.C.Teacher.MONASTIC,
                 DBManager.C.Teacher.NAME
         );
 
@@ -685,6 +690,7 @@ public class NavigationActivity extends AppCompatActivity
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
                         "FROM %s, %s, %s %s " +
                         "WHERE %s.%s=%s.%s " +
+                        "AND %s.%s='true' " +
                         "AND %s.%s=%s.%s " +
                         "AND %s %s " +
                         "ORDER BY %s.%s DESC",
@@ -709,6 +715,10 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
+
+                // AND
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.PUBLIC,
 
                 // AND
                 DBManager.C.Talk.TABLE_NAME,

@@ -35,8 +35,8 @@ import java.io.FileNotFoundException;
 
 public class TalkCursorAdapter extends StarCursorAdapter {
 
-    public TalkCursorAdapter(NavigationActivity context, int layout, Cursor c) {
-        super(DBManager.C.TalkStars.TABLE_NAME, context, layout, c);
+    public TalkCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
+        super(dbManager, DBManager.C.TalkStars.TABLE_NAME, context, layout, c);
     }
 
     @Override

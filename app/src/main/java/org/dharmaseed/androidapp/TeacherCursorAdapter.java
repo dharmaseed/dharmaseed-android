@@ -37,8 +37,8 @@ import java.io.FileNotFoundException;
 public class TeacherCursorAdapter extends StarCursorAdapter {
 
 
-    public TeacherCursorAdapter(NavigationActivity context, int layout, Cursor c) {
-        super(DBManager.C.TeacherStars.TABLE_NAME, context, layout, c);
+    public TeacherCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
+        super(dbManager, DBManager.C.TeacherStars.TABLE_NAME, context, layout, c);
     }
 
     @Override

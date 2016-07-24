@@ -39,13 +39,13 @@ public abstract class StarCursorAdapter extends CursorAdapter {
     NavigationActivity navigationActivity;
     String starTableName;
 
-    public StarCursorAdapter(String starTableName, NavigationActivity context, int layout, Cursor c) {
+    public StarCursorAdapter(DBManager dbManager, String starTableName, NavigationActivity context, int layout, Cursor c) {
         super(context, c, 0);
 
         this.starTableName = starTableName;
         this.layout=layout;
         this.inflater=LayoutInflater.from(context);
-        dbManager = new DBManager(context);
+        this.dbManager = dbManager;
         this.navigationActivity = context;
     }
 
