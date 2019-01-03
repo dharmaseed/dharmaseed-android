@@ -114,10 +114,14 @@ public class DBManager extends SQLiteOpenHelper {
         public abstract class Retreat {
             public static final String ID = "_id";
             public static final String NAME = "name";
+            public static final String START_DATE = "start_date";
 
             public static final String TABLE_NAME = "retreats";
-            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
-                    +NAME+" TEXT)";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" (" +
+                    ID + " INTEGER PRIMARY KEY," +
+                    NAME + " TEXT," +
+                    START_DATE + " TEXT" +
+                    ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
 
         }
