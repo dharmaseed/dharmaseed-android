@@ -41,7 +41,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 29;
+    private static final int DB_VERSION = 30;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -106,6 +106,17 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
                     +WEBSITE+" TEXT,"
                     +DESCRIPTION+" TEXT,"
+                    +NAME+" TEXT)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+
+        }
+
+        public abstract class Retreat {
+            public static final String ID = "_id";
+            public static final String NAME = "name";
+
+            public static final String TABLE_NAME = "retreats";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
                     +NAME+" TEXT)";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
 
@@ -187,6 +198,7 @@ public class DBManager extends SQLiteOpenHelper {
         db.execSQL(C.Talk.CREATE_TABLE);
         db.execSQL(C.Teacher.CREATE_TABLE);
         db.execSQL(C.Center.CREATE_TABLE);
+        db.execSQL(C.Retreat.CREATE_TABLE);
         db.execSQL(C.TalkStars.CREATE_TABLE);
         db.execSQL(C.TeacherStars.CREATE_TABLE);
         db.execSQL(C.CenterStars.CREATE_TABLE);
@@ -200,6 +212,8 @@ public class DBManager extends SQLiteOpenHelper {
         db.insert(C.Edition.TABLE_NAME, null, v);
         v.put(C.Edition.TABLE, C.Center.TABLE_NAME);
         db.insert(C.Edition.TABLE_NAME, null, v);
+        v.put(C.Edition.TABLE, C.Retreat.TABLE_NAME);
+        db.insert(C.Edition.TABLE_NAME, null, v);
         v.put(C.Edition.TABLE, C.Edition.LAST_SYNC);
         v.put(C.Edition.EDITION, 0);
         db.insert(C.Edition.TABLE_NAME, null, v);
@@ -210,9 +224,10 @@ public class DBManager extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i("DBManager", "Upgrading database to version "+DB_VERSION);
 
-        if(oldVersion < 29) {
+        if(oldVersion < DB_VERSION) {
             // DB version 29 introduced "public" and "monastic" fields into the teachers table
             // (See #21)
+            // DB version 30 added the "retreat" table (see #23)
             db.execSQL(C.Teacher.DROP_TABLE);
             db.execSQL(C.Teacher.CREATE_TABLE);
 

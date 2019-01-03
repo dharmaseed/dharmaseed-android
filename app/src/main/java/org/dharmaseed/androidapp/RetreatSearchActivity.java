@@ -10,7 +10,5 @@ public class RetreatSearchActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_retreat_search);
-
-        Log.d("RETREAT", "@@ IN NEW ACTIVITY @@");
     }
 }

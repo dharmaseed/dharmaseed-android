@@ -79,6 +79,8 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 .post(builder.build())
                 .build();
 
+        Log.d("DataFetcherTask", request.toString());
+
         try {
             Response response = httpClient.newCall(request).execute();
             if (response.isSuccessful()) {
