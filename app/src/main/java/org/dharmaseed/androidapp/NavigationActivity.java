@@ -462,10 +462,11 @@ public class NavigationActivity extends AppCompatActivity
             setViewMode(VIEW_MODE_TEACHERS);
         } else if (id == R.id.nav_centers) {
             setViewMode(VIEW_MODE_CENTERS);
-        } else if (id == R.id.nav_retreats) {
+        }
+//        else if (id == R.id.nav_retreats) {
 //            Intent intent = new Intent(this, RetreatSearchActivity.class);
 //            this.startActivity(intent);
-        }
+//        }
         setDetailMode(DETAIL_MODE_NONE);
 
         updateDisplayedData();
