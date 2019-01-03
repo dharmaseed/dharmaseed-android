@@ -227,9 +227,12 @@ public class DBManager extends SQLiteOpenHelper {
         if(oldVersion < DB_VERSION) {
             // DB version 29 introduced "public" and "monastic" fields into the teachers table
             // (See #21)
-            // DB version 30 added the "retreat" table (see #23)
             db.execSQL(C.Teacher.DROP_TABLE);
             db.execSQL(C.Teacher.CREATE_TABLE);
+
+            // DB version 30 added the "retreat" table (see #23)
+            db.execSQL(C.Retreat.DROP_TABLE);
+            db.execSQL(C.Retreat.CREATE_TABLE);
 
             // Clear teachers edition to force reloading from server
             ContentValues v = new ContentValues();
