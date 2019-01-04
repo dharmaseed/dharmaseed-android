@@ -51,11 +51,12 @@ import java.text.SimpleDateFormat;
 public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
     TalkPlayerFragment talkPlayerFragment;
-    String url;
     int talkID;
     DBManager dbManager;
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
+
+    private Talk talk;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,68 +75,38 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
         // Look up this talk
         dbManager = new DBManager(this);
-        SQLiteDatabase db = dbManager.getReadableDatabase();
-        String query = String.format(
-                "SELECT %s, %s.%s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
-                        + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
-                DBManager.C.Talk.TITLE,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.DESCRIPTION,
-                DBManager.C.Talk.AUDIO_URL,
-                DBManager.C.Talk.DURATION_IN_MINUTES,
-                DBManager.C.Talk.RECORDING_DATE,
-                DBManager.C.Talk.UPDATE_DATE,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.NAME,
 
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
+        // only hit the DB again if we know the talk is different than the one
+        // we have saved.
+        // for example, if the user selects a talk, exits, and re-opens it. No need
+        // to hit the DB again, since we already have that talk saved
+        if (talk == null || talk.getId() != talkID) {
+            // TODO
+        }
 
-                // FROM
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Center.TABLE_NAME,
-
-                // WHERE
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.VENUE_ID,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.ID,
-
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.ID,
-                talkID
-        );
-        Cursor cursor = db.rawQuery(query, null);
+        Cursor cursor = getCursor();
         if(cursor.moveToFirst()) {
+            // convert DB result to an object
+            talk = new Talk(cursor);
+
             // Set the talk title
             TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);
-            titleView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)).trim());
+            titleView.setText(talk.getTitle());
 
             // Set the teacher name
             TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-            teacherView.setText(cursor.getString(cursor.getColumnIndexOrThrow("teacher_name")).trim());
+            teacherView.setText(talk.getTeacherName());
 
             // Set the center name
             TextView centerView = (TextView) findViewById(R.id.play_talk_center);
-            centerView.setText(cursor.getString(cursor.getColumnIndexOrThrow("center_name")).trim());
+            centerView.setText(talk.getCenterName());
 
             // Set the talk description
             TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
-            descriptionView.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)).trim());
-
-            // Save the URL
-            url = "http://www.dharmaseed.org" + cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.AUDIO_URL));
+            descriptionView.setText(talk.getDescription());
 
             // Set teacher photo
-            String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
+            String photoFilename = talk.getPhotoFileName();
             ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
             Log.i("PlayTalkActivity", "photoFilename: "+photoFilename);
             try {
@@ -148,10 +119,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
             // Set date
             TextView dateView = (TextView) findViewById(R.id.play_talk_date);
-            String recDate = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.RECORDING_DATE));
-            if(recDate == null) {
-                recDate = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.UPDATE_DATE));
-            }
+            String recDate = talk.getDate();
             SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             try {
                 dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
@@ -173,7 +141,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
             // Set the talk duration
             final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
-            double duration = cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES));
+            double duration = talk.getDurationInMinutes();
             String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
             durationView.setText(durationStr);
 
@@ -208,7 +176,51 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         }
 
         cursor.close();
+    }
 
+    private Cursor getCursor() {
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        String query = String.format(
+                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
+                        + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
+                DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.DESCRIPTION,
+                DBManager.C.Talk.AUDIO_URL,
+                DBManager.C.Talk.DURATION_IN_MINUTES,
+                DBManager.C.Talk.RECORDING_DATE,
+                DBManager.C.Talk.UPDATE_DATE,
+                DBManager.C.Talk.RETREAT_ID,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.NAME,
+                DBManager.C.Center.TABLE_NAME,
+                DBManager.C.Center.NAME,
+
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+
+                // FROM
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Center.TABLE_NAME,
+
+                // WHERE
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.VENUE_ID,
+                DBManager.C.Center.TABLE_NAME,
+                DBManager.C.Center.ID,
+
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.ID,
+                talkID
+        );
+
+        return db.rawQuery(query, null);
     }
 
     @Override
@@ -277,7 +289,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             setPPButton("ic_media_pause");
         } else {
             try {
-                mediaPlayer.setDataSource(url);
+                mediaPlayer.setDataSource(talk.getAudioUrl());
                 mediaPlayer.prepareAsync();
             } catch (Exception e) {
                 Log.e("playTalk", e.toString());
