@@ -26,4 +26,11 @@
     <string name="action_refresh_server_data">Refresh server data</string>
     <string name="action_search">Search</string>
     <string name="action_toggle_starred">Toggle Starred</string>
+
+    <string name="drawer_talks">Talks</string>
+    <string name="drawer_teachers">Teachers</string>
+    <string name="drawer_centers">Centers</string>
+    <string name="drawer_retreats">Retreats</string>
+    <string name="retreat_search_label">Retreat Search</string>
+    <string name="play_talk_label">Play Talk</string>
 </resources>

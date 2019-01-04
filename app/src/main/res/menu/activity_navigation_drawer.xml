@@ -24,15 +24,21 @@
         <item
             android:id="@+id/nav_talks"
             android:icon="@drawable/mic"
-            android:title="Talks" />
+            android:title="@string/drawer_talks" />
         <item
             android:id="@+id/nav_teachers"
             android:icon="@drawable/teacher"
-            android:title="Teachers" />
+            android:title="@string/drawer_teachers" />
+        <!--
+        <item
+            android:id="@+id/nav_retreats"
+            android:icon="@drawable/home"
+            android:title="@string/drawer_retreats" />
+            -->
         <item
             android:id="@+id/nav_centers"
             android:icon="@drawable/home"
-            android:title="Centers" />
+            android:title="@string/drawer_centers" />
     </group>
 
 </menu>
