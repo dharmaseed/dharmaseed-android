@@ -40,11 +40,11 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:26.0.0'
-    compile 'com.android.support:design:26.0.0'
-    compile 'com.squareup.okhttp3:okhttp:3.0.1'
-    compile 'com.android.support:support-v4:26.0.0'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.android.support:appcompat-v7:26.0.0'
+    implementation 'com.android.support:design:26.0.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.0.1'
+    implementation 'com.android.support:support-v4:26.0.0'
 }
 
