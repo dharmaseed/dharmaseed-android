@@ -19,7 +19,10 @@
 
 package org.dharmaseed.androidapp;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
@@ -57,11 +60,19 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     int userSeekBarPosition;
 
     private Talk talk;
+    private TalkDownloader downloader;
+
+    private static final String LOG_TAG = "PlayTalkActivity";
+
+    // request code for writing external storage (the number is arbitrary)
+    private static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
+
+        downloader = new TalkDownloader();
 
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
@@ -108,7 +119,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             // Set teacher photo
             String photoFilename = talk.getPhotoFileName();
             ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
-            Log.i("PlayTalkActivity", "photoFilename: "+photoFilename);
+            Log.i(LOG_TAG, "photoFilename: "+photoFilename);
             try {
                 FileInputStream photo = openFileInput(photoFilename);
                 photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
@@ -125,8 +136,10 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                 dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
             } catch(ParseException e) {
                 dateView.setText("");
-                Log.w("playTalk", "Could not parse talk date for talk ID " + talkID);
+                Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
             }
+
+            // TODO if talk.downloaded == true, set check mark, else download icon
 
             // Get/create a persistent fragment to manage the MediaPlayer instance
             FragmentManager fm = getSupportFragmentManager();
@@ -172,7 +185,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             });
 
         } else {
-            Log.e("PlayTalkActivity", "Could not look up talk, id="+talkID);
+            Log.e(LOG_TAG, "Could not look up talk, id="+talkID);
         }
 
         cursor.close();
@@ -241,7 +254,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             star.setIcon(ContextCompat.getDrawable(this,
                     getResources().getIdentifier("btn_star_big_off", "drawable", "android")));
         }
-
         return true;
     }
 
@@ -279,7 +291,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     }
 
     public void playTalkButtonClicked(View view) {
-        Log.d("playTalk", "button pressed");
+        Log.d(LOG_TAG, "button pressed");
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         if(mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
@@ -292,7 +304,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                 mediaPlayer.setDataSource(talk.getAudioUrl());
                 mediaPlayer.prepareAsync();
             } catch (Exception e) {
-                Log.e("playTalk", e.toString());
+                Log.e(LOG_TAG, e.toString());
             }
         }
     }
@@ -335,5 +347,41 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         try {
             mediaPlayer.seekTo(userSeekBarPosition);
         } catch (IllegalStateException e) {}
+    }
+
+    /**
+     * Download the talk if we have permission. If we don't have permission, request it
+     */
+    private void downloadTalk() {
+        int permission = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+        );
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // requestPermissions will ask the user for permission asynchronously
+            // and will call onRequestPermissionsResult() with the results
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSIONS_WRITE_EXTERNAL_STORAGE
+            );
+        } else if (permission == PackageManager.PERMISSION_GRANTED) {
+            downloader.download(talk);
+        } else {
+            // should never happen
+            Log.w(LOG_TAG, "Permission was " + permission);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        switch (requestCode) {
+            case PERMISSIONS_WRITE_EXTERNAL_STORAGE:
+                // we asked for and received permission
+                if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
+                    downloader.download(talk);
+                }
+                // if we didn't receive permission, don't do anything
+                return;
+        }
     }
 }
