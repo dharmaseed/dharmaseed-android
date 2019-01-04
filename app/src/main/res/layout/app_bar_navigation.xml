@@ -64,7 +64,7 @@
         <ImageButton
             android:layout_width="30sp"
             android:layout_height="30sp"
-            android:src="@drawable/abc_ic_clear_mtrl_alpha"
+            android:src="@drawable/abc_ic_clear_material"
             android:background="@color/colorAccent"
             android:clickable="true"
             android:onClick="clearSearch" />
