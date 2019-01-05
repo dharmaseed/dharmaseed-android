@@ -41,7 +41,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 30;
+    private static final int DB_VERSION = 31;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -59,18 +59,23 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String UPDATE_DATE = "update_date";
             public static final String RECORDING_DATE = "recording_date";
             public static final String RETREAT_ID = "retreat_id";
+            public static final String DOWNLOADED = "downloaded";
+            public static final String FILE_PATH  = "file_path";
 
             public static final String TABLE_NAME = "talks";
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
-                    +TITLE+" TEXT,"
-                    +DESCRIPTION+" TEXT,"
-                    +VENUE_ID+" INTEGER,"
-                    +TEACHER_ID+" INTEGER,"
-                    +AUDIO_URL+" TEXT,"
-                    +DURATION_IN_MINUTES+" REAL,"
-                    +UPDATE_DATE+" TEXT,"
-                    +RECORDING_DATE+" TEXT,"
-                    +RETREAT_ID+" INTEGER)";
+                    + TITLE + " TEXT,"
+                    + DESCRIPTION + " TEXT,"
+                    + VENUE_ID + " INTEGER,"
+                    + TEACHER_ID + " INTEGER,"
+                    + AUDIO_URL + " TEXT,"
+                    + DURATION_IN_MINUTES + " REAL,"
+                    + UPDATE_DATE + " TEXT,"
+                    + RECORDING_DATE + " TEXT,"
+                    + RETREAT_ID + " INTEGER,"
+                    + DOWNLOADED + " INTEGER," // 0 or 1 - sqlite doesn't have BOOL
+                    + FILE_PATH + " TEXT" // empty if not downloaded
+                    + ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
@@ -172,7 +177,6 @@ public class DBManager extends SQLiteOpenHelper {
             Log.i("dbManager", "Trying to populate with pre-seeded database");
             try {
                 // Copy the pre-seeded database if it exists
-
                 InputStream dbIn = context.getAssets().open(DB_NAME);
                 dbFile.getParentFile().mkdirs();
                 OutputStream dbOut = new FileOutputStream(dbFile);
@@ -237,6 +241,10 @@ public class DBManager extends SQLiteOpenHelper {
             // DB version 30 added the "retreat" table (see #23)
             db.execSQL(C.Retreat.DROP_TABLE);
             db.execSQL(C.Retreat.CREATE_TABLE);
+
+            // DB version 31 added the "downloaded" and "file_path" columns to the talk table
+            db.execSQL(C.Talk.DROP_TABLE);
+            db.execSQL(C.Talk.CREATE_TABLE);
 
             // Clear teachers edition to force reloading from server
             ContentValues v = new ContentValues();
