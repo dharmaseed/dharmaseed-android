@@ -303,9 +303,12 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             setPPButton("ic_media_pause");
         } else {
             try {
-                // TODO check if file has been downloaded and if it has play from
-                // the local file instead
-                mediaPlayer.setDataSource(talk.getAudioUrl());
+                if (talk.isDownloaded()) {
+                    Log.d(LOG_TAG, "Playing from " + talk.getPath());
+                    mediaPlayer.setDataSource(talk.getPath());
+                } else {
+                    mediaPlayer.setDataSource(talk.getAudioUrl());
+                }
                 mediaPlayer.prepareAsync();
             } catch (Exception e) {
                 Log.e(LOG_TAG, e.toString());
@@ -369,7 +372,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                     PERMISSIONS_WRITE_EXTERNAL_STORAGE
             );
         } else if (permission == PackageManager.PERMISSION_GRANTED) {
-            new DownloadTalkTask(dbManager).execute(talk);
+            new DownloadTalkTask().execute(talk);
         } else {
             // should never happen
             Log.w(LOG_TAG, "Permission was " + permission);
@@ -382,7 +385,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             case PERMISSIONS_WRITE_EXTERNAL_STORAGE:
                 // we asked for and received permission
                 if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-                    new DownloadTalkTask(dbManager).execute(talk);
+                    new DownloadTalkTask().execute(talk);
                 }
                 // if we didn't receive permission, don't do anything
                 return;
@@ -434,12 +437,9 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
 
         private static final String LOG_TAG = "DownloadTalkTask";
-        private DBManager dbManager;
         private Talk talk;
 
-        public DownloadTalkTask(DBManager dbManager) {
-            this.dbManager = dbManager;
-        }
+        public DownloadTalkTask() {}
 
         @Override
         protected Long doInBackground(Talk... talks) {
