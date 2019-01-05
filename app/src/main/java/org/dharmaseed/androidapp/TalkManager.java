@@ -19,13 +19,13 @@ import java.nio.file.Paths;
  * Writes a talk to a file in external storage
  * @author jakewilson
  */
-public class TalkDownloader {
+public abstract class TalkManager {
 
     // folder where talks are stored on the device
     public static final String DIR_NAME = "dharmaseed";
     public static final String FILE_PREFIX = "ds_";
 
-    private static final String LOG_TAG = "TalkDownloader";
+    private static final String LOG_TAG = "TalkManager";
 
     // the key for the "location" field in the HTTP Header
     // it looks like most of the talks on dharma seed return a 301 or 302
@@ -35,14 +35,14 @@ public class TalkDownloader {
 
     public static final Long FAILURE = -1l;
 
-    public TalkDownloader() {}
+    public TalkManager() {}
 
     /**
      * Writes a talk to external storage
      * @param talk the talk to download
      * @return number of bytes downloaded or 0 on failure
      */
-    public Long download(Talk talk) {
+    public static Long download(Talk talk) {
         if (!isExternalStorageWritable())
             return FAILURE;
 
@@ -95,7 +95,7 @@ public class TalkDownloader {
         return FAILURE;
     }
 
-    public File getDir() {
+    public static File getDir() {
         File file = new File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
                 DIR_NAME
@@ -113,7 +113,7 @@ public class TalkDownloader {
      * Make sure we can write to external storage
      * @return if external storage is writable
      */
-    private boolean isExternalStorageWritable() {
+    private static boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (state.equals(Environment.MEDIA_MOUNTED)) {
             return true;
@@ -128,7 +128,7 @@ public class TalkDownloader {
      * @param talk the talk to delete
      * @return whether the talk was deleted or not
      */
-    public boolean deleteTalk(Talk talk) {
+    public static boolean deleteTalk(Talk talk) {
         boolean result = true;
         File file = new File(talk.getPath());
 

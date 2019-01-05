@@ -48,9 +48,6 @@ import android.widget.TextView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -64,7 +61,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     int userSeekBarPosition;
 
     private Talk talk;
-    private TalkDownloader downloader;
 
     private static final String LOG_TAG = "PlayTalkActivity";
 
@@ -75,8 +71,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
-
-        downloader = new TalkDownloader();
 
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
@@ -428,7 +422,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     }
 
     public void deleteTalk() {
-        if (!downloader.deleteTalk(talk)) {
+        if (!TalkManager.deleteTalk(talk)) {
             Log.d(LOG_TAG, "Unable to delete talk " + talk.getId());
         } else {
             dbManager.deleteTalk(talk);
@@ -451,10 +445,9 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         protected Long doInBackground(Talk... talks) {
             long totalSize = 0;
             if (talks.length > 0) {
-                TalkDownloader downloader = new TalkDownloader();
                 // only download the first one if we get passed multiple
                 this.talk = talks[0];
-                totalSize = downloader.download(this.talk);
+                totalSize = TalkManager.download(this.talk);
             }
             return totalSize;
         }
