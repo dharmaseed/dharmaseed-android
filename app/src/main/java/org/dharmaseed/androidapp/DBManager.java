@@ -335,9 +335,20 @@ public class DBManager extends SQLiteOpenHelper {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(C.Talk.FILE_PATH, talk.getPath());
-        Log.d("DBManager", "" + talk.getId());
         String whereClause = C.Talk.ID + "=" + talk.getId();
         return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
     }
 
+    /**
+     * Updates the Talk table to set the "file_path" column to the empty string
+     * @param talk
+     * @return # of rows updated
+     */
+    public int deleteTalk(Talk talk) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(C.Talk.FILE_PATH, ""); // a path of "" indicates that the talk is not downloaded
+        String whereClause = C.Talk.ID + "=" + talk.getId();
+        return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
+    }
 }

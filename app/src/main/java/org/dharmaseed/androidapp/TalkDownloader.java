@@ -123,4 +123,23 @@ public class TalkDownloader {
         return false;
     }
 
+    /**
+     * Deletes a talk from the file system
+     * @param talk the talk to delete
+     * @return whether the talk was deleted or not
+     */
+    public boolean deleteTalk(Talk talk) {
+        boolean result = true;
+        File file = new File(talk.getPath());
+
+        if (file.exists())
+            result = file.delete();
+
+        if (result)
+            talk.setPath("");
+
+        // if the file somehow didn't exist then we'll just say it was deleted anyway
+        return result;
+    }
+
 }

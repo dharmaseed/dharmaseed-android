@@ -123,6 +123,14 @@ public class Talk {
         return retreatId;
     }
 
+    /**
+     * The talk has been downloaded if the path field is populated
+     * @return whether the talk has been downloaded
+     */
+    public boolean isDownloaded() {
+        return this.getPath().length() > 0;
+    }
+
     public String getPath() {
         return path;
     }

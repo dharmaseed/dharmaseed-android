@@ -105,8 +105,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             talk = new Talk(cursor);
             talk.setId(talkID);
 
-            Log.d(LOG_TAG, "path: " + talk.getPath());
-
             // Set the talk title
             TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);
             titleView.setText(talk.getTitle());
@@ -135,6 +133,10 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                 photoView.setImageDrawable(icon);
             }
 
+            // set the image of the download button based on whether the talk is
+            // downloaded or not
+            toggleDownloadImage();
+
             // Set date
             TextView dateView = (TextView) findViewById(R.id.play_talk_date);
             String recDate = talk.getDate();
@@ -145,8 +147,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                 dateView.setText("");
                 Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
             }
-
-            // TODO if talk.downloaded == true, set check mark, else download icon
 
             // Get/create a persistent fragment to manage the MediaPlayer instance
             FragmentManager fm = getSupportFragmentManager();
@@ -395,52 +395,86 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         }
     }
 
+    public void toggleDownloadImage() {
+        ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
+        if (talk.isDownloaded()) {
+            Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_check_circle_green_24dp);
+            downloadButton.setImageDrawable(icon);
+            downloadButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onDeleteTalkClicked(view);
+                }
+            });
+        } else {
+            Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_file_download_green_24dp);
+            downloadButton.setImageDrawable(icon);
+            downloadButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onDownloadButtonClicked(view);
+                }
+            });
+        }
+    }
+
     public void onDownloadButtonClicked(View view) {
-        // TODO if talk is already downloaded, ask to remove
-        Log.d(LOG_TAG, "Downloading talk");
+        Log.d(LOG_TAG, "Downloading talk " + talk.getId());
         downloadTalk();
     }
-}
 
-class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
-
-    private static final String LOG_TAG = "DownloadTalkTask";
-    private DBManager dbManager;
-    private Talk talk;
-
-    public DownloadTalkTask(DBManager dbManager) {
-        this.dbManager = dbManager;
+    public void onDeleteTalkClicked(View view) {
+        deleteTalk();
     }
 
-    @Override
-    protected Long doInBackground(Talk... talks) {
-        long totalSize = 0;
-        if (talks.length > 0) {
-            TalkDownloader downloader = new TalkDownloader();
-            // only download the first one if we get passed multiple
-            this.talk = talks[0];
-            totalSize = downloader.download(this.talk);
-        }
-        return totalSize;
-    }
-
-    @Override
-    protected void onPostExecute(Long size) {
-        // TODO change button picture
-        // TODO update DB
-        // TODO change logs to show dialog
-        if (size > 0) {
-            Log.d(LOG_TAG, "size: " + size);
-            Log.d(LOG_TAG, "Talk downloaded!");
-            if (dbManager.addDownload(this.talk) == 1) {
-                // successfully updated db
-                Log.d(LOG_TAG, "updated db");
-            } else {
-                // TODO remove talk from fs because we couldn't update the DB
-                Log.d(LOG_TAG, "did not update DB");
-            }
+    public void deleteTalk() {
+        if (!downloader.deleteTalk(talk)) {
+            Log.d(LOG_TAG, "Unable to delete talk " + talk.getId());
         } else {
-            Log.d(LOG_TAG, "Talk not downloaded");
+            dbManager.deleteTalk(talk);
+            toggleDownloadImage();
+            Log.d(LOG_TAG, "Deleted talk " + talk.getId());
+        }
+    }
+
+    class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
+
+        private static final String LOG_TAG = "DownloadTalkTask";
+        private DBManager dbManager;
+        private Talk talk;
+
+        public DownloadTalkTask(DBManager dbManager) {
+            this.dbManager = dbManager;
+        }
+
+        @Override
+        protected Long doInBackground(Talk... talks) {
+            long totalSize = 0;
+            if (talks.length > 0) {
+                TalkDownloader downloader = new TalkDownloader();
+                // only download the first one if we get passed multiple
+                this.talk = talks[0];
+                totalSize = downloader.download(this.talk);
+            }
+            return totalSize;
+        }
+
+        @Override
+        protected void onPostExecute(Long size) {
+            // TODO change logs to show dialog
+            if (size > 0) {
+                Log.d(LOG_TAG, "Talk downloaded!");
+                if (dbManager.addDownload(this.talk) == 1) {
+                    toggleDownloadImage();
+                } else {
+                    // remove talk from fs because we couldn't update the DB
+                    deleteTalk();
+                    Log.d(LOG_TAG, "failed to update db with talk path. deleting talk");
+                }
+            } else {
+                Log.d(LOG_TAG, "failed to download talk");
+            }
         }
     }
 }
+
