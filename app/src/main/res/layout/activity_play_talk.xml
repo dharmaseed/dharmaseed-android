@@ -19,6 +19,7 @@
   -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -75,39 +76,59 @@
 
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textStyle="bold"
-        android:text="Center"
-        android:id="@+id/play_talk_center"
-        android:textColor="@color/colorPrimary"
-        />
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Date"
-        android:id="@+id/play_talk_date"
-        android:textColor="@color/colorPrimary"
-        />
+        android:orientation="horizontal">
 
+        <LinearLayout
+            android:layout_width="277dp"
+            android:layout_height="42dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/play_talk_center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Center"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/colorPrimary"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/play_talk_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/colorPrimary" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/imageButton3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/download_content_desc"
+            android:onClick="onDownloadButtonClicked"
+            app:srcCompat="@drawable/ic_file_download_green_24dp" />
+
+    </LinearLayout>
 
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingTop="10dp"
-        >
+        android:paddingTop="10dp">
+
         <TextView
+            android:id="@+id/play_talk_talk_description"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="Talk Description"
-            android:id="@+id/play_talk_talk_description"
-            />
+            android:textAppearance="?android:attr/textAppearanceSmall" />
     </ScrollView>
 
     <SeekBar

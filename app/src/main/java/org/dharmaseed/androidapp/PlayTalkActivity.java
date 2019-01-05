@@ -21,6 +21,7 @@ package org.dharmaseed.androidapp;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
@@ -47,6 +48,9 @@ import android.widget.TextView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -301,6 +305,8 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             setPPButton("ic_media_pause");
         } else {
             try {
+                // TODO check if file has been downloaded and if it has play from
+                // the local file instead
                 mediaPlayer.setDataSource(talk.getAudioUrl());
                 mediaPlayer.prepareAsync();
             } catch (Exception e) {
@@ -365,7 +371,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                     PERMISSIONS_WRITE_EXTERNAL_STORAGE
             );
         } else if (permission == PackageManager.PERMISSION_GRANTED) {
-            downloader.download(talk);
+            new DownloadTalkTask().execute(talk);
         } else {
             // should never happen
             Log.w(LOG_TAG, "Permission was " + permission);
@@ -378,10 +384,46 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             case PERMISSIONS_WRITE_EXTERNAL_STORAGE:
                 // we asked for and received permission
                 if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-                    downloader.download(talk);
+                    new DownloadTalkTask().execute(talk);
                 }
                 // if we didn't receive permission, don't do anything
                 return;
+        }
+    }
+
+    public void onDownloadButtonClicked(View view) {
+        // TODO if talk is already downloaded, ask to remove
+        Log.d(LOG_TAG, "Downloading talk");
+        downloadTalk();
+    }
+}
+
+class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
+
+    private static final String LOG_TAG = "DownloadTalkTask";
+
+    @Override
+    protected Long doInBackground(Talk... talks) {
+        long totalSize = 0;
+        if (talks.length > 0) {
+            TalkDownloader downloader = new TalkDownloader();
+            for (Talk talk : talks) {
+                totalSize += downloader.download(talk);
+            }
+        }
+        return totalSize;
+    }
+
+    @Override
+    protected void onPostExecute(Long size) {
+        // TODO change button picture
+        // TODO update DB
+        // TODO change logs to show dialog
+        if (size > 0) {
+            Log.d(LOG_TAG, "size: " + size);
+            Log.d(LOG_TAG, "Talk downloaded!");
+        } else {
+            Log.d(LOG_TAG, "Talk not downloaded");
         }
     }
 }

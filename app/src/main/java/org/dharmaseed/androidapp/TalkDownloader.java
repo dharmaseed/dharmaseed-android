@@ -5,6 +5,15 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Writes a talk to a file in external storage
@@ -17,22 +26,70 @@ public class TalkDownloader {
 
     private static final String LOG_TAG = "TalkDownloader";
 
+    // the key for the "location" field in the HTTP Header
+    // it looks like most of the talks on dharma seed return a 301 or 302
+    // to the _actual_ download link. So we need to follow this redirect
+    // and download the file at that location
+    public static final int HEADER_FIELD_KEY_LOCATION = 3;
+
+    public static final Long FAILURE = -1l;
+
     public TalkDownloader() {}
 
     /**
      * Writes a talk to external storage
      * @param talk the talk to download
-     * @return whether the download was successful or not
+     * @return number of bytes downloaded or 0 on failure
      */
-    public boolean download(Talk talk) {
+    public Long download(Talk talk) {
         if (!isExternalStorageWritable())
-            return false;
+            return FAILURE;
 
-        File file = getDir();
-        if (file == null)
-            return false;
+        File dir = getDir();
+        if (dir == null)
+            return FAILURE;
 
-        return true;
+        String talkName = talk.getId() + "_" + talk.getTitle() + ".mp3";
+        long size = 0;
+
+        try {
+            URL talkUrl = new URL(talk.getDownloadUrl());
+            HttpURLConnection connection = (HttpURLConnection) talkUrl.openConnection();
+
+            int response = connection.getResponseCode();
+            if (response != HttpURLConnection.HTTP_OK) {
+                Log.e(LOG_TAG, "Talk " + talk.getId() + " URL returned " + response);
+                return FAILURE;
+            }
+
+            String talkPath = dir.getPath() + "/" + talkName;
+
+            InputStream inputStream = connection.getInputStream();
+            FileOutputStream fileOutputStream = new FileOutputStream(talkPath);
+
+            int len;
+            byte[] buffer = new byte[4096];
+
+            // read file 4 kb at a time
+            while ((len = inputStream.read(buffer, 0, buffer.length)) != -1) {
+                fileOutputStream.write(buffer, 0, len);
+                size += len;
+            }
+
+            fileOutputStream.flush();
+            fileOutputStream.close();
+            inputStream.close();
+
+            return size;
+        } catch (MalformedURLException murlex) {
+            Log.e(LOG_TAG, murlex.getMessage());
+        } catch (IOException ioex) {
+            Log.e(LOG_TAG, ioex.getMessage());
+        } catch (Exception ex) {
+            Log.e(LOG_TAG, ex.getMessage());
+        }
+
+        return FAILURE;
     }
 
     public File getDir() {
