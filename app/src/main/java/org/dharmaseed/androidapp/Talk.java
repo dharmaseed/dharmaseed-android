@@ -19,6 +19,7 @@ public class Talk {
     private String teacherName;
     private String centerName;
     private String photoFileName;
+    private String path; // where the talk is downloaded, if it is
 
     private int id;
     private int venueId;
@@ -63,10 +64,11 @@ public class Talk {
 
         setPhotoFileName(DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID))));
 
-        setId(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
         setRetreatId(cursor.getColumnIndexOrThrow(DBManager.C.Talk.RETREAT_ID));
 
         setDurationInMinutes(cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES)));
+
+        setPath(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.FILE_PATH)));
     }
 
     public String getTitle() {
@@ -121,6 +123,10 @@ public class Talk {
         return retreatId;
     }
 
+    public String getPath() {
+        return path;
+    }
+
     private void setTitle(String title) {
         this.title = title;
     }
@@ -157,7 +163,11 @@ public class Talk {
         this.photoFileName = photoFileName;
     }
 
-    private void setId(int id) {
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setId(int id) {
         this.id = id;
     }
 

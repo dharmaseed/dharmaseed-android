@@ -23,6 +23,7 @@ public class TalkDownloader {
 
     // folder where talks are stored on the device
     public static final String DIR_NAME = "dharmaseed";
+    public static final String FILE_PREFIX = "ds_";
 
     private static final String LOG_TAG = "TalkDownloader";
 
@@ -49,7 +50,7 @@ public class TalkDownloader {
         if (dir == null)
             return FAILURE;
 
-        String talkName = talk.getId() + "_" + talk.getTitle() + ".mp3";
+        String talkName = FILE_PREFIX + talk.getId() + "_" + talk.getTitle() + ".mp3";
         long size = 0;
 
         try {
@@ -71,6 +72,7 @@ public class TalkDownloader {
             byte[] buffer = new byte[4096];
 
             // read file 4 kb at a time
+            // TODO could this be made faster?
             while ((len = inputStream.read(buffer, 0, buffer.length)) != -1) {
                 fileOutputStream.write(buffer, 0, len);
                 size += len;
@@ -80,6 +82,7 @@ public class TalkDownloader {
             fileOutputStream.close();
             inputStream.close();
 
+            talk.setPath(talkPath);
             return size;
         } catch (MalformedURLException murlex) {
             Log.e(LOG_TAG, murlex.getMessage());

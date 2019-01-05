@@ -59,7 +59,6 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String UPDATE_DATE = "update_date";
             public static final String RECORDING_DATE = "recording_date";
             public static final String RETREAT_ID = "retreat_id";
-            public static final String DOWNLOADED = "downloaded";
             public static final String FILE_PATH  = "file_path";
 
             public static final String TABLE_NAME = "talks";
@@ -73,8 +72,7 @@ public class DBManager extends SQLiteOpenHelper {
                     + UPDATE_DATE + " TEXT,"
                     + RECORDING_DATE + " TEXT,"
                     + RETREAT_ID + " INTEGER,"
-                    + DOWNLOADED + " INTEGER," // 0 or 1 - sqlite doesn't have BOOL
-                    + FILE_PATH + " TEXT" // empty if not downloaded
+                    + FILE_PATH + " TEXT NOT NULL DEFAULT ''" // empty if not downloaded
                     + ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
@@ -242,7 +240,7 @@ public class DBManager extends SQLiteOpenHelper {
             db.execSQL(C.Retreat.DROP_TABLE);
             db.execSQL(C.Retreat.CREATE_TABLE);
 
-            // DB version 31 added the "downloaded" and "file_path" columns to the talk table
+            // DB version 31 added the "file_path" column to the talk table
             db.execSQL(C.Talk.DROP_TABLE);
             db.execSQL(C.Talk.CREATE_TABLE);
 
@@ -326,6 +324,20 @@ public class DBManager extends SQLiteOpenHelper {
     public void removeStar(String starTableName, int id) {
         SQLiteDatabase db = getWritableDatabase();
         db.delete(starTableName, "_id="+id, null);
+    }
+
+    /**
+     * Updates the Talk table to set the "file_path" column to the talk path
+     * @param talk
+     * @return # of rows updated
+     */
+    public int addDownload(Talk talk) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(C.Talk.FILE_PATH, talk.getPath());
+        Log.d("DBManager", "" + talk.getId());
+        String whereClause = C.Talk.ID + "=" + talk.getId();
+        return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
     }
 
 }

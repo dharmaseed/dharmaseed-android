@@ -103,6 +103,9 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         if(cursor.moveToFirst()) {
             // convert DB result to an object
             talk = new Talk(cursor);
+            talk.setId(talkID);
+
+            Log.d(LOG_TAG, "path: " + talk.getPath());
 
             // Set the talk title
             TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);
@@ -198,7 +201,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     private Cursor getCursor() {
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
-                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
+                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
                         + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
                 DBManager.C.Talk.TITLE,
                 DBManager.C.Talk.TABLE_NAME,
@@ -208,6 +211,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                 DBManager.C.Talk.RECORDING_DATE,
                 DBManager.C.Talk.UPDATE_DATE,
                 DBManager.C.Talk.RETREAT_ID,
+                DBManager.C.Talk.FILE_PATH,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
                 DBManager.C.Center.TABLE_NAME,
@@ -371,7 +375,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
                     PERMISSIONS_WRITE_EXTERNAL_STORAGE
             );
         } else if (permission == PackageManager.PERMISSION_GRANTED) {
-            new DownloadTalkTask().execute(talk);
+            new DownloadTalkTask(dbManager).execute(talk);
         } else {
             // should never happen
             Log.w(LOG_TAG, "Permission was " + permission);
@@ -384,7 +388,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             case PERMISSIONS_WRITE_EXTERNAL_STORAGE:
                 // we asked for and received permission
                 if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-                    new DownloadTalkTask().execute(talk);
+                    new DownloadTalkTask(dbManager).execute(talk);
                 }
                 // if we didn't receive permission, don't do anything
                 return;
@@ -401,15 +405,21 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
 
     private static final String LOG_TAG = "DownloadTalkTask";
+    private DBManager dbManager;
+    private Talk talk;
+
+    public DownloadTalkTask(DBManager dbManager) {
+        this.dbManager = dbManager;
+    }
 
     @Override
     protected Long doInBackground(Talk... talks) {
         long totalSize = 0;
         if (talks.length > 0) {
             TalkDownloader downloader = new TalkDownloader();
-            for (Talk talk : talks) {
-                totalSize += downloader.download(talk);
-            }
+            // only download the first one if we get passed multiple
+            this.talk = talks[0];
+            totalSize = downloader.download(this.talk);
         }
         return totalSize;
     }
@@ -422,6 +432,13 @@ class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
         if (size > 0) {
             Log.d(LOG_TAG, "size: " + size);
             Log.d(LOG_TAG, "Talk downloaded!");
+            if (dbManager.addDownload(this.talk) == 1) {
+                // successfully updated db
+                Log.d(LOG_TAG, "updated db");
+            } else {
+                // TODO remove talk from fs because we couldn't update the DB
+                Log.d(LOG_TAG, "did not update DB");
+            }
         } else {
             Log.d(LOG_TAG, "Talk not downloaded");
         }
