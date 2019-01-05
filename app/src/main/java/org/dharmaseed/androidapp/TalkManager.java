@@ -71,9 +71,7 @@ public abstract class TalkManager {
             int len;
             byte[] buffer = new byte[4096];
 
-            // read file 4 kb at a time
-            // TODO could this be made faster?
-            while ((len = inputStream.read(buffer, 0, buffer.length)) != -1) {
+            while ((len = inputStream.read(buffer)) != -1) {
                 fileOutputStream.write(buffer, 0, len);
                 size += len;
             }

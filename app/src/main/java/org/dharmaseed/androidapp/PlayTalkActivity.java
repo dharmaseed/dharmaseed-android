@@ -60,7 +60,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
 
-    private Talk talk;
+    private static Talk talk;
 
     private static final String LOG_TAG = "PlayTalkActivity";
 
@@ -87,109 +87,107 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
         // only hit the DB again if we know the talk is different than the one
         // we have saved.
-        // for example, if the user selects a talk, exits, and re-opens it. No need
+        // for example, if the user selects a talk, exits, and re-opens it, no need
         // to hit the DB again, since we already have that talk saved
         if (talk == null || talk.getId() != talkID) {
-            // TODO
+            Cursor cursor = getCursor();
+            if (cursor.moveToFirst()) {
+                // convert DB result to an object
+                talk = new Talk(cursor);
+                talk.setId(talkID);
+            } else {
+                Log.e(LOG_TAG, "Could not look up talk, id="+talkID);
+                cursor.close();
+                return;
+            }
+            cursor.close();
+        } // else we already have the talk, just re-draw the page
+
+        // Set the talk title
+        TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);
+        titleView.setText(talk.getTitle());
+
+        // Set the teacher name
+        TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
+        teacherView.setText(talk.getTeacherName());
+
+        // Set the center name
+        TextView centerView = (TextView) findViewById(R.id.play_talk_center);
+        centerView.setText(talk.getCenterName());
+
+        // Set the talk description
+        TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
+        descriptionView.setText(talk.getDescription());
+
+        // Set teacher photo
+        String photoFilename = talk.getPhotoFileName();
+        ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
+        Log.i(LOG_TAG, "photoFilename: "+photoFilename);
+        try {
+            FileInputStream photo = openFileInput(photoFilename);
+            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
+        } catch(FileNotFoundException e) {
+            Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
+            photoView.setImageDrawable(icon);
         }
 
-        Cursor cursor = getCursor();
-        if(cursor.moveToFirst()) {
-            // convert DB result to an object
-            talk = new Talk(cursor);
-            talk.setId(talkID);
+        // set the image of the download button based on whether the talk is
+        // downloaded or not
+        toggleDownloadImage();
 
-            // Set the talk title
-            TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);
-            titleView.setText(talk.getTitle());
+        // Set date
+        TextView dateView = (TextView) findViewById(R.id.play_talk_date);
+        String recDate = talk.getDate();
+        SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
+        } catch(ParseException e) {
+            dateView.setText("");
+            Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
+        }
 
-            // Set the teacher name
-            TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-            teacherView.setText(talk.getTeacherName());
+        // Get/create a persistent fragment to manage the MediaPlayer instance
+        FragmentManager fm = getSupportFragmentManager();
+        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
+        if (talkPlayerFragment == null) {
+            // add the fragment
+            talkPlayerFragment = new TalkPlayerFragment();
+            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
+        } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
+            setPPButton("ic_media_pause");
+        }
 
-            // Set the center name
-            TextView centerView = (TextView) findViewById(R.id.play_talk_center);
-            centerView.setText(talk.getCenterName());
+        // Set the talk duration
+        final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+        double duration = talk.getDurationInMinutes();
+        String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
+        durationView.setText(durationStr);
 
-            // Set the talk description
-            TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
-            descriptionView.setText(talk.getDescription());
-
-            // Set teacher photo
-            String photoFilename = talk.getPhotoFileName();
-            ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
-            Log.i(LOG_TAG, "photoFilename: "+photoFilename);
-            try {
-                FileInputStream photo = openFileInput(photoFilename);
-                photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-            } catch(FileNotFoundException e) {
-                Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
-                photoView.setImageDrawable(icon);
-            }
-
-            // set the image of the download button based on whether the talk is
-            // downloaded or not
-            toggleDownloadImage();
-
-            // Set date
-            TextView dateView = (TextView) findViewById(R.id.play_talk_date);
-            String recDate = talk.getDate();
-            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            try {
-                dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
-            } catch(ParseException e) {
-                dateView.setText("");
-                Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
-            }
-
-            // Get/create a persistent fragment to manage the MediaPlayer instance
-            FragmentManager fm = getSupportFragmentManager();
-            talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
-            if (talkPlayerFragment == null) {
-                // add the fragment
-                talkPlayerFragment = new TalkPlayerFragment();
-                fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
-            } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
-                setPPButton("ic_media_pause");
-            }
-
-            // Set the talk duration
-            final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
-            double duration = talk.getDurationInMinutes();
-            String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
-            durationView.setText(durationStr);
-
-            // Start a handler to periodically update the seek bar and talk time
-            final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
-            seekBar.setMax((int)(duration*60*1000));
-            userDraggingSeekBar = false;
-            userSeekBarPosition = 0;
-            seekBar.setOnSeekBarChangeListener(this);
-            final Handler handler = new Handler();
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    handler.postDelayed(this, 1000);
-                    if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
-                        try {
-                            int pos = mediaPlayer.getCurrentPosition();
-                            int mpDuration = mediaPlayer.getDuration();
-                            seekBar.setMax(mpDuration);
-                            seekBar.setProgress(pos);
-                            String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                            String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
-                            durationView.setText(posStr + "/" + mpDurStr);
-                        } catch(IllegalStateException e) {}
-                    }
+        // Start a handler to periodically update the seek bar and talk time
+        final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+        seekBar.setMax((int)(duration*60*1000));
+        userDraggingSeekBar = false;
+        userSeekBarPosition = 0;
+        seekBar.setOnSeekBarChangeListener(this);
+        final Handler handler = new Handler();
+        final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                handler.postDelayed(this, 1000);
+                if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
+                    try {
+                        int pos = mediaPlayer.getCurrentPosition();
+                        int mpDuration = mediaPlayer.getDuration();
+                        seekBar.setMax(mpDuration);
+                        seekBar.setProgress(pos);
+                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                        durationView.setText(posStr + "/" + mpDurStr);
+                    } catch(IllegalStateException e) {}
                 }
-            });
-
-        } else {
-            Log.e(LOG_TAG, "Could not look up talk, id="+talkID);
-        }
-
-        cursor.close();
+            }
+        });
     }
 
     private Cursor getCursor() {
