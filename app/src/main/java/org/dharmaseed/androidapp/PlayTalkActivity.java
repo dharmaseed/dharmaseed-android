@@ -21,6 +21,7 @@ package org.dharmaseed.androidapp;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
@@ -432,6 +433,20 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         }
     }
 
+    public void startLoadingAnim() {
+        ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
+        Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_downloading);
+        downloadButton.setImageDrawable(icon);
+        if (icon instanceof Animatable)
+            ((Animatable) icon).start();
+    }
+
+    public void stopLoadingAnim() {
+        Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_downloading);
+        if (icon instanceof Animatable)
+            ((Animatable) icon).stop();
+    }
+
     class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
 
         private static final String LOG_TAG = "DownloadTalkTask";
@@ -441,6 +456,7 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
 
         @Override
         protected Long doInBackground(Talk... talks) {
+            startLoadingAnim();
             long totalSize = 0;
             if (talks.length > 0) {
                 // only download the first one if we get passed multiple
@@ -456,7 +472,6 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             if (size > 0) {
                 Log.d(LOG_TAG, "Talk downloaded!");
                 if (dbManager.addDownload(this.talk) == 1) {
-                    toggleDownloadImage();
                 } else {
                     // remove talk from fs because we couldn't update the DB
                     deleteTalk();
@@ -465,6 +480,8 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
             } else {
                 Log.d(LOG_TAG, "failed to download talk");
             }
+            stopLoadingAnim();
+            toggleDownloadImage();
         }
     }
 }

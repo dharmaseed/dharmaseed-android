@@ -1,0 +1,16 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_loading_black_24dp" >
+
+    <target
+        android:name="first"
+        android:animation="@animator/bounce1" />
+
+    <target
+        android:name="second"
+        android:animation="@animator/bounce2" />
+
+    <target
+        android:name="third"
+        android:animation="@animator/bounce3" />
+
+</animated-vector>
