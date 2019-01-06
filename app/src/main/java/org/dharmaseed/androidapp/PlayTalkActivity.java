@@ -47,6 +47,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -428,9 +429,10 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void deleteTalk() {
         if (!TalkManager.deleteTalk(talk)) {
-            Log.d(LOG_TAG, "Unable to delete talk " + talk.getId());
+            showToast("Unable to delete talk.", Toast.LENGTH_SHORT);
         } else {
             dbManager.deleteTalk(talk);
+            showToast("Talk deleted.", Toast.LENGTH_SHORT);
             toggleDownloadImage();
             Log.d(LOG_TAG, "Deleted talk " + talk.getId());
         }
@@ -448,6 +450,10 @@ public class PlayTalkActivity extends AppCompatActivity
         Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_downloading);
         if (icon instanceof Animatable)
             ((Animatable) icon).stop();
+    }
+
+    public void showToast(String message, int length) {
+        Toast.makeText(getApplicationContext(), message, length).show();
     }
 
     @Override
@@ -483,15 +489,15 @@ public class PlayTalkActivity extends AppCompatActivity
         protected void onPostExecute(Long size) {
             // TODO change logs to show dialog
             if (size > 0) {
-                Log.d(LOG_TAG, "Talk downloaded!");
                 if (dbManager.addDownload(this.talk) == 1) {
+                    showToast("Talk downloaded.", Toast.LENGTH_SHORT);
                 } else {
                     // remove talk from fs because we couldn't update the DB
                     deleteTalk();
                     Log.d(LOG_TAG, "failed to update db with talk path. deleting talk");
                 }
             } else {
-                Log.d(LOG_TAG, "failed to download talk");
+                showToast("Failed to download talk.", Toast.LENGTH_SHORT);
             }
             stopLoadingAnim();
             toggleDownloadImage();
