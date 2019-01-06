@@ -739,7 +739,7 @@ public class NavigationActivity extends AppCompatActivity
 
                 // ORDER BY
                 DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.UPDATE_DATE
+                DBManager.C.Talk.RECORDING_DATE
         );
 
         Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);

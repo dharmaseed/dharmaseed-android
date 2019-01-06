@@ -57,7 +57,7 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String AUDIO_URL = "audio_url";
             public static final String DURATION_IN_MINUTES = "duration_in_minutes";
             public static final String UPDATE_DATE = "update_date";
-            public static final String RECORDING_DATE = "recording_date";
+            public static final String RECORDING_DATE = "rec_date";
             public static final String RETREAT_ID = "retreat_id";
             public static final String FILE_PATH  = "file_path";
 
@@ -241,8 +241,11 @@ public class DBManager extends SQLiteOpenHelper {
             db.execSQL(C.Retreat.CREATE_TABLE);
 
             // DB version 31 added the "file_path" column to the talk table
+            // DB version 32 changed the column `recording_date` to `rec_date` in the talk table
+            // see (#30 for v32)
             db.execSQL(C.Talk.DROP_TABLE);
             db.execSQL(C.Talk.CREATE_TABLE);
+
 
             // Clear teachers edition to force reloading from server
             ContentValues v = new ContentValues();
