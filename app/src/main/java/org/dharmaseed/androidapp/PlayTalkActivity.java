@@ -20,6 +20,7 @@
 package org.dharmaseed.androidapp;
 
 import android.Manifest;
+import android.app.DialogFragment;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
@@ -53,7 +54,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
+public class PlayTalkActivity extends AppCompatActivity
+        implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
 
     TalkPlayerFragment talkPlayerFragment;
     int talkID;
@@ -420,7 +422,8 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
     }
 
     public void onDeleteTalkClicked(View view) {
-        deleteTalk();
+        DialogFragment dialog = new DeleteTalkFragment();
+        dialog.show(getFragmentManager(), "DeleteTalkFragment");
     }
 
     public void deleteTalk() {
@@ -445,6 +448,16 @@ public class PlayTalkActivity extends AppCompatActivity implements SeekBar.OnSee
         Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_downloading);
         if (icon instanceof Animatable)
             ((Animatable) icon).stop();
+    }
+
+    @Override
+    public void onDeleteTalkPositiveClick(DialogFragment dialogFragment) {
+        deleteTalk();
+    }
+
+    @Override
+    public void onDeleteTalkNegativeClick(DialogFragment dialogFragment) {
+        // do nothing
     }
 
     class DownloadTalkTask extends AsyncTask<Talk, Integer, Long> {
