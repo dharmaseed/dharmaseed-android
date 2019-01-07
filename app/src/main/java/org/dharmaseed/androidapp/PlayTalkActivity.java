@@ -429,7 +429,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void deleteTalk() {
         if (!TalkManager.deleteTalk(talk)) {
-            showToast("Unable to delete talk.", Toast.LENGTH_SHORT);
+            showToast("Unable to delete '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
         } else {
             dbManager.deleteTalk(talk);
             showToast("Deleted '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
