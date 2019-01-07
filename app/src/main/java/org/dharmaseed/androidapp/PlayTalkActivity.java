@@ -432,7 +432,7 @@ public class PlayTalkActivity extends AppCompatActivity
             showToast("Unable to delete talk.", Toast.LENGTH_SHORT);
         } else {
             dbManager.deleteTalk(talk);
-            showToast("Talk deleted.", Toast.LENGTH_SHORT);
+            showToast("Deleted '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
             toggleDownloadImage();
             Log.d(LOG_TAG, "Deleted talk " + talk.getId());
         }
@@ -490,14 +490,14 @@ public class PlayTalkActivity extends AppCompatActivity
             // TODO change logs to show dialog
             if (size > 0) {
                 if (dbManager.addDownload(this.talk) == 1) {
-                    showToast("Talk downloaded.", Toast.LENGTH_SHORT);
+                    showToast("'" + talk.getTitle() + "' downloaded.", Toast.LENGTH_SHORT);
                 } else {
                     // remove talk from fs because we couldn't update the DB
                     deleteTalk();
                     Log.d(LOG_TAG, "failed to update db with talk path. deleting talk");
                 }
             } else {
-                showToast("Failed to download talk.", Toast.LENGTH_SHORT);
+                showToast("Failed to download '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
             }
             stopLoadingAnim();
             toggleDownloadImage();
