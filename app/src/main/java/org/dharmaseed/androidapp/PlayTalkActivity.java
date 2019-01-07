@@ -427,6 +427,9 @@ public class PlayTalkActivity extends AppCompatActivity
         dialog.show(getFragmentManager(), "DeleteTalkFragment");
     }
 
+    /**
+     * Deletes the talk from the FS and removes the path from the DB row
+     */
     public void deleteTalk() {
         if (!TalkManager.deleteTalk(talk)) {
             showToast("Unable to delete '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
@@ -440,6 +443,14 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void startLoadingAnim() {
         ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
+        // override the current listener so the user can't accidentally download the talk
+        // twice
+        downloadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // do nothing
+            }
+        });
         Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_downloading);
         downloadButton.setImageDrawable(icon);
         if (icon instanceof Animatable)
@@ -455,6 +466,7 @@ public class PlayTalkActivity extends AppCompatActivity
     public void showToast(String message, int length) {
         Toast.makeText(getApplicationContext(), message, length).show();
     }
+
 
     @Override
     public void onDeleteTalkPositiveClick(DialogFragment dialogFragment) {
@@ -474,8 +486,12 @@ public class PlayTalkActivity extends AppCompatActivity
         public DownloadTalkTask() {}
 
         @Override
-        protected Long doInBackground(Talk... talks) {
+        protected void onPreExecute() {
             startLoadingAnim();
+        }
+
+        @Override
+        protected Long doInBackground(Talk... talks) {
             long totalSize = 0;
             if (talks.length > 0) {
                 // only download the first one if we get passed multiple
@@ -487,7 +503,6 @@ public class PlayTalkActivity extends AppCompatActivity
 
         @Override
         protected void onPostExecute(Long size) {
-            // TODO change logs to show dialog
             if (size > 0) {
                 if (dbManager.addDownload(this.talk) == 1) {
                     showToast("'" + talk.getTitle() + "' downloaded.", Toast.LENGTH_SHORT);
