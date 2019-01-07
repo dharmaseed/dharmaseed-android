@@ -443,6 +443,14 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void startLoadingAnim() {
         ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
+        // override the current listener so the user can't accidentally download the talk
+        // twice
+        downloadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // do nothing
+            }
+        });
         Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_downloading);
         downloadButton.setImageDrawable(icon);
         if (icon instanceof Animatable)
