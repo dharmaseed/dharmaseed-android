@@ -14,6 +14,7 @@ Dharma Seed is dedicated to preserving and sharing the spoken teachings of Thera
 * Find talks by specific teachers
 * Search a teacher's talks by keyword
 * View teacher information
+* Download talks and listen without cellular or internet connectivity
 
 ## Screenshots
 
@@ -25,7 +26,6 @@ Dharma Seed is dedicated to preserving and sharing the spoken teachings of Thera
 
 ## Notes
 
-* The app does not currently support downloading talks for offline playing.
 * Access to retreatants only talks is not currently supported.
 
 These talks are freely offered in the spirit of dana, or generosity. You may visit the Dharma Seed website if you would like to support our work. We are a small non-profit organization supported solely through donations and we deeply appreciate your help in making these priceless teachings available to all.
