@@ -49,6 +49,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.lang.reflect.Array;
@@ -88,6 +89,10 @@ public class NavigationActivity extends AppCompatActivity
     TalkFetcherTask talkFetcherTask;
     TeacherFetcherTask teacherFetcherTask;
     CenterFetcherTask centerFetcherTask;
+
+    private static final String LOG_TAG = "NavigationActivity";
+
+    private boolean downloadedOnly;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -167,6 +172,7 @@ public class NavigationActivity extends AppCompatActivity
         starFilterOn = false;
         searchCluster.setVisibility(View.GONE);
         header.setVisibility(View.GONE);
+        downloadedOnly = false;
         setViewMode(VIEW_MODE_TALKS);
         setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
@@ -477,6 +483,21 @@ public class NavigationActivity extends AppCompatActivity
         return true;
     }
 
+    /**
+     * Called when the "Downloaded only" switch in the nav drawer is pressed
+     * @param view
+     */
+    public void downloadOnlySwitchClicked(View view) {
+        Switch downloadSwitch = (Switch) view;
+        if (downloadSwitch.isChecked()) {
+            downloadedOnly = true;
+        } else {
+            downloadedOnly = false;
+        }
+        if (viewMode == VIEW_MODE_TALKS)
+            updateDisplayedTalks();
+    }
+
     public void headingDetailCollapseExpandButtonClicked(View view) {
         ScrollView scrollView = (ScrollView) findViewById(R.id.nav_sub_header_description_scroll);
         ImageButton button = (ImageButton) findViewById(R.id.heading_detail_collapse_expand_button);
@@ -691,13 +712,25 @@ public class NavigationActivity extends AppCompatActivity
             );
         }
 
+        String downloadedOnlyTable = "";
+        String downloadedOnlySubquery = "";
+        if (downloadedOnly) {
+            downloadedOnlyTable = String.format(" , %s ", DBManager.C.DownloadedTalks.TABLE_NAME);
+            downloadedOnlySubquery = String.format(" AND %s.%s=%s.%s ",
+                    DBManager.C.Talk.TABLE_NAME,
+                    DBManager.C.Talk.ID,
+                    DBManager.C.DownloadedTalks.TABLE_NAME,
+                    DBManager.C.DownloadedTalks.ID
+            );
+        }
+
         final String query = String.format(
                 "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
-                        "FROM %s, %s, %s %s " +
+                        "FROM %s, %s, %s %s %s " +
                         "WHERE %s.%s=%s.%s " +
                         "AND %s.%s='true' " +
                         "AND %s.%s=%s.%s " +
-                        "AND %s %s " +
+                        "AND %s %s %s " +
                         "ORDER BY %s.%s DESC",
                 // SELECT
                 DBManager.C.Talk.TABLE_NAME,
@@ -714,6 +747,7 @@ public class NavigationActivity extends AppCompatActivity
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Center.TABLE_NAME,
                 starFilterTable,
+                downloadedOnlyTable,
 
                 // WHERE
                 DBManager.C.Talk.TABLE_NAME,
@@ -737,6 +771,9 @@ public class NavigationActivity extends AppCompatActivity
 
                 // Star filter sub-query
                 starFilterSubquery,
+
+                // downloaded only talks
+                downloadedOnlySubquery,
 
                 // ORDER BY
                 DBManager.C.Talk.TABLE_NAME,
