@@ -41,7 +41,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 30;
+    private static final int DB_VERSION = 31;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -57,20 +57,23 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String AUDIO_URL = "audio_url";
             public static final String DURATION_IN_MINUTES = "duration_in_minutes";
             public static final String UPDATE_DATE = "update_date";
-            public static final String RECORDING_DATE = "recording_date";
+            public static final String RECORDING_DATE = "rec_date";
             public static final String RETREAT_ID = "retreat_id";
+            public static final String FILE_PATH  = "file_path";
 
             public static final String TABLE_NAME = "talks";
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
-                    +TITLE+" TEXT,"
-                    +DESCRIPTION+" TEXT,"
-                    +VENUE_ID+" INTEGER,"
-                    +TEACHER_ID+" INTEGER,"
-                    +AUDIO_URL+" TEXT,"
-                    +DURATION_IN_MINUTES+" REAL,"
-                    +UPDATE_DATE+" TEXT,"
-                    +RECORDING_DATE+" TEXT,"
-                    +RETREAT_ID+" INTEGER)";
+                    + TITLE + " TEXT,"
+                    + DESCRIPTION + " TEXT,"
+                    + VENUE_ID + " INTEGER,"
+                    + TEACHER_ID + " INTEGER,"
+                    + AUDIO_URL + " TEXT,"
+                    + DURATION_IN_MINUTES + " REAL,"
+                    + UPDATE_DATE + " TEXT,"
+                    + RECORDING_DATE + " TEXT,"
+                    + RETREAT_ID + " INTEGER,"
+                    + FILE_PATH + " TEXT NOT NULL DEFAULT ''" // empty if not downloaded
+                    + ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
@@ -172,7 +175,6 @@ public class DBManager extends SQLiteOpenHelper {
             Log.i("dbManager", "Trying to populate with pre-seeded database");
             try {
                 // Copy the pre-seeded database if it exists
-
                 InputStream dbIn = context.getAssets().open(DB_NAME);
                 dbFile.getParentFile().mkdirs();
                 OutputStream dbOut = new FileOutputStream(dbFile);
@@ -237,6 +239,13 @@ public class DBManager extends SQLiteOpenHelper {
             // DB version 30 added the "retreat" table (see #23)
             db.execSQL(C.Retreat.DROP_TABLE);
             db.execSQL(C.Retreat.CREATE_TABLE);
+
+            // DB version 31 added the "file_path" column to the talk table
+            // DB version 32 changed the column `recording_date` to `rec_date` in the talk table
+            // see (#30 for v32)
+            db.execSQL(C.Talk.DROP_TABLE);
+            db.execSQL(C.Talk.CREATE_TABLE);
+
 
             // Clear teachers edition to force reloading from server
             ContentValues v = new ContentValues();
@@ -320,4 +329,29 @@ public class DBManager extends SQLiteOpenHelper {
         db.delete(starTableName, "_id="+id, null);
     }
 
+    /**
+     * Updates the Talk table to set the "file_path" column to the talk path
+     * @param talk
+     * @return # of rows updated
+     */
+    public int addDownload(Talk talk) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(C.Talk.FILE_PATH, talk.getPath());
+        String whereClause = C.Talk.ID + "=" + talk.getId();
+        return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
+    }
+
+    /**
+     * Updates the Talk table to set the "file_path" column to the empty string
+     * @param talk
+     * @return # of rows updated
+     */
+    public int deleteTalk(Talk talk) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(C.Talk.FILE_PATH, ""); // a path of "" indicates that the talk is not downloaded
+        String whereClause = C.Talk.ID + "=" + talk.getId();
+        return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
+    }
 }

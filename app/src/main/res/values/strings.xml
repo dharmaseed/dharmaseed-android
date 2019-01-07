@@ -33,4 +33,8 @@
     <string name="drawer_retreats">Retreats</string>
     <string name="retreat_search_label">Retreat Search</string>
     <string name="play_talk_label">Play Talk</string>
+    <string name="download_content_desc">Download Talk</string>
+    <string name="delete_talk_confirm">Delete Talk?</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 </resources>

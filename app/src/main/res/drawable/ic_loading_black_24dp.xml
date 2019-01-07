@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:tint="#527550"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24.0"
+        android:viewportHeight="24.0">
+    <group android:name="dots" >
+        <group android:name="first">
+            <path
+                android:fillColor="#FF000000"
+                android:pathData="M6,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z"/>
+        </group>
+        <group android:name="second">
+            <path
+                android:fillColor="#FF000000"
+                android:pathData="M12,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z"/>
+        </group>
+        <group android:name="third">
+            <path
+                android:fillColor="#FF000000"
+                android:pathData="M18,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z"/>
+        </group>
+    </group>
+</vector>
