@@ -220,6 +220,7 @@ public class NavigationActivity extends AppCompatActivity
     void setViewMode(int viewMode) {
         setViewMode(viewMode, true);
     }
+
     void setViewMode(int viewMode, boolean setMenuCheck) {
         this.viewMode = viewMode;
         header.setVisibility(View.GONE);

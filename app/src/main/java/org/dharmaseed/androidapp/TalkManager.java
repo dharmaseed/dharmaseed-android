@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Writes a talk to a file in external storage
+ * Manages downloaded talks
  * @author jakewilson
  */
 public abstract class TalkManager {
@@ -26,12 +26,6 @@ public abstract class TalkManager {
     public static final String FILE_PREFIX = "ds_";
 
     private static final String LOG_TAG = "TalkManager";
-
-    // the key for the "location" field in the HTTP Header
-    // it looks like most of the talks on dharma seed return a 301 or 302
-    // to the _actual_ download link. So we need to follow this redirect
-    // and download the file at that location
-    public static final int HEADER_FIELD_KEY_LOCATION = 3;
 
     public static final Long FAILURE = -1l;
 
@@ -93,6 +87,9 @@ public abstract class TalkManager {
         return FAILURE;
     }
 
+    /**
+     * @return the directory where we store talks
+     */
     public static File getDir() {
         File file = new File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
@@ -126,7 +123,7 @@ public abstract class TalkManager {
      * @param talk the talk to delete
      * @return whether the talk was deleted or not
      */
-    public static boolean deleteTalk(Talk talk) {
+    public static boolean delete(Talk talk) {
         boolean result = true;
         File file = new File(talk.getPath());
 
