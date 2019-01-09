@@ -37,4 +37,6 @@
     <string name="delete_talk_confirm">Delete Talk?</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="download_only">Download Only</string>
+    <string name="download_only_title">Downloaded only</string>
 </resources>

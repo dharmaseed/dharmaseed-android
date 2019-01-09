@@ -18,9 +18,12 @@
   ~
   -->
 
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
+    <group
+        android:checkableBehavior="single"
+        android:id="@+id/menu_top" >
         <item
             android:id="@+id/nav_talks"
             android:icon="@drawable/mic"
@@ -39,6 +42,15 @@
             android:id="@+id/nav_centers"
             android:icon="@drawable/home"
             android:title="@string/drawer_centers" />
+    </group>
+
+    <group
+        android:id="@+id/menu_bottom" >
+        <item
+            android:id="@+id/download_only"
+            android:title="@string/download_only_title"
+            app:actionLayout="@layout/switch_item"
+            app:showAsAction="always" />
     </group>
 
 </menu>

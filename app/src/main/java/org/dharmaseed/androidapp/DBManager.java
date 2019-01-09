@@ -41,7 +41,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 31;
+    private static final int DB_VERSION = 33;
     private static final String DB_NAME = "Dharmaseed.db";
 
     // Database contract class
@@ -153,6 +153,14 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
         }
 
+        public abstract class DownloadedTalks {
+            public static final String ID = "_id";
+
+            public static final String TABLE_NAME = "downloaded_talks";
+            public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY)";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
+        }
+
         public abstract class Edition {
             public static final String TABLE = "_table";
             public static final String EDITION = "edition";
@@ -208,6 +216,7 @@ public class DBManager extends SQLiteOpenHelper {
         db.execSQL(C.TalkStars.CREATE_TABLE);
         db.execSQL(C.TeacherStars.CREATE_TABLE);
         db.execSQL(C.CenterStars.CREATE_TABLE);
+        db.execSQL(C.DownloadedTalks.CREATE_TABLE);
         db.execSQL(C.Edition.CREATE_TABLE);
 
         // Populate editions table with initial data
@@ -246,6 +255,9 @@ public class DBManager extends SQLiteOpenHelper {
             db.execSQL(C.Talk.DROP_TABLE);
             db.execSQL(C.Talk.CREATE_TABLE);
 
+            // DB version 33 added the "downloaded_talks" table (see #32)
+            db.execSQL(C.DownloadedTalks.DROP_TABLE);
+            db.execSQL(C.DownloadedTalks.CREATE_TABLE);
 
             // Clear teachers edition to force reloading from server
             ContentValues v = new ContentValues();
@@ -331,27 +343,47 @@ public class DBManager extends SQLiteOpenHelper {
 
     /**
      * Updates the Talk table to set the "file_path" column to the talk path
-     * @param talk
-     * @return # of rows updated
+     * also add the Talk ID to the downloaded_talks table
+     * @param talk the talk to add
+     * @return true if all rows were updated successfully, false if at least one was not
      */
-    public int addDownload(Talk talk) {
+    public boolean addDownload(Talk talk) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(C.Talk.FILE_PATH, talk.getPath());
         String whereClause = C.Talk.ID + "=" + talk.getId();
-        return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
+        if (db.update(C.Talk.TABLE_NAME, cv, whereClause, null) != 1)
+            return false;
+
+        // add id to downloaded_talks table
+        cv.clear();
+        cv.put(C.DownloadedTalks.ID, talk.getId());
+        // insert returns a -1 on error
+        if (db.insert(C.DownloadedTalks.TABLE_NAME, null, cv) == -1)
+            return false;
+
+        return true;
     }
 
     /**
-     * Updates the Talk table to set the "file_path" column to the empty string
-     * @param talk
-     * @return # of rows updated
+     * Updates the Talk table to set the "file_path" column to the empty string and removes
+     * the talk id from the downloaded_talks table
+     * @param talk the talk to delete
+     * @return true if all rows were updated successfully, false if at least one was not
      */
-    public int deleteTalk(Talk talk) {
+    public boolean deleteTalk(Talk talk) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(C.Talk.FILE_PATH, ""); // a path of "" indicates that the talk is not downloaded
         String whereClause = C.Talk.ID + "=" + talk.getId();
-        return db.update(C.Talk.TABLE_NAME, cv, whereClause, null);
+        if (db.update(C.Talk.TABLE_NAME, cv, whereClause, null) != 1)
+            return false;
+
+        // remove row from downloaded_talks table
+        whereClause = C.DownloadedTalks.ID + "=" + talk.getId();
+        if (db.delete(C.DownloadedTalks.TABLE_NAME, whereClause, null) != 1)
+            return false;
+
+        return true;
     }
 }

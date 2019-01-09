@@ -431,7 +431,7 @@ public class PlayTalkActivity extends AppCompatActivity
      * Deletes the talk from the FS and removes the path from the DB row
      */
     public void deleteTalk() {
-        if (!TalkManager.deleteTalk(talk)) {
+        if (!TalkManager.delete(talk)) {
             showToast("Unable to delete '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
         } else {
             dbManager.deleteTalk(talk);
@@ -504,7 +504,7 @@ public class PlayTalkActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(Long size) {
             if (size > 0) {
-                if (dbManager.addDownload(this.talk) == 1) {
+                if (dbManager.addDownload(this.talk)) {
                     showToast("'" + talk.getTitle() + "' downloaded.", Toast.LENGTH_SHORT);
                 } else {
                     // remove talk from fs because we couldn't update the DB
