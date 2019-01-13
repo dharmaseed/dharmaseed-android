@@ -51,12 +51,14 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -93,6 +95,8 @@ public class NavigationActivity extends AppCompatActivity
     private static final String LOG_TAG = "NavigationActivity";
 
     private boolean downloadedOnly;
+
+    private TalkRepository talkRepository;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -176,6 +180,7 @@ public class NavigationActivity extends AppCompatActivity
         setViewMode(VIEW_MODE_TALKS);
         setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
+        talkRepository = new TalkRepository(dbManager);
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -280,6 +285,12 @@ public class NavigationActivity extends AppCompatActivity
             switch (detailMode) {
 
                 case DETAIL_MODE_TEACHER:
+                    Log.d(LOG_TAG, "Selecting a teacher");
+                    cursor = talkRepository.getTalksByTeacher((int)id);
+                    while (cursor.moveToNext()) {
+                        String teacher = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE));
+                        Log.d(LOG_TAG, teacher);
+                    }
                     getSupportActionBar().setTitle("Teacher Detail");
                     query = String.format("SELECT * FROM %s WHERE %s=%s",
                             DBManager.C.Teacher.TABLE_NAME,
@@ -670,119 +681,30 @@ public class NavigationActivity extends AppCompatActivity
 
     }
 
-
-    void updateDisplayedTalks() {
-        ArrayList<String> searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
-        if(!extraSearchTerms.equals("")) searchTerms.add(extraSearchTerms);
-        String[] subqueries = new String[searchTerms.size()];
-        for(int i=0; i < searchTerms.size(); i++) {
-            String subquery = String.format(" (%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.TITLE,
-                    searchTerms.get(i),
-
-                    // OR
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.DESCRIPTION,
-                    searchTerms.get(i),
-
-                    // OR
-                    DBManager.C.Teacher.TABLE_NAME,
-                    DBManager.C.Teacher.NAME,
-                    searchTerms.get(i),
-
-                    // OR
-                    DBManager.C.Center.TABLE_NAME,
-                    DBManager.C.Center.NAME,
-                    searchTerms.get(i));
-
-            subqueries[i] = subquery;
+    /**
+     * Updates the view with talks by search term, and whether talks are downloaded/starred
+     */
+    void updateDisplayedTalks()
+    {
+        ArrayList<String> searchTerms = null;
+        if (searchBox.getText().length() > 0)
+        {
+            searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
+            if(!extraSearchTerms.equals("")) searchTerms.add(extraSearchTerms);
         }
-        String searchSubquery = TextUtils.join(" AND ", subqueries);
-
-        String starFilterTable = "";
-        String starFilterSubquery = "";
-        if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
-            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.ID,
-                    DBManager.C.TalkStars.TABLE_NAME,
-                    DBManager.C.TalkStars.ID
-            );
+        Cursor cursor = talkRepository.getTalkAdapterData(searchTerms, starFilterOn, downloadedOnly);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
         }
-
-        String downloadedOnlyTable = "";
-        String downloadedOnlySubquery = "";
-        if (downloadedOnly) {
-            downloadedOnlyTable = String.format(" , %s ", DBManager.C.DownloadedTalks.TABLE_NAME);
-            downloadedOnlySubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.ID,
-                    DBManager.C.DownloadedTalks.TABLE_NAME,
-                    DBManager.C.DownloadedTalks.ID
-            );
+        else
+        {
+            Toast.makeText(
+                    getApplicationContext(),
+                    "There was a proble with the query",
+                    Toast.LENGTH_SHORT
+            ).show();
         }
-
-        final String query = String.format(
-                "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
-                        "FROM %s, %s, %s %s %s " +
-                        "WHERE %s.%s=%s.%s " +
-                        "AND %s.%s='true' " +
-                        "AND %s.%s=%s.%s " +
-                        "AND %s %s %s " +
-                        "ORDER BY %s.%s DESC",
-                // SELECT
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.ID,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TITLE,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-
-                // FROM
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Center.TABLE_NAME,
-                starFilterTable,
-                downloadedOnlyTable,
-
-                // WHERE
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-
-                // AND
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.PUBLIC,
-
-                // AND
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.VENUE_ID,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.ID,
-
-                // AND
-                // Search filter sub-query
-                searchSubquery,
-
-                // Star filter sub-query
-                starFilterSubquery,
-
-                // downloaded only talks
-                downloadedOnlySubquery,
-
-                // ORDER BY
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.RECORDING_DATE
-        );
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
-
     }
 
 }
