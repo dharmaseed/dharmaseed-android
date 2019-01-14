@@ -323,7 +323,7 @@ public class NavigationActivity extends AppCompatActivity
 
     public void displayTalksByTeacher(long id)
     {
-        Cursor cursor = talkRepository.getTalksByTeacher(id, starFilterOn, downloadedOnly);
+        Cursor cursor = talkRepository.getTalksByTeacher(getSearchTerms(), id, starFilterOn, downloadedOnly);
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -348,7 +348,7 @@ public class NavigationActivity extends AppCompatActivity
 
     private void displayTalksByCenter(long id)
     {
-        Cursor cursor = talkRepository.getTalksByCenter(id, starFilterOn);
+        Cursor cursor = talkRepository.getTalksByCenter(getSearchTerms(), id, starFilterOn, downloadedOnly);
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -552,15 +552,11 @@ public class NavigationActivity extends AppCompatActivity
      * Called when the "Downloaded only" switch in the nav drawer is pressed
      * @param view
      */
-    public void downloadOnlySwitchClicked(View view) {
+    public void downloadOnlySwitchClicked(View view)
+    {
         Switch downloadSwitch = (Switch) view;
-        if (downloadSwitch.isChecked()) {
-            downloadedOnly = true;
-        } else {
-            downloadedOnly = false;
-        }
-        if (viewMode == VIEW_MODE_TALKS)
-            updateDisplayedTalks();
+        downloadedOnly = downloadSwitch.isChecked();
+        updateDisplayedData();
     }
 
     public void headingDetailCollapseExpandButtonClicked(View view) {

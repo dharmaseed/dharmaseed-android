@@ -90,10 +90,10 @@ public class TalkRepository extends Repository
 
             String[] selectionColumns = new String[]
             {
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE,
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DESCRIPTION,
-                    DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME,
-                    DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DESCRIPTION,
+                DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME,
+                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME
             };
 
             where += getSearchStatement(searchTerms, selectionColumns);
@@ -118,12 +118,18 @@ public class TalkRepository extends Repository
     }
 
     /**
+     * @param searchTerms
      * @param teacherId the teacher id
      * @param isStarred
      * @param isDownloaded
      * @return all talks with by a teacher
      */
-    public Cursor getTalksByTeacher(long teacherId, boolean isStarred, boolean isDownloaded)
+    public Cursor getTalksByTeacher(
+            List<String> searchTerms,
+            long teacherId,
+            boolean isStarred,
+            boolean isDownloaded
+    )
     {
         String query = "SELECT talks._id, talks.title, talks.teacher_id, teachers.name, talks.rec_date FROM talks";
 
@@ -139,19 +145,45 @@ public class TalkRepository extends Repository
 
         query += joinTalkIdTeacherId();
 
-        query += String.format(
-                " WHERE %s.%s = %s ",
+        String where = " WHERE ";
+
+        if (searchTerms != null && !searchTerms.isEmpty())
+        {
+            String[] selectionColumns = new String[]
+            {
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DESCRIPTION,
+            };
+
+            where += getSearchStatement(searchTerms, selectionColumns) + " AND ";
+        }
+
+        where += String.format(
+                " %s.%s = %s ",
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.TEACHER_ID,
                 teacherId
         );
 
-        query += " ORDER BY talks.rec_date DESC ";
+        query += where + " ORDER BY talks.rec_date DESC ";
 
         return queryIfNotNull(query, null);
     }
 
-    public Cursor getTalksByCenter(long venueId, boolean isStarred)
+    /**
+     *
+     * @param searchTerms
+     * @param venueId
+     * @param isStarred
+     * @param isDownloaded
+     * @return talks filtered by venue id, search terms, stars and downloads
+     */
+    public Cursor getTalksByCenter(
+            List<String> searchTerms,
+            long venueId,
+            boolean isStarred,
+            boolean isDownloaded
+    )
     {
         String query = "SELECT talks._id, talks.title, talks.teacher_id, centers.name, talks.rec_date FROM talks";
 
@@ -160,16 +192,34 @@ public class TalkRepository extends Repository
             query += joinStarredTalks();
         }
 
+        if (isDownloaded)
+        {
+            query += joinDownloadedTalks();
+        }
+
         query += joinTalkIdVenueId();
 
-        query += String.format(
-                " WHERE %s.%s = %s ",
+        String where = " WHERE ";
+
+        if (searchTerms != null && !searchTerms.isEmpty())
+        {
+            String[] selectionColumns = new String[]
+            {
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DESCRIPTION,
+            };
+
+            where += getSearchStatement(searchTerms, selectionColumns) + " AND ";
+        }
+
+        where += String.format(
+                " %s.%s = %s ",
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.VENUE_ID,
                 venueId
         );
 
-        query += " ORDER BY talks.rec_date DESC ";
+        query += where + " ORDER BY talks.rec_date DESC ";
 
         return queryIfNotNull(query, null);
     }

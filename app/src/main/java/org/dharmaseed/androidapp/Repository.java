@@ -74,5 +74,4 @@ public abstract class Repository
         );
     }
 
-
 }
