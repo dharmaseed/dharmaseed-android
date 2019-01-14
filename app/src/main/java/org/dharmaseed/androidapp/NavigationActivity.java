@@ -621,61 +621,17 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     void updateDisplayedTeachers() {
-        // TODO: refactor common logic in updateDisplayedXXX methods
-        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
-        String[] subqueries = new String[searchTerms.length];
-        for(int i=0; i < searchTerms.length; i++) {
-            String subquery = String.format(" (%s LIKE '%%%s%%') ",
-                    DBManager.C.Teacher.NAME,
-                    searchTerms[i]);
-
-            subqueries[i] = subquery;
+        Cursor cursor = teacherRepository.getTeachers(getSearchTerms(), starFilterOn);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
         }
-        String searchSubquery = TextUtils.join(" AND ", subqueries);
-
-        String starFilterTable = "";
-        String starFilterSubquery = "";
-        if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.TeacherStars.TABLE_NAME);
-            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Teacher.TABLE_NAME,
-                    DBManager.C.Teacher.ID,
-                    DBManager.C.TeacherStars.TABLE_NAME,
-                    DBManager.C.TeacherStars.ID
-            );
+        else
+        {
+            showToast("There was a problem displaying teachers.");
+            setViewMode(VIEW_MODE_TALKS);
+            updateDisplayedData();
         }
-
-
-        final String query = String.format(
-                "SELECT %s.%s, %s.%s " +
-                        "FROM %s %s " +
-                        "WHERE %s %s " +
-                        "AND %s='true' " +
-                        "ORDER BY %s DESC, %s ASC",
-                // SELECT
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-
-                // FROM
-                DBManager.C.Teacher.TABLE_NAME,
-                starFilterTable,
-
-                // WHERE
-                searchSubquery,
-                starFilterSubquery,
-
-                // AND
-                DBManager.C.Teacher.PUBLIC,
-
-                // ORDER BY
-                DBManager.C.Teacher.MONASTIC,
-                DBManager.C.Teacher.NAME
-        );
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
 
     }
 

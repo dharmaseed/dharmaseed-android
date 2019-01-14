@@ -88,8 +88,6 @@ public class TalkRepository extends Repository
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.VENUE_ID
             );
 
-            List<String> subqueries = new ArrayList<>();
-
             String[] selectionColumns = new String[]
             {
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE,
@@ -98,18 +96,7 @@ public class TalkRepository extends Repository
                     DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME
             };
 
-            // for each term, generate a series of LIKE statements for each selection column
-            for (String term : searchTerms)
-            {
-                List<String> subquery = new ArrayList<>(selectionColumns.length);
-                for (String col : selectionColumns)
-                {
-                    subquery.add(col + " LIKE '%" + term + "%'");
-                }
-                subqueries.add("(" + TextUtils.join(" OR ", subquery) + ")");
-            }
-
-            where += TextUtils.join(" AND ", subqueries) + " ";
+            where += getSearchStatement(searchTerms, selectionColumns);
         }
 
         if (!innerJoin.isEmpty())
@@ -128,21 +115,6 @@ public class TalkRepository extends Repository
                 ;
         Log.d(LOG_TAG, query);
         return queryIfNotNull(query, null);
-    }
-
-    /**
-     * Returns an INNER JOIN statement
-     * @param table
-     * @param firstId should be in the form <table_name>._id
-     * @param secondId should be in the form <table_name>._id
-     * @return
-     */
-    private String innerJoin(String table, String firstId, String secondId)
-    {
-        return String.format(
-                " INNER JOIN %s ON %s = %s ",
-                table, firstId, secondId
-        );
     }
 
     /**
