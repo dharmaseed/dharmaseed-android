@@ -8,38 +8,15 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TalkRepository {
-
-    private DBManager dbManager;
+public class TalkRepository extends Repository
+{
 
     private static final String LOG_TAG = "TalkRepository";
+    private DBManager dbManager;
 
-    public TalkRepository(DBManager dbManager) {
-        this.dbManager = dbManager;
-    }
-
-    /**
-     * @return every talk in the DB
-     */
-    public Cursor getTalks() {
-        return null;
-    }
-
-    /**
-     * @param searchTerms the term to filter the results by
-     * @return every talk in the DB filtered by a search term
-     */
-    public Cursor getTalks(List<String> searchTerms) {
-        return null;
-    }
-
-    /**
-     * @param searchTerms the term to filter by
-     * @param isStarred whether the talk is starred or not
-     * @return every talk in the db filtered by search term and is starred
-     */
-    public Cursor getTalks(List<String> searchTerms, boolean isStarred) {
-        return null;
+    public TalkRepository(DBManager dbManager)
+    {
+        super(dbManager);
     }
 
     /**
@@ -70,7 +47,7 @@ public class TalkRepository {
      * @param isDownloaded whether the talk is downloaded
      * @return every talk in the db filtered by search term, is starred, and is downloaded
      */
-    public Cursor getTalks(
+    private Cursor getTalks(
            List<String> columns,
            List<String> searchTerms,
            boolean isStarred,
@@ -89,28 +66,16 @@ public class TalkRepository {
 
         String query = "SELECT " + queryColumns + " FROM " + DBManager.C.Talk.TABLE_NAME;
 
-        String innerJoin = innerJoin(
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID
-        );
+        String innerJoin = joinTalkIdTeacherId();
 
         if (isStarred)
         {
-            innerJoin += innerJoin(
-                    DBManager.C.TalkStars.TABLE_NAME,
-                    DBManager.C.TalkStars.TABLE_NAME + "." + DBManager.C.TalkStars.ID,
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-            );
+            innerJoin += joinStarredTalks();
         }
 
         if (isDownloaded)
         {
-            innerJoin += innerJoin(
-                    DBManager.C.DownloadedTalks.TABLE_NAME,
-                    DBManager.C.DownloadedTalks.TABLE_NAME + "." + DBManager.C.DownloadedTalks.ID,
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-            );
+            innerJoin += joinDownloadedTalks();
         }
 
         String where = "";
@@ -182,30 +147,61 @@ public class TalkRepository {
 
     /**
      * @param teacherId the teacher id
+     * @param isStarred
+     * @param isDownloaded
      * @return all talks with by a teacher
      */
-    public Cursor getTalksByTeacher(int teacherId) {
-        String query =
-                "SELECT * FROM " + DBManager.C.Talk.TABLE_NAME
-                + " WHERE " + DBManager.C.Talk.TEACHER_ID + " = " + teacherId
-                ;
+    public Cursor getTalksByTeacher(int teacherId, boolean isStarred, boolean isDownloaded)
+    {
+        String query = "SELECT * FROM " + DBManager.C.Talk.TABLE_NAME;
+
+        if (isStarred)
+        {
+            query += joinStarredTalks();
+        }
+
+        if (isDownloaded)
+        {
+            query += joinDownloadedTalks();
+        }
+
+        query += joinTalkIdTeacherId();
+
+        query += String.format(
+                " WHERE %s.%s = %s ",
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TEACHER_ID,
+                teacherId
+        );
 
         return queryIfNotNull(query, null);
     }
 
-    /**
-     * Runs a query after checking if the DB is not null
-     * @param query
-     * @param selectionArgs
-     * @return
-     */
-    private Cursor queryIfNotNull(String query, String[] selectionArgs) {
-        SQLiteDatabase db = dbManager.getReadableDatabase();
-        Cursor cursor = null;
-        if (db != null) {
-            cursor = db.rawQuery(query, selectionArgs);
-        }
-        return cursor;
+    private String joinStarredTalks()
+    {
+        return innerJoin(
+                DBManager.C.TalkStars.TABLE_NAME,
+                DBManager.C.TalkStars.TABLE_NAME + "." + DBManager.C.TalkStars.ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
+        );
+    }
+
+    private String joinDownloadedTalks()
+    {
+        return innerJoin(
+                DBManager.C.DownloadedTalks.TABLE_NAME,
+                DBManager.C.DownloadedTalks.TABLE_NAME + "." + DBManager.C.DownloadedTalks.ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
+        );
+    }
+
+    private String joinTalkIdTeacherId()
+    {
+        return innerJoin(
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID
+        );
     }
 
 }

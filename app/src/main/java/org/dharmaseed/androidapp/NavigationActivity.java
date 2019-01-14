@@ -53,12 +53,9 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -97,6 +94,7 @@ public class NavigationActivity extends AppCompatActivity
     private boolean downloadedOnly;
 
     private TalkRepository talkRepository;
+    private TeacherRepository teacherRepository;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -181,6 +179,7 @@ public class NavigationActivity extends AppCompatActivity
         setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
         talkRepository = new TalkRepository(dbManager);
+        teacherRepository = new TeacherRepository(dbManager);
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -285,19 +284,8 @@ public class NavigationActivity extends AppCompatActivity
             switch (detailMode) {
 
                 case DETAIL_MODE_TEACHER:
-                    Log.d(LOG_TAG, "Selecting a teacher");
-                    cursor = talkRepository.getTalksByTeacher((int)id);
-                    while (cursor.moveToNext()) {
-                        String teacher = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE));
-                        Log.d(LOG_TAG, teacher);
-                    }
-                    getSupportActionBar().setTitle("Teacher Detail");
-                    query = String.format("SELECT * FROM %s WHERE %s=%s",
-                            DBManager.C.Teacher.TABLE_NAME,
-                            DBManager.C.Teacher.ID, id);
-                    headerIdx = DBManager.C.Teacher.NAME;
-                    detailIdx = DBManager.C.Teacher.BIO;
-                    break;
+                    displayTalksByTeacher((int) id);
+                    return;
 
                 case DETAIL_MODE_CENTER:
                     getSupportActionBar().setTitle("Center Detail");
@@ -321,6 +309,26 @@ public class NavigationActivity extends AppCompatActivity
             cursor.close();
             updateDisplayedData();
 
+        }
+    }
+
+    public void displayTalksByTeacher(int id)
+    {
+        getSupportActionBar().setTitle("Teacher Detail");
+        Cursor cursor = teacherRepository.getTeacherById((int)id);
+        Teacher teacher = Teacher.create(cursor);
+        headerPrimary.setText(teacher.getName());
+        headerDescription.setText(teacher.getBio());
+
+        cursor = talkRepository.getTalksByTeacher(id, starFilterOn, downloadedOnly);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
+        }
+        else
+        {
+            showToast("There was a problem fetching talks by " + teacher.getName() + ".");
+            updateDisplayedTeachers();
         }
     }
 
@@ -699,12 +707,21 @@ public class NavigationActivity extends AppCompatActivity
         }
         else
         {
-            Toast.makeText(
-                    getApplicationContext(),
-                    "There was a proble with the query",
-                    Toast.LENGTH_SHORT
-            ).show();
+            showToast("There was a problem with the query");
         }
+    }
+
+    /**
+     * Shows a short toast with text=message
+     * @param message
+     */
+    public void showToast(String message)
+    {
+        Toast.makeText(
+                getApplicationContext(),
+                message,
+                Toast.LENGTH_SHORT
+        ).show();
     }
 
 }
