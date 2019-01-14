@@ -24,11 +24,11 @@ android {
     buildToolsVersion '28.0.3'
 
     defaultConfig {
-        applicationId "org.dharmaseed.androidapp"
+        applicationId "org.dharmaseed.android"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 6
-        versionName "1.0.0-rc3"
+        versionCode 7
+        versionName "1.0.0-rc4"
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
