@@ -640,56 +640,19 @@ public class NavigationActivity extends AppCompatActivity
         }
     }
 
-    void updateDisplayedCenters() {
-        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
-        String[] subqueries = new String[searchTerms.length];
-        for(int i=0; i < searchTerms.length; i++) {
-            String subquery = String.format(" (%s LIKE '%%%s%%') ",
-                    DBManager.C.Center.NAME,
-                    searchTerms[i]);
-
-            subqueries[i] = subquery;
+    void updateDisplayedCenters()
+    {
+        Cursor cursor = centerRepository.getCenters(getSearchTerms(), starFilterOn);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
         }
-        String searchSubquery = TextUtils.join(" AND ", subqueries);
-
-        String starFilterTable = "";
-        String starFilterSubquery = "";
-        if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.CenterStars.TABLE_NAME);
-            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Center.TABLE_NAME,
-                    DBManager.C.Center.ID,
-                    DBManager.C.CenterStars.TABLE_NAME,
-                    DBManager.C.CenterStars.ID
-            );
+        else
+        {
+            showToast("There was a problem with the query");
+            setViewMode(VIEW_MODE_TALKS);
+            updateDisplayedData();
         }
-
-        final String query = String.format(
-                "SELECT %s.%s, %s.%s " +
-                        "FROM %s %s " +
-                        "WHERE %s %s " +
-                        "ORDER BY %s ASC",
-                // SELECT
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.ID,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.NAME,
-
-                // FROM
-                DBManager.C.Center.TABLE_NAME,
-                starFilterTable,
-
-                // WHERE
-                searchSubquery,
-                starFilterSubquery,
-
-                // ORDER BY
-                DBManager.C.Center.NAME
-        );
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
-
     }
 
     /**
