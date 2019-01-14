@@ -18,7 +18,7 @@ public class TeacherRepository extends Repository
      * @param id the id to search for
      * @return all teachers with <id>
      */
-    public Cursor getTeacherById(int id)
+    public Cursor getTeacherById(long id)
     {
         String query = String.format(
                 "SELECT * FROM %s WHERE %s = %s",

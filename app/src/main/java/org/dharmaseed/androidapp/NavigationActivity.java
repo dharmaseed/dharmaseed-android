@@ -56,6 +56,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -78,10 +79,18 @@ public class NavigationActivity extends AppCompatActivity
     CursorAdapter cursorAdapter;
     SwipeRefreshLayout refreshLayout;
 
-    static final int VIEW_MODE_TALKS = 0, VIEW_MODE_TEACHERS = 1, VIEW_MODE_CENTERS = 2;
-    int viewMode;
+    private int viewMode;
 
-    static final int DETAIL_MODE_NONE = 0, DETAIL_MODE_TEACHER = 1, DETAIL_MODE_CENTER = 2;
+    private static final int VIEW_MODE_TALKS          = 0;
+    private static final int VIEW_MODE_TEACHERS       = 1;
+    private static final int VIEW_MODE_CENTERS        = 2;
+    private static final int VIEW_MODE_TEACHER_TALKS  = 3;
+    private static final int VIEW_MODE_CENTER_TALKS   = 4;
+
+    private static final int DETAIL_MODE_NONE    = 0;
+    private static final int DETAIL_MODE_TEACHER = 1;
+    private static final int DETAIL_MODE_CENTER  = 2;
+
     int detailMode;
     long detailId;
 
@@ -238,6 +247,8 @@ public class NavigationActivity extends AppCompatActivity
         switch(viewMode) {
 
             case VIEW_MODE_TALKS:
+            case VIEW_MODE_TEACHER_TALKS:
+            case VIEW_MODE_CENTER_TALKS:
                 getSupportActionBar().setTitle("Talks");
                 cursorAdapter = new TalkCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
@@ -284,10 +295,13 @@ public class NavigationActivity extends AppCompatActivity
             switch (detailMode) {
 
                 case DETAIL_MODE_TEACHER:
-                    displayTalksByTeacher((int) id);
+                    setViewMode(VIEW_MODE_TEACHER_TALKS);
+                    setTeacherHeader(id);
+                    displayTalksByTeacher(id);
                     return;
 
                 case DETAIL_MODE_CENTER:
+                    //setViewMode(VIEW_MODE_CENTER_TALKS);
                     getSupportActionBar().setTitle("Center Detail");
                     query = String.format("SELECT * FROM %s WHERE %s=%s",
                             DBManager.C.Center.TABLE_NAME,
@@ -312,22 +326,27 @@ public class NavigationActivity extends AppCompatActivity
         }
     }
 
-    public void displayTalksByTeacher(int id)
+    private void setTeacherHeader(long id)
     {
         getSupportActionBar().setTitle("Teacher Detail");
-        Cursor cursor = teacherRepository.getTeacherById((int)id);
+        Cursor cursor = teacherRepository.getTeacherById(id);
         Teacher teacher = Teacher.create(cursor);
+        cursor.close();
+
         headerPrimary.setText(teacher.getName());
         headerDescription.setText(teacher.getBio());
+    }
 
-        cursor = talkRepository.getTalksByTeacher(id, starFilterOn, downloadedOnly);
+    public void displayTalksByTeacher(long id)
+    {
+        Cursor cursor = talkRepository.getTalksByTeacher(id, starFilterOn, downloadedOnly);
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
         }
         else
         {
-            showToast("There was a problem fetching talks by " + teacher.getName() + ".");
+            showToast("There was a problem fetching talks by the teacher.");
             updateDisplayedTeachers();
         }
     }
@@ -354,22 +373,38 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     @Override
-    public void onBackPressed() {
+    public void onBackPressed()
+    {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
+        if (drawer.isDrawerOpen(GravityCompat.START))
+        {
             drawer.closeDrawer(GravityCompat.START);
+            return;
         }
-        else if (detailMode == DETAIL_MODE_TEACHER) {
-            setViewMode(VIEW_MODE_TEACHERS);
-            updateDisplayedData();
+
+        switch (viewMode)
+        {
+            case VIEW_MODE_TALKS:
+                // nowhere to go
+                break;
+            case VIEW_MODE_TEACHERS:
+                setViewMode(VIEW_MODE_TALKS);
+                break;
+            case VIEW_MODE_TEACHER_TALKS:
+                setViewMode(VIEW_MODE_TEACHERS);
+                break;
+            case VIEW_MODE_CENTERS:
+                setViewMode(VIEW_MODE_TALKS);
+                break;
+            case VIEW_MODE_CENTER_TALKS:
+                setViewMode(VIEW_MODE_CENTERS);
+                break;
+            default:
+                super.onBackPressed();
+                return;
         }
-        else if (detailMode == DETAIL_MODE_CENTER) {
-            setViewMode(VIEW_MODE_CENTERS);
-            updateDisplayedData();
-        }
-        else {
-            super.onBackPressed();
-        }
+
+        updateDisplayedData();
     }
 
     @Override
@@ -435,6 +470,8 @@ public class NavigationActivity extends AppCompatActivity
 
         switch(viewMode) {
             case VIEW_MODE_TALKS:
+            case VIEW_MODE_TEACHER_TALKS:
+            case VIEW_MODE_CENTER_TALKS:
                 Intent intent = new Intent(ctx, PlayTalkActivity.class);
                 intent.putExtra(TALK_DETAIL_EXTRA, id);
                 ctx.startActivity(intent);
@@ -575,6 +612,11 @@ public class NavigationActivity extends AppCompatActivity
             case VIEW_MODE_CENTERS:
                 updateDisplayedCenters();
                 break;
+            case VIEW_MODE_TEACHER_TALKS:
+                displayTalksByTeacher(detailId);
+                break;
+            case VIEW_MODE_CENTER_TALKS:
+                break;
         }
     }
 
@@ -692,15 +734,9 @@ public class NavigationActivity extends AppCompatActivity
     /**
      * Updates the view with talks by search term, and whether talks are downloaded/starred
      */
-    void updateDisplayedTalks()
+    private void updateDisplayedTalks()
     {
-        ArrayList<String> searchTerms = null;
-        if (searchBox.getText().length() > 0)
-        {
-            searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
-            if(!extraSearchTerms.equals("")) searchTerms.add(extraSearchTerms);
-        }
-        Cursor cursor = talkRepository.getTalkAdapterData(searchTerms, starFilterOn, downloadedOnly);
+        Cursor cursor = talkRepository.getTalkAdapterData(getSearchTerms(), starFilterOn, downloadedOnly);
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -709,6 +745,24 @@ public class NavigationActivity extends AppCompatActivity
         {
             showToast("There was a problem with the query");
         }
+    }
+
+    /**
+     * @return the list of search terms in the search box or null if empty
+     */
+    private List<String> getSearchTerms()
+    {
+        ArrayList<String> searchTerms = null;
+        if (searchBox.getText().length() > 0)
+        {
+            searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
+            if (!extraSearchTerms.equals(""))
+            {
+                searchTerms.add(extraSearchTerms);
+            }
+        }
+
+        return searchTerms;
     }
 
     /**

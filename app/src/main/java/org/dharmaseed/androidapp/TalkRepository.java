@@ -151,9 +151,9 @@ public class TalkRepository extends Repository
      * @param isDownloaded
      * @return all talks with by a teacher
      */
-    public Cursor getTalksByTeacher(int teacherId, boolean isStarred, boolean isDownloaded)
+    public Cursor getTalksByTeacher(long teacherId, boolean isStarred, boolean isDownloaded)
     {
-        String query = "SELECT * FROM " + DBManager.C.Talk.TABLE_NAME;
+        String query = "SELECT talks._id, talks.title, talks.teacher_id, teachers.name, talks.rec_date FROM talks";
 
         if (isStarred)
         {
@@ -173,6 +173,8 @@ public class TalkRepository extends Repository
                 DBManager.C.Talk.TEACHER_ID,
                 teacherId
         );
+
+        query += " ORDER BY talks.rec_date DESC ";
 
         return queryIfNotNull(query, null);
     }
