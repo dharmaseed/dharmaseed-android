@@ -286,8 +286,6 @@ public class NavigationActivity extends AppCompatActivity
         }
         else
         {
-            header.setVisibility(View.VISIBLE);
-
             // Clear search and star filters
             starFilterOn = false;
             setStarButton();
@@ -306,6 +304,7 @@ public class NavigationActivity extends AppCompatActivity
                     break;
             }
 
+            header.setVisibility(View.VISIBLE);
             updateDisplayedData();
         }
     }
