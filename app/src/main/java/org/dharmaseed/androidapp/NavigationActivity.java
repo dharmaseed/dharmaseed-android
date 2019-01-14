@@ -104,6 +104,7 @@ public class NavigationActivity extends AppCompatActivity
 
     private TalkRepository talkRepository;
     private TeacherRepository teacherRepository;
+    private CenterRepository centerRepository;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -189,6 +190,7 @@ public class NavigationActivity extends AppCompatActivity
         extraSearchTerms = "";
         talkRepository = new TalkRepository(dbManager);
         teacherRepository = new TeacherRepository(dbManager);
+        centerRepository = new CenterRepository(dbManager);
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -269,18 +271,21 @@ public class NavigationActivity extends AppCompatActivity
         listView.setAdapter(cursorAdapter);
     }
 
-    void setDetailMode(int detailMode) {
+    private void setDetailMode(int detailMode) {
         setDetailMode(detailMode, 0);
     }
-    void setDetailMode(int detailMode, long id) {
+
+    private void setDetailMode(int detailMode, long id)
+    {
         this.detailMode = detailMode;
         this.detailId = id;
 
-        if(detailMode == DETAIL_MODE_NONE) {
+        if (detailMode == DETAIL_MODE_NONE)
+        {
             header.setVisibility(View.GONE);
-        } else {
-
-            setViewMode(VIEW_MODE_TALKS, false);
+        }
+        else
+        {
             header.setVisibility(View.VISIBLE);
 
             // Clear search and star filters
@@ -288,41 +293,20 @@ public class NavigationActivity extends AppCompatActivity
             setStarButton();
             clearSearch(searchCluster);
 
-            String query="", header, detail;
-            String headerIdx="", detailIdx="";
-            Cursor cursor;
-
-            switch (detailMode) {
-
+            switch (detailMode)
+            {
                 case DETAIL_MODE_TEACHER:
                     setViewMode(VIEW_MODE_TEACHER_TALKS);
                     setTeacherHeader(id);
-                    displayTalksByTeacher(id);
-                    return;
-
-                case DETAIL_MODE_CENTER:
-                    //setViewMode(VIEW_MODE_CENTER_TALKS);
-                    getSupportActionBar().setTitle("Center Detail");
-                    query = String.format("SELECT * FROM %s WHERE %s=%s",
-                            DBManager.C.Center.TABLE_NAME,
-                            DBManager.C.Center.ID, id);
-                    headerIdx = DBManager.C.Center.NAME;
-                    detailIdx = DBManager.C.Center.DESCRIPTION;
                     break;
 
+                case DETAIL_MODE_CENTER:
+                    setViewMode(VIEW_MODE_CENTER_TALKS);
+                    setCenterHeader(id);
+                    break;
             }
 
-            cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-            if (cursor.moveToFirst()) {
-                header = cursor.getString(cursor.getColumnIndexOrThrow(headerIdx));
-                detail = cursor.getString(cursor.getColumnIndexOrThrow(detailIdx));
-                headerPrimary.setText(header);
-                headerDescription.setText(detail);
-                extraSearchTerms = header;
-            }
-            cursor.close();
             updateDisplayedData();
-
         }
     }
 
@@ -348,6 +332,31 @@ public class NavigationActivity extends AppCompatActivity
         {
             showToast("There was a problem fetching talks by the teacher.");
             updateDisplayedTeachers();
+        }
+    }
+
+    private void setCenterHeader(long id)
+    {
+        getSupportActionBar().setTitle("Center Detail");
+        Cursor cursor = centerRepository.getCenterById(id);
+        Center center = Center.create(cursor);
+        cursor.close();
+
+        headerPrimary.setText(center.getName());
+        headerDescription.setText(center.getDescription());
+    }
+
+    private void displayTalksByCenter(long id)
+    {
+        Cursor cursor = talkRepository.getTalksByCenter(id, starFilterOn);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
+        }
+        else
+        {
+            showToast("There was a problem fetching talks by the center.");
+            updateDisplayedCenters();
         }
     }
 
@@ -616,6 +625,7 @@ public class NavigationActivity extends AppCompatActivity
                 displayTalksByTeacher(detailId);
                 break;
             case VIEW_MODE_CENTER_TALKS:
+                displayTalksByCenter(detailId);
                 break;
         }
     }
@@ -632,7 +642,6 @@ public class NavigationActivity extends AppCompatActivity
             setViewMode(VIEW_MODE_TALKS);
             updateDisplayedData();
         }
-
     }
 
     void updateDisplayedCenters() {

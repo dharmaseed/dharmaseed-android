@@ -71,7 +71,7 @@ public class TeacherRepository extends Repository
         return innerJoin(
                 DBManager.C.TeacherStars.TABLE_NAME,
                 DBManager.C.TeacherStars.TABLE_NAME + "." + DBManager.C.TeacherStars.ID,
-                DBManager.C.TeacherStars.TABLE_NAME + "." + DBManager.C.Teacher.ID
+                DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID
         );
     }
 

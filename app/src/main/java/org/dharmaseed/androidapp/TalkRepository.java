@@ -151,6 +151,30 @@ public class TalkRepository extends Repository
         return queryIfNotNull(query, null);
     }
 
+    public Cursor getTalksByCenter(long venueId, boolean isStarred)
+    {
+        String query = "SELECT talks._id, talks.title, talks.teacher_id, centers.name, talks.rec_date FROM talks";
+
+        if (isStarred)
+        {
+            query += joinStarredTalks();
+        }
+
+        query += joinTalkIdVenueId();
+
+        query += String.format(
+                " WHERE %s.%s = %s ",
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.VENUE_ID,
+                venueId
+        );
+
+        query += " ORDER BY talks.rec_date DESC ";
+
+        return queryIfNotNull(query, null);
+    }
+
+
     private String joinStarredTalks()
     {
         return innerJoin(
@@ -175,6 +199,15 @@ public class TalkRepository extends Repository
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID,
                 DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID
+        );
+    }
+
+    private String joinTalkIdVenueId()
+    {
+        return innerJoin(
+                DBManager.C.Center.TABLE_NAME,
+                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.VENUE_ID
         );
     }
 
