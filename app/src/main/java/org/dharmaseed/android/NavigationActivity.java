@@ -17,7 +17,7 @@
  *
  */
 
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -30,7 +30,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -64,7 +63,7 @@ public class NavigationActivity extends AppCompatActivity
         AdapterView.OnItemClickListener,
         View.OnFocusChangeListener {
 
-    public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.androidapp.TALK_DETAIL";
+    public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.android.TALK_DETAIL";
 
     NavigationView navigationView;
     ListView listView;

@@ -17,14 +17,13 @@
  *
  */
 
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -33,10 +32,11 @@ import android.widget.TextView;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
-public class TalkCursorAdapter extends StarCursorAdapter {
+public class TeacherCursorAdapter extends StarCursorAdapter {
 
-    public TalkCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
-        super(dbManager, DBManager.C.TalkStars.TABLE_NAME, context, layout, c);
+
+    public TeacherCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
+        super(dbManager, DBManager.C.TeacherStars.TABLE_NAME, context, layout, c);
     }
 
     @Override
@@ -47,14 +47,14 @@ public class TalkCursorAdapter extends StarCursorAdapter {
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
 
-        // Set talk title and teacher name
+        // Set teacher name
         TextView title=(TextView)view.findViewById(R.id.item_view_title);
-        TextView teacher=(TextView)view.findViewById(R.id.item_view_subtitle);
-        title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TITLE)).trim());
-        teacher.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
+        TextView subtitle=(TextView)view.findViewById(R.id.item_view_subtitle);
+        title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
+        subtitle.setText("");
 
         // Set teacher photo
-        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID)));
+        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
         ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
         try {
             FileInputStream photo = context.openFileInput(photoFilename);
@@ -64,8 +64,9 @@ public class TalkCursorAdapter extends StarCursorAdapter {
             photoView.setImageDrawable(icon);
         }
 
-        // Set talk stars
-        handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID)));
+        // Set stars
+        handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
+
     }
 
 

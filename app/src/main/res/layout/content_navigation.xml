@@ -25,7 +25,7 @@
     android:layout_height="match_parent"
     android:padding="4dp"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="org.dharmaseed.androidapp.NavigationActivity"
+    tools:context="org.dharmaseed.android.NavigationActivity"
     tools:showIn="@layout/app_bar_navigation"
     android:orientation="vertical">
 

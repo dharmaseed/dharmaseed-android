@@ -17,7 +17,7 @@
  *
  */
 
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.Manifest;
 import android.app.DialogFragment;

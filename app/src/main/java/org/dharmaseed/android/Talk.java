@@ -1,8 +1,6 @@
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.database.Cursor;
-
-import org.dharmaseed.androidapp.DBManager;
 
 /**
  * Model of the TALK table in the DB

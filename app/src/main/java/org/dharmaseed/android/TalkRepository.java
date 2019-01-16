@@ -1,7 +1,6 @@
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Log;
 

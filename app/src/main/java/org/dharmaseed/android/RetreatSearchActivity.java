@@ -1,8 +1,7 @@
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 
 public class RetreatSearchActivity extends AppCompatActivity {
 

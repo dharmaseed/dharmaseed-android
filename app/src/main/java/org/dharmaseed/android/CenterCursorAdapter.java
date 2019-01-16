@@ -17,28 +17,21 @@
  *
  */
 
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.CursorAdapter;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+public class CenterCursorAdapter extends StarCursorAdapter {
 
-public class TeacherCursorAdapter extends StarCursorAdapter {
-
-
-    public TeacherCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
-        super(dbManager, DBManager.C.TeacherStars.TABLE_NAME, context, layout, c);
+    public CenterCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
+        super(dbManager, DBManager.C.CenterStars.TABLE_NAME, context, layout, c);
     }
 
     @Override
@@ -49,25 +42,19 @@ public class TeacherCursorAdapter extends StarCursorAdapter {
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
 
-        // Set teacher name
+        // Set center name
         TextView title=(TextView)view.findViewById(R.id.item_view_title);
         TextView subtitle=(TextView)view.findViewById(R.id.item_view_subtitle);
-        title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
+        title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.NAME)).trim());
         subtitle.setText("");
 
-        // Set teacher photo
-        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
+        // Set photo
         ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
-        try {
-            FileInputStream photo = context.openFileInput(photoFilename);
-            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch(FileNotFoundException e) {
-            Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
-            photoView.setImageDrawable(icon);
-        }
+        Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
+        photoView.setImageDrawable(icon);
 
         // Set stars
-        handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
+        handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Center.ID)));
 
     }
 

@@ -17,7 +17,7 @@
   ~
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.dharmaseed.androidapp">
+    package="org.dharmaseed.android">
 
     <!-- Internet Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -31,7 +31,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".NavigationActivity"
+            android:name="org.dharmaseed.android.NavigationActivity"
             android:label="@string/app_name"
             android:launchMode="singleTop"
             android:theme="@style/AppTheme.NoActionBar">
@@ -42,18 +42,18 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PlayTalkActivity"
+            android:name="org.dharmaseed.android.PlayTalkActivity"
             android:label="@string/play_talk_label">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".NavigationActivity" />
+                android:value="org.dharmaseed.android.NavigationActivity" />
         </activity>
         <activity
-            android:name=".RetreatSearchActivity"
+            android:name="org.dharmaseed.android.RetreatSearchActivity"
             android:label="@string/retreat_search_label">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".NavigationActivity" />
+                android:value="org.dharmaseed.android.NavigationActivity" />
         </activity>
     </application>
 
