@@ -51,12 +51,12 @@ import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -79,10 +79,18 @@ public class NavigationActivity extends AppCompatActivity
     CursorAdapter cursorAdapter;
     SwipeRefreshLayout refreshLayout;
 
-    static final int VIEW_MODE_TALKS = 0, VIEW_MODE_TEACHERS = 1, VIEW_MODE_CENTERS = 2;
-    int viewMode;
+    private int viewMode;
 
-    static final int DETAIL_MODE_NONE = 0, DETAIL_MODE_TEACHER = 1, DETAIL_MODE_CENTER = 2;
+    private static final int VIEW_MODE_TALKS          = 0;
+    private static final int VIEW_MODE_TEACHERS       = 1;
+    private static final int VIEW_MODE_CENTERS        = 2;
+    private static final int VIEW_MODE_TEACHER_TALKS  = 3;
+    private static final int VIEW_MODE_CENTER_TALKS   = 4;
+
+    private static final int DETAIL_MODE_NONE    = 0;
+    private static final int DETAIL_MODE_TEACHER = 1;
+    private static final int DETAIL_MODE_CENTER  = 2;
+
     int detailMode;
     long detailId;
 
@@ -93,6 +101,10 @@ public class NavigationActivity extends AppCompatActivity
     private static final String LOG_TAG = "NavigationActivity";
 
     private boolean downloadedOnly;
+
+    private TalkRepository talkRepository;
+    private TeacherRepository teacherRepository;
+    private CenterRepository centerRepository;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -176,6 +188,9 @@ public class NavigationActivity extends AppCompatActivity
         setViewMode(VIEW_MODE_TALKS);
         setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
+        talkRepository = new TalkRepository(dbManager);
+        teacherRepository = new TeacherRepository(dbManager);
+        centerRepository = new CenterRepository(dbManager);
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -234,6 +249,8 @@ public class NavigationActivity extends AppCompatActivity
         switch(viewMode) {
 
             case VIEW_MODE_TALKS:
+            case VIEW_MODE_TEACHER_TALKS:
+            case VIEW_MODE_CENTER_TALKS:
                 getSupportActionBar().setTitle("Talks");
                 cursorAdapter = new TalkCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
@@ -254,62 +271,91 @@ public class NavigationActivity extends AppCompatActivity
         listView.setAdapter(cursorAdapter);
     }
 
-    void setDetailMode(int detailMode) {
+    private void setDetailMode(int detailMode) {
         setDetailMode(detailMode, 0);
     }
-    void setDetailMode(int detailMode, long id) {
+
+    private void setDetailMode(int detailMode, long id)
+    {
         this.detailMode = detailMode;
         this.detailId = id;
 
-        if(detailMode == DETAIL_MODE_NONE) {
+        if (detailMode == DETAIL_MODE_NONE)
+        {
             header.setVisibility(View.GONE);
-        } else {
-
-            setViewMode(VIEW_MODE_TALKS, false);
-            header.setVisibility(View.VISIBLE);
-
+        }
+        else
+        {
             // Clear search and star filters
             starFilterOn = false;
             setStarButton();
             clearSearch(searchCluster);
 
-            String query="", header, detail;
-            String headerIdx="", detailIdx="";
-            Cursor cursor;
-
-            switch (detailMode) {
-
+            switch (detailMode)
+            {
                 case DETAIL_MODE_TEACHER:
-                    getSupportActionBar().setTitle("Teacher Detail");
-                    query = String.format("SELECT * FROM %s WHERE %s=%s",
-                            DBManager.C.Teacher.TABLE_NAME,
-                            DBManager.C.Teacher.ID, id);
-                    headerIdx = DBManager.C.Teacher.NAME;
-                    detailIdx = DBManager.C.Teacher.BIO;
+                    setViewMode(VIEW_MODE_TEACHER_TALKS);
+                    setTeacherHeader(id);
                     break;
 
                 case DETAIL_MODE_CENTER:
-                    getSupportActionBar().setTitle("Center Detail");
-                    query = String.format("SELECT * FROM %s WHERE %s=%s",
-                            DBManager.C.Center.TABLE_NAME,
-                            DBManager.C.Center.ID, id);
-                    headerIdx = DBManager.C.Center.NAME;
-                    detailIdx = DBManager.C.Center.DESCRIPTION;
+                    setViewMode(VIEW_MODE_CENTER_TALKS);
+                    setCenterHeader(id);
                     break;
-
             }
 
-            cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-            if (cursor.moveToFirst()) {
-                header = cursor.getString(cursor.getColumnIndexOrThrow(headerIdx));
-                detail = cursor.getString(cursor.getColumnIndexOrThrow(detailIdx));
-                headerPrimary.setText(header);
-                headerDescription.setText(detail);
-                extraSearchTerms = header;
-            }
-            cursor.close();
+            header.setVisibility(View.VISIBLE);
             updateDisplayedData();
+        }
+    }
 
+    private void setTeacherHeader(long id)
+    {
+        getSupportActionBar().setTitle("Teacher Detail");
+        Cursor cursor = teacherRepository.getTeacherById(id);
+        Teacher teacher = Teacher.create(cursor);
+        cursor.close();
+
+        headerPrimary.setText(teacher.getName());
+        headerDescription.setText(teacher.getBio());
+    }
+
+    public void displayTalksByTeacher(long id)
+    {
+        Cursor cursor = talkRepository.getTalksByTeacher(getSearchTerms(), id, starFilterOn, downloadedOnly);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
+        }
+        else
+        {
+            showToast("There was a problem fetching talks by the teacher.");
+            updateDisplayedTeachers();
+        }
+    }
+
+    private void setCenterHeader(long id)
+    {
+        getSupportActionBar().setTitle("Center Detail");
+        Cursor cursor = centerRepository.getCenterById(id);
+        Center center = Center.create(cursor);
+        cursor.close();
+
+        headerPrimary.setText(center.getName());
+        headerDescription.setText(center.getDescription());
+    }
+
+    private void displayTalksByCenter(long id)
+    {
+        Cursor cursor = talkRepository.getTalksByCenter(getSearchTerms(), id, starFilterOn, downloadedOnly);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
+        }
+        else
+        {
+            showToast("There was a problem fetching talks by the center.");
+            updateDisplayedCenters();
         }
     }
 
@@ -335,22 +381,38 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     @Override
-    public void onBackPressed() {
+    public void onBackPressed()
+    {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
+        if (drawer.isDrawerOpen(GravityCompat.START))
+        {
             drawer.closeDrawer(GravityCompat.START);
+            return;
         }
-        else if (detailMode == DETAIL_MODE_TEACHER) {
-            setViewMode(VIEW_MODE_TEACHERS);
-            updateDisplayedData();
+
+        switch (viewMode)
+        {
+            case VIEW_MODE_TALKS:
+                // nowhere to go
+                break;
+            case VIEW_MODE_TEACHERS:
+                setViewMode(VIEW_MODE_TALKS);
+                break;
+            case VIEW_MODE_TEACHER_TALKS:
+                setViewMode(VIEW_MODE_TEACHERS);
+                break;
+            case VIEW_MODE_CENTERS:
+                setViewMode(VIEW_MODE_TALKS);
+                break;
+            case VIEW_MODE_CENTER_TALKS:
+                setViewMode(VIEW_MODE_CENTERS);
+                break;
+            default:
+                super.onBackPressed();
+                return;
         }
-        else if (detailMode == DETAIL_MODE_CENTER) {
-            setViewMode(VIEW_MODE_CENTERS);
-            updateDisplayedData();
-        }
-        else {
-            super.onBackPressed();
-        }
+
+        updateDisplayedData();
     }
 
     @Override
@@ -416,6 +478,8 @@ public class NavigationActivity extends AppCompatActivity
 
         switch(viewMode) {
             case VIEW_MODE_TALKS:
+            case VIEW_MODE_TEACHER_TALKS:
+            case VIEW_MODE_CENTER_TALKS:
                 Intent intent = new Intent(ctx, PlayTalkActivity.class);
                 intent.putExtra(TALK_DETAIL_EXTRA, id);
                 ctx.startActivity(intent);
@@ -487,15 +551,11 @@ public class NavigationActivity extends AppCompatActivity
      * Called when the "Downloaded only" switch in the nav drawer is pressed
      * @param view
      */
-    public void downloadOnlySwitchClicked(View view) {
+    public void downloadOnlySwitchClicked(View view)
+    {
         Switch downloadSwitch = (Switch) view;
-        if (downloadSwitch.isChecked()) {
-            downloadedOnly = true;
-        } else {
-            downloadedOnly = false;
-        }
-        if (viewMode == VIEW_MODE_TALKS)
-            updateDisplayedTalks();
+        downloadedOnly = downloadSwitch.isChecked();
+        updateDisplayedData();
     }
 
     public void headingDetailCollapseExpandButtonClicked(View view) {
@@ -556,233 +616,89 @@ public class NavigationActivity extends AppCompatActivity
             case VIEW_MODE_CENTERS:
                 updateDisplayedCenters();
                 break;
+            case VIEW_MODE_TEACHER_TALKS:
+                displayTalksByTeacher(detailId);
+                break;
+            case VIEW_MODE_CENTER_TALKS:
+                displayTalksByCenter(detailId);
+                break;
         }
     }
 
     void updateDisplayedTeachers() {
-        // TODO: refactor common logic in updateDisplayedXXX methods
-        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
-        String[] subqueries = new String[searchTerms.length];
-        for(int i=0; i < searchTerms.length; i++) {
-            String subquery = String.format(" (%s LIKE '%%%s%%') ",
-                    DBManager.C.Teacher.NAME,
-                    searchTerms[i]);
-
-            subqueries[i] = subquery;
+        Cursor cursor = teacherRepository.getTeachers(getSearchTerms(), starFilterOn);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
         }
-        String searchSubquery = TextUtils.join(" AND ", subqueries);
-
-        String starFilterTable = "";
-        String starFilterSubquery = "";
-        if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.TeacherStars.TABLE_NAME);
-            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Teacher.TABLE_NAME,
-                    DBManager.C.Teacher.ID,
-                    DBManager.C.TeacherStars.TABLE_NAME,
-                    DBManager.C.TeacherStars.ID
-            );
+        else
+        {
+            showToast("There was a problem displaying teachers.");
+            setViewMode(VIEW_MODE_TALKS);
+            updateDisplayedData();
         }
-
-
-        final String query = String.format(
-                "SELECT %s.%s, %s.%s " +
-                        "FROM %s %s " +
-                        "WHERE %s %s " +
-                        "AND %s='true' " +
-                        "ORDER BY %s DESC, %s ASC",
-                // SELECT
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-
-                // FROM
-                DBManager.C.Teacher.TABLE_NAME,
-                starFilterTable,
-
-                // WHERE
-                searchSubquery,
-                starFilterSubquery,
-
-                // AND
-                DBManager.C.Teacher.PUBLIC,
-
-                // ORDER BY
-                DBManager.C.Teacher.MONASTIC,
-                DBManager.C.Teacher.NAME
-        );
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
-
     }
 
-    void updateDisplayedCenters() {
-        String[] searchTerms = searchBox.getText().toString().trim().split("\\s+");
-        String[] subqueries = new String[searchTerms.length];
-        for(int i=0; i < searchTerms.length; i++) {
-            String subquery = String.format(" (%s LIKE '%%%s%%') ",
-                    DBManager.C.Center.NAME,
-                    searchTerms[i]);
-
-            subqueries[i] = subquery;
+    void updateDisplayedCenters()
+    {
+        Cursor cursor = centerRepository.getCenters(getSearchTerms(), starFilterOn);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
         }
-        String searchSubquery = TextUtils.join(" AND ", subqueries);
-
-        String starFilterTable = "";
-        String starFilterSubquery = "";
-        if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.CenterStars.TABLE_NAME);
-            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Center.TABLE_NAME,
-                    DBManager.C.Center.ID,
-                    DBManager.C.CenterStars.TABLE_NAME,
-                    DBManager.C.CenterStars.ID
-            );
+        else
+        {
+            showToast("There was a problem with the query");
+            setViewMode(VIEW_MODE_TALKS);
+            updateDisplayedData();
         }
-
-        final String query = String.format(
-                "SELECT %s.%s, %s.%s " +
-                        "FROM %s %s " +
-                        "WHERE %s %s " +
-                        "ORDER BY %s ASC",
-                // SELECT
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.ID,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.NAME,
-
-                // FROM
-                DBManager.C.Center.TABLE_NAME,
-                starFilterTable,
-
-                // WHERE
-                searchSubquery,
-                starFilterSubquery,
-
-                // ORDER BY
-                DBManager.C.Center.NAME
-        );
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
-
     }
 
-
-    void updateDisplayedTalks() {
-        ArrayList<String> searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
-        if(!extraSearchTerms.equals("")) searchTerms.add(extraSearchTerms);
-        String[] subqueries = new String[searchTerms.size()];
-        for(int i=0; i < searchTerms.size(); i++) {
-            String subquery = String.format(" (%s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%' OR %s.%s LIKE '%%%s%%') ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.TITLE,
-                    searchTerms.get(i),
-
-                    // OR
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.DESCRIPTION,
-                    searchTerms.get(i),
-
-                    // OR
-                    DBManager.C.Teacher.TABLE_NAME,
-                    DBManager.C.Teacher.NAME,
-                    searchTerms.get(i),
-
-                    // OR
-                    DBManager.C.Center.TABLE_NAME,
-                    DBManager.C.Center.NAME,
-                    searchTerms.get(i));
-
-            subqueries[i] = subquery;
+    /**
+     * Updates the view with talks by search term, and whether talks are downloaded/starred
+     */
+    private void updateDisplayedTalks()
+    {
+        Cursor cursor = talkRepository.getTalkAdapterData(getSearchTerms(), starFilterOn, downloadedOnly);
+        if (cursor != null)
+        {
+            cursorAdapter.changeCursor(cursor);
         }
-        String searchSubquery = TextUtils.join(" AND ", subqueries);
+        else
+        {
+            showToast("There was a problem with the query");
+        }
+    }
 
-        String starFilterTable = "";
-        String starFilterSubquery = "";
-        if(starFilterOn) {
-            starFilterTable = String.format(" , %s ", DBManager.C.TalkStars.TABLE_NAME);
-            starFilterSubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.ID,
-                    DBManager.C.TalkStars.TABLE_NAME,
-                    DBManager.C.TalkStars.ID
-            );
+    /**
+     * @return the list of search terms in the search box or null if empty
+     */
+    private List<String> getSearchTerms()
+    {
+        ArrayList<String> searchTerms = null;
+        if (searchBox.getText().length() > 0)
+        {
+            searchTerms = new ArrayList<>(Arrays.asList(searchBox.getText().toString().trim().split("\\s+")));
+            if (!extraSearchTerms.equals(""))
+            {
+                searchTerms.add(extraSearchTerms);
+            }
         }
 
-        String downloadedOnlyTable = "";
-        String downloadedOnlySubquery = "";
-        if (downloadedOnly) {
-            downloadedOnlyTable = String.format(" , %s ", DBManager.C.DownloadedTalks.TABLE_NAME);
-            downloadedOnlySubquery = String.format(" AND %s.%s=%s.%s ",
-                    DBManager.C.Talk.TABLE_NAME,
-                    DBManager.C.Talk.ID,
-                    DBManager.C.DownloadedTalks.TABLE_NAME,
-                    DBManager.C.DownloadedTalks.ID
-            );
-        }
+        return searchTerms;
+    }
 
-        final String query = String.format(
-                "SELECT %s.%s, %s.%s, %s.%s, %s.%s " +
-                        "FROM %s, %s, %s %s %s " +
-                        "WHERE %s.%s=%s.%s " +
-                        "AND %s.%s='true' " +
-                        "AND %s.%s=%s.%s " +
-                        "AND %s %s %s " +
-                        "ORDER BY %s.%s DESC",
-                // SELECT
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.ID,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TITLE,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-
-                // FROM
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Center.TABLE_NAME,
-                starFilterTable,
-                downloadedOnlyTable,
-
-                // WHERE
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-
-                // AND
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.PUBLIC,
-
-                // AND
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.VENUE_ID,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.ID,
-
-                // AND
-                // Search filter sub-query
-                searchSubquery,
-
-                // Star filter sub-query
-                starFilterSubquery,
-
-                // downloaded only talks
-                downloadedOnlySubquery,
-
-                // ORDER BY
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.RECORDING_DATE
-        );
-
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        cursorAdapter.changeCursor(cursor);
-
+    /**
+     * Shows a short toast with text=message
+     * @param message
+     */
+    public void showToast(String message)
+    {
+        Toast.makeText(
+                getApplicationContext(),
+                message,
+                Toast.LENGTH_SHORT
+        ).show();
     }
 
 }
