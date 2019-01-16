@@ -1,7 +1,6 @@
-package org.dharmaseed.androidapp;
+package org.dharmaseed.android;
 
 import android.os.Environment;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import java.io.File;
@@ -11,9 +10,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Manages downloaded talks
