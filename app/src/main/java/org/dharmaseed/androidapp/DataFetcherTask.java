@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -105,10 +106,12 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                         publishProgress();
                     }
                 }
-                // Fire any last requests still in the aggregator
-                itemsWithDetails = agg.fireRequest();
-                if(itemsWithDetails != null) {
-                    dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
+                while (!agg.isDone()) {
+                    // Fire any last requests still in the aggregator
+                    itemsWithDetails = agg.fireRequest();
+                    if(itemsWithDetails != null) {
+                        dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
+                    }
                 }
 
                 // Mark that we've successfully cached the new edition
@@ -158,6 +161,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         private String table;
         private String tableID;
         private ArrayList<String> IDStrings;
+        private ArrayList<String> failedIds; // ids that receive socket timeouts
         private String apiUrl;
 
         public RequestAggregator(int size, String table, String tableID, String apiUrl) {
@@ -165,6 +169,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
             this.table = table;
             this.tableID = tableID;
             this.IDStrings = new ArrayList<>(size);
+            this.failedIds = new ArrayList<>(size);
             this.apiUrl = apiUrl;
         }
 
@@ -184,15 +189,23 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
             }
         }
 
+        public boolean isDone() {
+            return failedIds.isEmpty() && IDStrings.isEmpty();
+        }
+
         public JSONObject fireRequest() {
-            if(IDStrings.isEmpty()) {
+            if (isDone()) {
                 return null;
             }
 
-            Log.d("fireRequest", "getting "+table+": "+IDStrings);
+            ArrayList<String> ids = getIds();
+
+            JSONObject json = null;
+
+            Log.d("fireRequest", "getting "+table+": "+ids);
             MultipartBody body = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("items", TextUtils.join(",", IDStrings))
+                    .addFormDataPart("items", TextUtils.join(",", ids))
                     .addFormDataPart("detail", "1")
                     .build();
             Request request = new Request.Builder()
@@ -200,20 +213,44 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                     .post(body)
                     .build();
 
-            // Reset state for the next request
-            IDStrings.clear();
+            boolean success = false;
 
             try {
                 Response response = httpClient.newCall(request).execute();
                 if(response.isSuccessful()) {
-                    return new JSONObject(response.body().string());
-                } else {
-                    return null;
+                    success = true;
+                    json = new JSONObject(response.body().string());
                 }
             } catch (Exception e) {
                 Log.e("fireRequest", e.toString());
-                return null;
             }
+
+            if (!success) {
+                failedIds.addAll(ids);
+                Log.d("fireRequest", "failed: " + failedIds.size());
+            }
+
+            // Reset state for the next request
+            ids.clear();
+            return json;
+        }
+
+        /**
+         * Adds failed ids to IDStrings if there is room
+         * @return
+         */
+        private ArrayList<String> getIds() {
+            if (size > IDStrings.size() && !failedIds.isEmpty()) {
+                int len = size - IDStrings.size();
+                if (len > failedIds.size()) {
+                    len = failedIds.size();
+                }
+                Log.d("fireReq", "re-trying " + len + " failed ids");
+                List<String> idsToAdd = failedIds.subList(0, len);
+                IDStrings.addAll(idsToAdd);
+                idsToAdd.clear();
+            }
+            return IDStrings;
         }
 
         public boolean keyExists(int ID) {
