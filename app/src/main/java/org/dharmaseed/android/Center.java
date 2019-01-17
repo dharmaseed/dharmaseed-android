@@ -10,6 +10,8 @@ public class Center
     private String description;
     private String name;
 
+    private boolean hasVenueView;
+
     public Center() {}
 
     public static Center create(Cursor cursor)
@@ -22,6 +24,9 @@ public class Center
             center.setWebsite(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.WEBSITE)));
             center.setDescription(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.DESCRIPTION)));
             center.setName(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.NAME)));
+            center.setHasVenueView(
+                    cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.HAS_VENUE_VIEW)).equals("true")
+            );
         }
 
         return center;
@@ -57,5 +62,13 @@ public class Center
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean hasVenueView() {
+        return hasVenueView;
+    }
+
+    public void setHasVenueView(boolean hasVenueView) {
+        this.hasVenueView = hasVenueView;
     }
 }

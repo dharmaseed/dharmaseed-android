@@ -37,7 +37,8 @@ public class CenterFetcherTask extends DataFetcherTask {
                 new String[]{
                         DBManager.C.Center.WEBSITE,
                         DBManager.C.Center.DESCRIPTION,
-                        DBManager.C.Center.NAME
+                        DBManager.C.Center.NAME,
+                        DBManager.C.Center.HAS_VENUE_VIEW
                 });
 
         publishProgress();

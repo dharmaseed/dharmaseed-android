@@ -36,7 +36,7 @@ public class CenterRepository extends Repository {
             query += joinStarredCenters();
         }
 
-        String where = "";
+        String where = " WHERE centers.has_venue_view = 'true' ";
         if (searchTerms != null && !searchTerms.isEmpty())
         {
             String[] selectionColumns = new String[]
@@ -44,7 +44,7 @@ public class CenterRepository extends Repository {
                 DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME,
             };
 
-            where += " WHERE " + getSearchStatement(searchTerms, selectionColumns);
+            where += " AND " + getSearchStatement(searchTerms, selectionColumns);
         }
 
         query += where + " ORDER BY centers.name ASC";
