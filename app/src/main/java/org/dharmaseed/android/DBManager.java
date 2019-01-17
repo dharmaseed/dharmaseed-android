@@ -405,7 +405,7 @@ public class DBManager extends SQLiteOpenHelper {
     }
 
     /**
-     * @return whether we should hit sync with the dharmaseed db again
+     * @return whether we should sync with the dharmaseed api again
      */
     public boolean shouldSync() {
         if (didUpdate) {
