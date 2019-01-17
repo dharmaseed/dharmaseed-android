@@ -280,6 +280,12 @@ public class DBManager extends SQLiteOpenHelper {
         }
     }
 
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // do nothing for now - this just prevents exceptions if the user
+        // downgrades
+    }
+
     /**
      * Removes the edition entry for `tableName`
      * @param db
