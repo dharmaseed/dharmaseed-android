@@ -158,7 +158,7 @@ public class NavigationActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        dbManager = new DBManager(this);
+        dbManager = DBManager.getInstance(this);
 
         // Configure search box
         searchBox = (EditText)findViewById(R.id.nav_search_text);

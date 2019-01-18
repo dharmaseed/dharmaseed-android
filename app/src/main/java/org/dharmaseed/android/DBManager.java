@@ -44,6 +44,8 @@ public class DBManager extends SQLiteOpenHelper {
     private static final int DB_VERSION = 33;
     private static final String DB_NAME = "Dharmaseed.db";
 
+    private static DBManager instance = null;
+
     // Database contract class
     final class C {
         public C() {}
@@ -175,31 +177,49 @@ public class DBManager extends SQLiteOpenHelper {
 
     }
 
-    public DBManager(Context context) {
+    private DBManager(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
 
-        File dbFile = context.getDatabasePath(DB_NAME);
-        if(! dbFile.exists()) {
-            Log.i("dbManager", "Trying to populate with pre-seeded database");
-            try {
-                // Copy the pre-seeded database if it exists
-                InputStream dbIn = context.getAssets().open(DB_NAME);
-                dbFile.getParentFile().mkdirs();
-                OutputStream dbOut = new FileOutputStream(dbFile);
+        if (context != null) {
+            File dbFile = context.getDatabasePath(DB_NAME);
+            if(! dbFile.exists()) {
+                Log.i("dbManager", "Trying to populate with pre-seeded database");
+                try {
+                    // Copy the pre-seeded database if it exists
+                    InputStream dbIn = context.getAssets().open(DB_NAME);
+                    dbFile.getParentFile().mkdirs();
+                    OutputStream dbOut = new FileOutputStream(dbFile);
 
-                byte[] buf = new byte[1024];
-                int len;
-                while ((len = dbIn.read(buf)) > 0) {
-                    dbOut.write(buf, 0, len);
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = dbIn.read(buf)) > 0) {
+                        dbOut.write(buf, 0, len);
+                    }
+
+                    dbOut.flush();
+                    dbOut.close();
+                    dbIn.close();
+                } catch (IOException ioe) {
+                    Log.e("dbManager", ioe.toString());
                 }
-
-                dbOut.flush();
-                dbOut.close();
-                dbIn.close();
-            } catch (IOException ioe) {
-                Log.e("dbManager", ioe.toString());
             }
         }
+    }
+
+    public static synchronized DBManager getInstance(Context context) {
+        if (instance == null) {
+            instance = new DBManager(context.getApplicationContext());
+        }
+
+        return instance;
+    }
+
+    /**
+     * Used for testing purposes
+     * @return the db name
+     */
+    protected String getDbName() {
+        return DB_NAME;
     }
 
     @Override

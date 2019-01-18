@@ -1,6 +1,7 @@
 package org.dharmaseed.android;
 
 import android.database.Cursor;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -11,9 +12,9 @@ public class TalkRepository extends Repository
 {
 
     private static final String LOG_TAG = "TalkRepository";
-    private DBManager dbManager;
+    private SQLiteOpenHelper dbManager;
 
-    public TalkRepository(DBManager dbManager)
+    public TalkRepository(SQLiteOpenHelper dbManager)
     {
         super(dbManager);
     }
@@ -46,7 +47,7 @@ public class TalkRepository extends Repository
      * @param isDownloaded whether the talk is downloaded
      * @return every talk in the db filtered by search term, is starred, and is downloaded
      */
-    private Cursor getTalks(
+    public Cursor getTalks(
            List<String> columns,
            List<String> searchTerms,
            boolean isStarred,
@@ -65,7 +66,12 @@ public class TalkRepository extends Repository
 
         String query = "SELECT " + queryColumns + " FROM " + DBManager.C.Talk.TABLE_NAME;
 
-        String innerJoin = joinTalkIdTeacherId();
+        String innerJoin = "";
+
+        if (queryColumns.contains(DBManager.C.Teacher.TABLE_NAME))
+        {
+            innerJoin += joinTalkIdTeacherId();
+        }
 
         if (isStarred)
         {

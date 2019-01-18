@@ -30,6 +30,7 @@ android {
         versionCode 7
         versionName "1.0.0-rc4"
         vectorDrawables.useSupportLibrary = true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -46,5 +47,8 @@ dependencies {
     implementation 'com.android.support:design:26.0.0'
     implementation 'com.squareup.okhttp3:okhttp:3.0.1'
     implementation 'com.android.support:support-v4:26.0.0'
+    // Required for instrumented tests
+    androidTestImplementation 'com.android.support:support-annotations:24.0.0'
+    androidTestImplementation 'com.android.support.test:runner:0.5'
 }
 
