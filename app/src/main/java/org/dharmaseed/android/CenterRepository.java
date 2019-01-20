@@ -29,7 +29,12 @@ public class CenterRepository extends Repository {
      */
     public Cursor getCenters(List<String> searchTerms, boolean isStarred)
     {
-        String query = "SELECT centers._id, centers.name FROM centers ";
+        String query = "SELECT centers._id, centers.name, count(talks._id) AS talk_count FROM centers ";
+        query += innerJoin(
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.VENUE_ID,
+                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID
+        );
 
         if (isStarred)
         {
@@ -47,7 +52,7 @@ public class CenterRepository extends Repository {
             where += " AND " + getSearchStatement(searchTerms, selectionColumns);
         }
 
-        query += where + " ORDER BY centers.name ASC";
+        query += where + "GROUP BY centers._id ORDER BY centers.name ASC";
 
         return queryIfNotNull(query, null);
     }

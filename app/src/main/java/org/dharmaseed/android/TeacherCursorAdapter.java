@@ -52,6 +52,10 @@ public class TeacherCursorAdapter extends StarCursorAdapter {
         TextView title=(TextView)view.findViewById(R.id.item_view_title);
         title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim());
 
+        // Get number of talks by this teacher
+        TextView numTalks=(TextView)view.findViewById(R.id.item_view_detail1);
+        numTalks.setText(cursor.getString(cursor.getColumnIndexOrThrow("talk_count")) + " talks");
+
         // Set teacher photo
         String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
         ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
