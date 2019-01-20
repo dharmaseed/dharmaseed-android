@@ -25,13 +25,10 @@
     android:minHeight="95dp">
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="60dp"
+        android:layout_height="90dp"
+        android:paddingTop="5dp"
         android:id="@+id/item_view_photo"
-        android:minHeight="90dp"
-        android:minWidth="60dp"
-        android:maxHeight="90dp"
-        android:maxWidth="60dp"
         android:adjustViewBounds="true"
         android:scaleType="fitStart" />
 
