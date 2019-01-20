@@ -27,6 +27,7 @@ import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 /**
  * Created by bbethke on 5/15/16.
@@ -81,5 +82,14 @@ public abstract class StarCursorAdapter extends CursorAdapter {
             }
         });
 
+    }
+
+    void clearView(View view) {
+        int ids[] = {R.id.item_view_title, R.id.item_view_detail1, R.id.item_view_detail2,
+                R.id.item_view_detail3, R.id.item_view_detail4};
+        for(int id : ids) {
+            TextView textView=(TextView)view.findViewById(id);
+            textView.setText("");
+        }
     }
 }

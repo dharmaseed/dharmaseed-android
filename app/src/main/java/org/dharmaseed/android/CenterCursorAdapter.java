@@ -43,10 +43,9 @@ public class CenterCursorAdapter extends StarCursorAdapter {
     public void bindView(View view, Context context, Cursor cursor) {
 
         // Set center name
+        clearView(view);
         TextView title=(TextView)view.findViewById(R.id.item_view_title);
-        TextView subtitle=(TextView)view.findViewById(R.id.item_view_subtitle);
         title.setText(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Center.NAME)).trim());
-        subtitle.setText("");
 
         // Set photo
         ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
