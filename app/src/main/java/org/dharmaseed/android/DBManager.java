@@ -42,7 +42,7 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 34;
+    private static final int DB_VERSION = 35;
     private static final String DB_NAME = "Dharmaseed.db";
 
     private boolean didUpdate;
@@ -82,6 +82,7 @@ public class DBManager extends SQLiteOpenHelper {
 
         public abstract class Teacher {
             public static final String WEBSITE = "website";
+            public static final String DONATION_URL = "donation_url";
             public static final String BIO = "bio";
             public static final String ID = "_id";
             public static final String NAME = "name";
@@ -93,6 +94,7 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String TABLE_NAME = "teachers";
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
                     +WEBSITE+" TEXT,"
+                    +DONATION_URL+" TEXT,"
                     +BIO+" TEXT,"
                     +NAME+" TEXT,"
                     +PUBLIC+" INTEGER,"
@@ -277,6 +279,11 @@ public class DBManager extends SQLiteOpenHelper {
             db.execSQL(C.Center.DROP_TABLE);
             db.execSQL(C.Center.CREATE_TABLE);
             clearEdition(db, C.Center.TABLE_NAME);
+
+            // DB version 35 added the "donation_url" column to the teachers table (see #41)
+            db.execSQL(C.Teacher.DROP_TABLE);
+            db.execSQL(C.Teacher.CREATE_TABLE);
+            clearEdition(db, C.Teacher.TABLE_NAME);
         }
     }
 

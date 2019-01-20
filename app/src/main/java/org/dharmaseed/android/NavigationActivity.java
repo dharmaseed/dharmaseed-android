@@ -30,6 +30,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -169,6 +171,7 @@ public class NavigationActivity extends AppCompatActivity
         header = (LinearLayout)findViewById(R.id.nav_sub_header);
         headerPrimary = (TextView)findViewById(R.id.nav_sub_header_primary);
         headerDescription = (TextView)findViewById(R.id.nav_sub_header_description);
+        headerDescription.setMovementMethod(LinkMovementMethod.getInstance());
 
         // Configure navigation view
         navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -295,7 +298,15 @@ public class NavigationActivity extends AppCompatActivity
         cursor.close();
 
         headerPrimary.setText(teacher.getName());
-        headerDescription.setText(teacher.getBio());
+
+        String descriptionHtml = teacher.getBio().replace("\n", "\n<p>") + "\n<p>";
+        if (!teacher.getWebsite().isEmpty()) {
+            descriptionHtml += String.format("<a href=%s>Visit teacher's website</a><p>\n", teacher.getWebsite());
+        }
+        if (!teacher.getDonationUrl().isEmpty()) {
+            descriptionHtml += String.format("<a href=%s>Donate to this teacher</a><p>\n", teacher.getDonationUrl());
+        }
+        headerDescription.setText(Html.fromHtml(descriptionHtml));
     }
 
     public void displayTalksByTeacher(long id)
