@@ -34,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.Iterator;
 
 /**
@@ -41,8 +42,10 @@ import java.util.Iterator;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 33;
+    private static final int DB_VERSION = 34;
     private static final String DB_NAME = "Dharmaseed.db";
+
+    private boolean didUpdate;
 
     // Database contract class
     final class C {
@@ -104,12 +107,15 @@ public class DBManager extends SQLiteOpenHelper {
             public static final String DESCRIPTION = "description";
             public static final String ID = "_id";
             public static final String NAME = "name";
+            public static final String HAS_VENUE_VIEW = "has_venue_view";
 
             public static final String TABLE_NAME = "centers";
             public static final String CREATE_TABLE = "CREATE TABLE "+TABLE_NAME+" ("+ID+" INTEGER PRIMARY KEY,"
-                    +WEBSITE+" TEXT,"
-                    +DESCRIPTION+" TEXT,"
-                    +NAME+" TEXT)";
+                     + WEBSITE + " TEXT,"
+                     + DESCRIPTION + " TEXT,"
+                     + NAME + " TEXT,"
+                     + HAS_VENUE_VIEW + " INT"
+                     + ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS "+TABLE_NAME;
 
         }
@@ -178,6 +184,7 @@ public class DBManager extends SQLiteOpenHelper {
     public DBManager(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
 
+        didUpdate = false;
         File dbFile = context.getDatabasePath(DB_NAME);
         if(! dbFile.exists()) {
             Log.i("dbManager", "Trying to populate with pre-seeded database");
@@ -237,13 +244,19 @@ public class DBManager extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.i("DBManager", "Upgrading database to version "+DB_VERSION);
+        Log.i(
+                "DBManager",
+                "Upgrading database from v" + oldVersion + " to v" + newVersion
+        );
 
         if(oldVersion < DB_VERSION) {
+            didUpdate = true; // re-sync with dharmaseed api
+
             // DB version 29 introduced "public" and "monastic" fields into the teachers table
             // (See #21)
             db.execSQL(C.Teacher.DROP_TABLE);
             db.execSQL(C.Teacher.CREATE_TABLE);
+            clearEdition(db, C.Teacher.TABLE_NAME);
 
             // DB version 30 added the "retreat" table (see #23)
             db.execSQL(C.Retreat.DROP_TABLE);
@@ -254,26 +267,36 @@ public class DBManager extends SQLiteOpenHelper {
             // see (#30 for v32)
             db.execSQL(C.Talk.DROP_TABLE);
             db.execSQL(C.Talk.CREATE_TABLE);
+            clearEdition(db, C.Talk.TABLE_NAME);
 
             // DB version 33 added the "downloaded_talks" table (see #32)
             db.execSQL(C.DownloadedTalks.DROP_TABLE);
             db.execSQL(C.DownloadedTalks.CREATE_TABLE);
 
-            // Clear teachers edition to force reloading from server
-            ContentValues v = new ContentValues();
-            v.put(C.Edition.TABLE, C.Teacher.TABLE_NAME);
-            v.putNull(C.Edition.EDITION);
-            db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
+            // DB version 34 added the "has_venue_view" column to the center table
+            db.execSQL(C.Center.DROP_TABLE);
+            db.execSQL(C.Center.CREATE_TABLE);
+            clearEdition(db, C.Center.TABLE_NAME);
         }
+    }
 
-//        db.execSQL(C.Talk.DROP_TABLE);
-//        db.execSQL(C.Teacher.DROP_TABLE);
-//        db.execSQL(C.Center.DROP_TABLE);
-//        db.execSQL(C.TalkStars.DROP_TABLE);
-//        db.execSQL(C.TeacherStars.DROP_TABLE);
-//        db.execSQL(C.CenterStars.DROP_TABLE);
-//        db.execSQL(C.Edition.DROP_TABLE);
-//        onCreate(db);
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // do nothing for now - this just prevents exceptions if the user
+        // downgrades
+    }
+
+    /**
+     * Removes the edition entry for `tableName`
+     * @param db
+     * @param tableName
+     */
+    private void clearEdition(SQLiteDatabase db, String tableName) {
+        ContentValues v = new ContentValues();
+        v.put(C.Edition.TABLE, tableName);
+        v.putNull(C.Edition.EDITION);
+        db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
+
     }
 
     private void insertValue(ContentValues values, JSONObject obj, String key) {
@@ -385,5 +408,33 @@ public class DBManager extends SQLiteOpenHelper {
             return false;
 
         return true;
+    }
+
+    /**
+     * @return whether we should sync with the dharmaseed api again
+     */
+    public boolean shouldSync() {
+        if (didUpdate) {
+            didUpdate = false;
+            return true;
+        }
+
+        String query = String.format("SELECT %s FROM %s WHERE %s=\"%s\"",
+                DBManager.C.Edition.EDITION,
+                DBManager.C.Edition.TABLE_NAME,
+                DBManager.C.Edition.TABLE,
+                DBManager.C.Edition.LAST_SYNC);
+        Cursor cursor = getReadableDatabase().rawQuery(query, null);
+        boolean outOfDate = false;
+        if(cursor.moveToFirst()) {
+            long lastSync = cursor.getLong(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
+            Date nowDate = new Date();
+            long now = nowDate.getTime();
+            if(now - lastSync > 1000*60*60*12) { // Update every 12 hours
+                outOfDate = true;
+            }
+        }
+        cursor.close();
+        return outOfDate;
     }
 }

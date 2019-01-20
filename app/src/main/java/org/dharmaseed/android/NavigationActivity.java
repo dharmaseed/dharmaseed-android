@@ -54,7 +54,6 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity
@@ -140,7 +139,7 @@ public class NavigationActivity extends AppCompatActivity
         super.onResume();
 
         // Get the latest data from dharmaseed.org if necessary
-        if(editionOutOfDate()) {
+        if (dbManager.shouldSync()) {
             fetchNewDataFromServer();
         } else {
             Log.i("onResume", "Don't need to fetch new data from server");
@@ -215,26 +214,6 @@ public class NavigationActivity extends AppCompatActivity
             }
         }, new IntentFilter("updateDisplayedData"));
 
-    }
-
-    boolean editionOutOfDate() {
-        String query = String.format("SELECT %s FROM %s WHERE %s=\"%s\"",
-                DBManager.C.Edition.EDITION,
-                DBManager.C.Edition.TABLE_NAME,
-                DBManager.C.Edition.TABLE,
-                DBManager.C.Edition.LAST_SYNC);
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        boolean outOfDate = false;
-        if(cursor.moveToFirst()) {
-            long lastSync = cursor.getLong(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
-            Date nowDate = new Date();
-            long now = nowDate.getTime();
-            if(now - lastSync > 1000*60*60*12) { // Update every 12 hours
-                outOfDate = true;
-            }
-        }
-        cursor.close();
-        return outOfDate;
     }
 
     void setViewMode(int viewMode) {

@@ -35,8 +35,8 @@ public class Teacher
             teacher.setBio(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.BIO)));
             teacher.setName(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)));
             teacher.setPhoto(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PHOTO)));
-            teacher.setPublic(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PUBLIC) == 1);
-            teacher.setMonastic(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.MONASTIC) == 1);
+            teacher.setPublic(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PUBLIC)).equals("true"));
+            teacher.setMonastic(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.MONASTIC)).equals("true"));
         }
 
         return teacher;
