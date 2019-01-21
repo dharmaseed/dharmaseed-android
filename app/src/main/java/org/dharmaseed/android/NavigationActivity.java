@@ -331,7 +331,12 @@ public class NavigationActivity extends AppCompatActivity
         cursor.close();
 
         headerPrimary.setText(center.getName());
-        headerDescription.setText(center.getDescription());
+
+        String descriptionHtml = center.getDescription().replace("\n", "\n<p>") + "\n<p>";
+        if (!center.getWebsite().isEmpty()) {
+            descriptionHtml += String.format("<a href=%s>Visit center's website</a><p>\n", center.getWebsite());
+        }
+        headerDescription.setText(Html.fromHtml(descriptionHtml));
     }
 
     private void displayTalksByCenter(long id)

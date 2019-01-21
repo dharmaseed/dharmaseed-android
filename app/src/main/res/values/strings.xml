@@ -23,7 +23,7 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="action_refresh_server_data">Refresh server data</string>
+    <string name="action_refresh_server_data">Sync talks</string>
     <string name="action_search">Search</string>
     <string name="action_toggle_starred">Toggle Starred</string>
 
