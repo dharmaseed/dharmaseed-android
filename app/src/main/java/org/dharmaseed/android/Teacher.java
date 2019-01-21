@@ -7,6 +7,7 @@ public class Teacher
     private int id;
 
     private String website;
+    private String donationUrl;
     private String bio;
     private String name;
     private String photo;
@@ -32,11 +33,12 @@ public class Teacher
         {
             teacher.setId(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
             teacher.setWebsite(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.WEBSITE)));
+            teacher.setDonationUrl(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.DONATION_URL)));
             teacher.setBio(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.BIO)));
             teacher.setName(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)));
             teacher.setPhoto(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PHOTO)));
-            teacher.setPublic(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PUBLIC) == 1);
-            teacher.setMonastic(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.MONASTIC) == 1);
+            teacher.setPublic(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PUBLIC)).equals("true"));
+            teacher.setMonastic(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.MONASTIC)).equals("true"));
         }
 
         return teacher;
@@ -56,6 +58,14 @@ public class Teacher
 
     public void setWebsite(String website) {
         this.website = website;
+    }
+
+    public String getDonationUrl() {
+        return donationUrl;
+    }
+
+    public void setDonationUrl(String donationUrl) {
+        this.donationUrl = donationUrl;
     }
 
     public String getBio() {

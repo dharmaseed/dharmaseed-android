@@ -50,6 +50,7 @@ public class TeacherFetcherTask extends DataFetcherTask {
                 "teachers/",
                 new String[]{
                         DBManager.C.Teacher.WEBSITE,
+                        DBManager.C.Teacher.DONATION_URL,
                         DBManager.C.Teacher.BIO,
                         DBManager.C.Teacher.NAME,
                         DBManager.C.Teacher.PHOTO,

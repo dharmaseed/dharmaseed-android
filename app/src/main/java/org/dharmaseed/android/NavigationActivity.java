@@ -30,6 +30,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -54,7 +56,6 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class NavigationActivity extends AppCompatActivity
@@ -140,7 +141,7 @@ public class NavigationActivity extends AppCompatActivity
         super.onResume();
 
         // Get the latest data from dharmaseed.org if necessary
-        if(editionOutOfDate()) {
+        if (dbManager.shouldSync()) {
             fetchNewDataFromServer();
         } else {
             Log.i("onResume", "Don't need to fetch new data from server");
@@ -170,6 +171,7 @@ public class NavigationActivity extends AppCompatActivity
         header = (LinearLayout)findViewById(R.id.nav_sub_header);
         headerPrimary = (TextView)findViewById(R.id.nav_sub_header_primary);
         headerDescription = (TextView)findViewById(R.id.nav_sub_header_description);
+        headerDescription.setMovementMethod(LinkMovementMethod.getInstance());
 
         // Configure navigation view
         navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -215,26 +217,6 @@ public class NavigationActivity extends AppCompatActivity
             }
         }, new IntentFilter("updateDisplayedData"));
 
-    }
-
-    boolean editionOutOfDate() {
-        String query = String.format("SELECT %s FROM %s WHERE %s=\"%s\"",
-                DBManager.C.Edition.EDITION,
-                DBManager.C.Edition.TABLE_NAME,
-                DBManager.C.Edition.TABLE,
-                DBManager.C.Edition.LAST_SYNC);
-        Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
-        boolean outOfDate = false;
-        if(cursor.moveToFirst()) {
-            long lastSync = cursor.getLong(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
-            Date nowDate = new Date();
-            long now = nowDate.getTime();
-            if(now - lastSync > 1000*60*60*12) { // Update every 12 hours
-                outOfDate = true;
-            }
-        }
-        cursor.close();
-        return outOfDate;
     }
 
     void setViewMode(int viewMode) {
@@ -316,7 +298,15 @@ public class NavigationActivity extends AppCompatActivity
         cursor.close();
 
         headerPrimary.setText(teacher.getName());
-        headerDescription.setText(teacher.getBio());
+
+        String descriptionHtml = teacher.getBio().replace("\n", "\n<p>") + "\n<p>";
+        if (!teacher.getWebsite().isEmpty()) {
+            descriptionHtml += String.format("<a href=%s>Visit teacher's website</a><p>\n", teacher.getWebsite());
+        }
+        if (!teacher.getDonationUrl().isEmpty()) {
+            descriptionHtml += String.format("<a href=%s>Donate to this teacher</a><p>\n", teacher.getDonationUrl());
+        }
+        headerDescription.setText(Html.fromHtml(descriptionHtml));
     }
 
     public void displayTalksByTeacher(long id)
@@ -341,7 +331,12 @@ public class NavigationActivity extends AppCompatActivity
         cursor.close();
 
         headerPrimary.setText(center.getName());
-        headerDescription.setText(center.getDescription());
+
+        String descriptionHtml = center.getDescription().replace("\n", "\n<p>") + "\n<p>";
+        if (!center.getWebsite().isEmpty()) {
+            descriptionHtml += String.format("<a href=%s>Visit center's website</a><p>\n", center.getWebsite());
+        }
+        headerDescription.setText(Html.fromHtml(descriptionHtml));
     }
 
     private void displayTalksByCenter(long id)
