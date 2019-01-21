@@ -12,7 +12,6 @@ public class TalkRepository extends Repository
 {
 
     private static final String LOG_TAG = "TalkRepository";
-    private SQLiteOpenHelper dbManager;
 
     public TalkRepository(SQLiteOpenHelper dbManager)
     {

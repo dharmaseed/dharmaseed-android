@@ -1,5 +1,6 @@
 CREATE TABLE talks (_id INTEGER PRIMARY KEY,title TEXT,description TEXT,venue_id INTEGER,teacher_id INTEGER,audio_url TEXT,duration_in_minutes REAL,update_date TEXT,rec_date TEXT,retreat_id INTEGER,file_path TEXT NOT NULL DEFAULT '');
 CREATE TABLE teachers (_id INTEGER PRIMARY KEY,website TEXT,bio TEXT,name TEXT,public INTEGER,monastic INTEGER,photo TEXT);
+CREATE TABLE centers (_id INTEGER PRIMARY KEY,website TEXT,description TEXT,name TEXT);
 INSERT INTO "talks" VALUES(1,'Patience And The Gentle Heart','Patience is a quality not often appreciated but so necessary in our
 lives and our practice. When we are patient, we can open fully to and
 connect with what is true in the moment - moment after moment, even
@@ -64,3 +65,5 @@ Right now I''m most enthusiastic about the first gift, paying attention, because
 
 As a parent, grandparent and a psychotherapist, I teach out of the stories of my life and the lives of those around me.  I am especially touched by personal narrative, accounts of spiritual journeys, and how these become vehicles for connecting with the dharma.  I believe in revealing my own story so that others are more at ease to reveal theirs.  Truth talking is a way out of suffering.  Discovering how our hearts and minds work and creating a dialogue supports right speech practice.  This is an on-going primary practice that we can do all the time.  My hope is that I encourage people how to pay attention and to tell the truth by example.
 ','Sylvia Boorstein','true','false','photo.png');
+INSERT INTO "centers" VALUES(3,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Forest Refuge');
+INSERT INTO "centers" VALUES(6,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Retreat Center');

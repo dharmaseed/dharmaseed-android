@@ -34,6 +34,7 @@ public class TalkRepositoryTest
         InputStream fis = InstrumentationRegistry.getContext().getAssets().open("inserts.txt");
         String line = "";
         int ch;
+        // run every statement from "inserts.txt"
         while ((ch = fis.read()) != -1)
         {
             if (ch < 8 || ch > 'z') continue;
@@ -65,6 +66,35 @@ public class TalkRepositoryTest
         SQLiteDatabase db = dbManager.getReadableDatabase();
         // the getTalks() method should perform an equivalent query
         Cursor expectedCursor = db.rawQuery("SELECT _id FROM talks ORDER BY rec_date DESC", null);
+
+        assertCursors(expectedCursor, actualCursor, columns);
+    }
+
+    @Test
+    public void getAllTalks_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        Cursor actualCursor = talkRepository.getTalks(null, null, false, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        // the getTalks() method should perform an equivalent query
+        Cursor expectedCursor = db.rawQuery("SELECT * FROM talks ORDER BY rec_date DESC", null);
+
+        List<String> columns = new ArrayList<>();
+
+        // compare every column
+        columns.add(DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TITLE);
+        columns.add(DBManager.C.Talk.TEACHER_ID);
+        columns.add(DBManager.C.Talk.RECORDING_DATE);
+        columns.add(DBManager.C.Talk.VENUE_ID);
+        columns.add(DBManager.C.Talk.FILE_PATH);
+        columns.add(DBManager.C.Talk.AUDIO_URL);
+        columns.add(DBManager.C.Talk.UPDATE_DATE);
+        columns.add(DBManager.C.Talk.DESCRIPTION);
+        columns.add(DBManager.C.Talk.DURATION_IN_MINUTES);
+        columns.add(DBManager.C.Talk.RETREAT_ID);
 
         assertCursors(expectedCursor, actualCursor, columns);
     }
@@ -107,6 +137,58 @@ public class TalkRepositoryTest
         assertCursors(expected, actual, columns);
     }
 
+    @Test
+    public void getTalksByTeacher_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+        int teacherId = 96;
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
+        columns.add(DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME);
+        Cursor actual = talkRepository.getTalksByTeacher(null, teacherId, false, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT talks._id, talks.title, talks.teacher_id, teachers.name, talks.rec_date " +
+                    "FROM talks " +
+                    "INNER JOIN teachers ON teachers._id = talks.teacher_id " +
+                    "WHERE teachers._id = " + teacherId + " " +
+                    "ORDER BY rec_date DESC",
+                null);
+
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksByCenter_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+        int centerId = 1;
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
+        columns.add(DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME);
+        Cursor actual = talkRepository.getTalksByCenter(null, centerId, false, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT talks._id, talks.title, talks.teacher_id, centers.name, talks.rec_date " +
+                    "FROM talks " +
+                    "INNER JOIN centers ON centers._id = talks.venue_id " +
+                    "WHERE centers._id = " + centerId + " " +
+                    "ORDER BY rec_date DESC",
+                null);
+
+        assertCursors(expected, actual, columns);
+    }
+
     /**
      * Verifies that every provided column is the same in both cursors
      * @param expected the expected result
@@ -115,13 +197,14 @@ public class TalkRepositoryTest
      */
     private void assertCursors(Cursor expected, Cursor actual, List<String> columns)
     {
-        assertEquals(expected.getCount(), actual.getCount());
+        assertEquals("Cursor lengths are not equal.", expected.getCount(), actual.getCount());
 
         while (expected.moveToNext() && actual.moveToNext())
         {
             for (String column : columns)
             {
                 assertEquals(
+                        "failed on column: " + column,
                         expected.getString(expected.getColumnIndex(column)),
                         actual.getString(actual.getColumnIndex(column))
                 );
