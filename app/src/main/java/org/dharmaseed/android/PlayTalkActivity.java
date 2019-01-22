@@ -86,8 +86,7 @@ public class PlayTalkActivity extends AppCompatActivity
         Intent i = getIntent();
         talkID = (int) i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
 
-        // Look up this talk
-        dbManager = new DBManager(this);
+        dbManager = DBManager.getInstance(this);
 
         // only hit the DB again if we know the talk is different than the one
         // we have saved.

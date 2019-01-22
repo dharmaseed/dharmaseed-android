@@ -2,6 +2,7 @@ package org.dharmaseed.android;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
@@ -10,9 +11,9 @@ import java.util.List;
 public abstract class Repository
 {
 
-    protected DBManager dbManager;
+    protected SQLiteOpenHelper dbManager;
 
-    public Repository(DBManager dbManager)
+    public Repository(SQLiteOpenHelper dbManager)
     {
         this.dbManager = dbManager;
     }

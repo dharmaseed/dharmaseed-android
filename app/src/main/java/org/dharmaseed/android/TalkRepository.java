@@ -1,6 +1,7 @@
 package org.dharmaseed.android;
 
 import android.database.Cursor;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -11,9 +12,8 @@ public class TalkRepository extends Repository
 {
 
     private static final String LOG_TAG = "TalkRepository";
-    private DBManager dbManager;
 
-    public TalkRepository(DBManager dbManager)
+    public TalkRepository(SQLiteOpenHelper dbManager)
     {
         super(dbManager);
     }
@@ -46,7 +46,7 @@ public class TalkRepository extends Repository
      * @param isDownloaded whether the talk is downloaded
      * @return every talk in the db filtered by search term, is starred, and is downloaded
      */
-    private Cursor getTalks(
+    public Cursor getTalks(
            List<String> columns,
            List<String> searchTerms,
            boolean isStarred,
@@ -65,7 +65,14 @@ public class TalkRepository extends Repository
 
         String query = "SELECT " + queryColumns + " FROM " + DBManager.C.Talk.TABLE_NAME;
 
-        String innerJoin = joinTalkIdTeacherId();
+        String innerJoin = "";
+
+        boolean teachers = false;
+        if (queryColumns.contains(DBManager.C.Teacher.TABLE_NAME))
+        {
+            teachers = true;
+            innerJoin += joinTalkIdTeacherId();
+        }
 
         if (isStarred)
         {
@@ -80,6 +87,12 @@ public class TalkRepository extends Repository
         String where = "";
         if (searchTerms != null && searchTerms.size() > 0)
         {
+            // get the teachers table if we haven't already
+            if (!teachers)
+            {
+                innerJoin += joinTalkIdTeacherId();
+            }
+
             // we only need the center table if we have search terms
             innerJoin += innerJoin(
                     DBManager.C.Center.TABLE_NAME,

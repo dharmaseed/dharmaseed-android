@@ -1,0 +1,84 @@
+CREATE TABLE talks (_id INTEGER PRIMARY KEY,title TEXT,description TEXT,venue_id INTEGER,teacher_id INTEGER,audio_url TEXT,duration_in_minutes REAL,update_date TEXT,rec_date TEXT,retreat_id INTEGER,file_path TEXT NOT NULL DEFAULT '');
+CREATE TABLE teachers (_id INTEGER PRIMARY KEY,website TEXT,bio TEXT,name TEXT,public INTEGER,monastic INTEGER,photo TEXT);
+CREATE TABLE centers (_id INTEGER PRIMARY KEY,website TEXT,description TEXT,name TEXT);
+CREATE TABLE talk_stars (_id INTEGER PRIMARY KEY);
+CREATE TABLE teacher_stars (_id INTEGER PRIMARY KEY);
+CREATE TABLE center_stars (_id INTEGER PRIMARY KEY);
+CREATE TABLE downloaded_talks (_id INTEGER PRIMARY KEY);
+INSERT INTO "talks" VALUES(1,'Patience And The Gentle Heart','Patience is a quality not often appreciated but so necessary in our
+lives and our practice. When we are patient, we can open fully to and
+connect with what is true in the moment - moment after moment, even
+when our experience is difficult or unpleasant.',1,153,'/teacher/153/talk/1/19900101-Sally_Clough_Armstrong-UNK-patience_and_the_gentle_heart-1.mp3',51.2168333333333,'2018-02-27 00:12:30','1990-01-01 00:00:00',1,'');
+INSERT INTO "talks" VALUES(2,'How This Practice Works','This talk presents the technical, meditative practice of mindfulness
+and LovingKindness in the context of the fullest sense of practice,
+the living of an awakened, purposeful life.  If you are living
+intentionally, you can''t be practicing wrong.',1,174,'/teacher/174/talk/2/19900101-Sylvia_Boorstein-UNK-how_this_practice_works-2.mp3',57.3373333333333,'2018-02-27 00:15:17','1990-01-01 00:00:00',1,'');
+INSERT INTO "talks" VALUES(4,'Seven Factors Of Enlightenment','Developing and balancing the seven factors of awakening [mindfulness,
+investigation, energy, joy, calm, concentration and equanimity] to
+support life and practice.',1,3,'/teacher/3/talk/4/20011011-Adrianne_Ross-UNK-seven_factors_of_enlightenment-4.mp3',53.6806666666667,'2018-02-27 00:17:56','2001-10-11 00:00:00',1,'');
+INSERT INTO "talks" VALUES(5,'Difficulty In Life, Difficulty In Practice','Difficult times and sudden adversities are potentially very crucial
+challenges to deepen our practice.',1,46,'/teacher/46/talk/5/20010706-Corrado_Pensa-UNK-difficulty_in_life_difficulty_in_practice-5.mp3',41.8766666666667,'2018-02-27 00:19:58','2001-07-06 00:00:00',1,'');
+INSERT INTO "talks" VALUES(6,'Turning The Mind Toward The Dharma','Reflections on impermanence and karma that in the midst of our lives
+in the world can help turn the mind towards the Dharma, towards
+liberation.',1,96,'/teacher/96/talk/6/20030724-Joseph_Goldstein-UNK-turning_the_mind_toward_the_dharma-6.mp3',57.7163666666667,'2018-02-27 00:22:56','2003-07-24 00:00:00',1,'');
+INSERT INTO "talks" VALUES(8,'Opening Our Heart','Opening the heart through consciously allowing ourselves to touch and
+be touched by all of life, including the difficult, dissolves the
+defensive armor of separation; this allows us to receive life''s
+nourishment and discover true inner strength.',1,193,'/teacher/193/talk/8/20010716-Yanai_Postelnik-UNK-opening_our_heart-8.mp3',53.7163666666667,'2018-02-27 00:25:27','2001-07-16 00:00:00',1,'');
+INSERT INTO "talks" VALUES(9,'Thinking','We don''t have to get rid of thinking in order to meditate. There is no
+problem with thinking in and of itself, but only in how we sometimes
+relate to it. This talk explores the role and nature of conceptual
+thought, how to relate to it skillfully, as well as acknowledging the
+value and right use of reflective thinking.',1,4,'/teacher/4/talk/9/19980414-Ajahn_Amaro-UNK-thinking-9.mp3',65.5523333333333,'2018-02-27 00:28:35','1998-04-14 00:00:00',1,'');
+INSERT INTO "talks" VALUES(11,'The Power Of Metta','Lovingkindness is the quality of friendliness toward oneself and others^M
+developed through the practice of metta.  This talk describes how the^M
+practice works as a protection, a healing, a purification of heart, and a^M
+boundless state of mind.',1,79,'/teacher/79/talk/11/20010706-Guy_Armstrong-UNK-the_power_of_metta-11.mp3',48.1608333333333,'2018-02-27 00:30:56','2001-07-06 00:00:00',1,'');
+INSERT INTO "teachers" VALUES(96,'http://www.dharma.org/joseph-goldstein','I have two main aims in teaching. The first is to spread the dharma as widely as possible, offering it to as many different people as I can.  The second is to teach a smaller number of people over sustained periods of time. This in-depth teaching engages my tremendous love for intensive, long-term meditation practice, where people can immerse themselves in the retreat experience and see how it transforms their understanding.
+
+
+Although deeply rooted in the Vipassana tradition of Theravada Buddhism, I enjoy working with various skillful means from different Buddhist schools to help convey the essence of all practice, the one dharma of liberation.  This essential dharma includes the wisdom of non-clinging, the motivation of compassion to practice for the benefit of all beings, and the potential for  liberation within us all.
+
+Given the speed and complexity of our culture, the Buddha''s teachings offer a much-needed means to slow down, a way to create some inner calm.  We need to touch base with this place of tranquillity in order to allow our bodies and minds to unwind.  We then have the chance to see more deeply and profoundly the nature of our lives, how we create suffering and how we can be free.  The dharma begins with the development of calm and it carries us all the way to liberation.
+
+','Joseph Goldstein','true','false','photo.png');
+INSERT INTO "teachers" VALUES(3,'','Adrianne Ross, MD, has been involved with meditation and healing since 1978 and has offered retreats in Canada and the US since 1995. She also teaches MBSR to people with chronic pain and illness.','Adrianne Ross','true','false','photo.png');
+INSERT INTO "teachers" VALUES(193,'','Yanai Postelnik has been engaged in full-time dharma practice and service since 1990. His practice and teaching are inspired by the Thai forest tradition and nourished by time spent in the natural world. He has been teaching retreats around the world for 20 years, and is a guiding teacher of Gaia House, England.  ','Yanai Postelnik','true','false','photo.png');
+INSERT INTO "teachers" VALUES(46,'','Corrado Pensa teaches insight meditation in Italy and the US. Since 1987 he has been the guiding teacher of the Association for Mindfulness Meditation in Rome. He is also a professor of Eastern Philosophy at the University of Rome and a former psychotherapist.','Corrado Pensa','true','false','photo.png');
+INSERT INTO "teachers" VALUES(79,'','What has always engaged me is working with practitioners who are deepening their commitment to the Dharma and then seeing them take a quantum leap in their understanding.  My contribution to this commitment is working towards conveying a Theravadan practice with a Mahayana spirit.
+
+The Theravadan practice of vipassana provides simple, direct instructions that can be immediately understood and applied in daily life as well as retreat practice.  The Mahayana spirit has the beautiful attitude that we practice not for ourselves alone, but for all sentient beings.  Between the two, the unfolding of liberation for ourselves and others becomes a simple, down-to-earth practice that anyone can do.
+
+It is fun for me to take the most difficult concepts and put them into accessible language, to unwrap the mystery.  So I try to find ways to explore the breadth of concepts like "emptiness" -- to see how the entire path can be explained in terms of this synonym for nibbana.  One of my aims is to bring the goal of freedom into the here and now.  This way practitioners get a taste of freedom, so they know what they are heading toward on their journey to liberation.
+
+The tools of mindfulness and lovingkindness can be picked up by anyone.  They are easy to understand and they bring immediate benefit to our lives.  The essence of vipassana is ideally suited to western society, especially to the resonance between our psychological turn of mind and our quest for spiritual understanding.
+','Guy Armstrong','true','false','photo.png');
+INSERT INTO "teachers" VALUES(4,'http://www.amaravati.org/','I think of myself primarily as a monk who occasionally teaches, who strives to convey the spirit and the letter of Buddhism through my lifestyle, through explanation, and through the imagery of storytelling in order to bring Buddhism to life for people who are seeking truth and freedom.
+
+As co-abbot of Abhayagiri Monastery, I am deeply involved with forming a monastic community that can serve as a guiding spirit for Buddhist practice in the world.   The traditional, renunciate form of the practice is the embodiment of simplicity, strength and resiliency for anyone who seeks classical training in the monastic life.  It is also a hand extended to the lay community that says: come, experience the life of the forest, the chanting, the bowing, the serenity of meditation, the robes, the peacefulness of celibacy.  Draw from our well and bring this spiritual nourishment back into your everyday life.
+
+The outward structure of traditional Buddhism supports a form of spiritual living that is grounded in honesty, non-violence, and living in truth-all the qualities of inner freedom that are precious to me.  Buddhist practice turns the current of attention toward an inner life, irrigating the arid internal landscapes created by the external priorities of our Western world.
+
+Buddhist practice also reconstructs our relationship to time and space.  Our fragmented world is suffering from a continually diminishing attention span as we become overwhelmed with so much to do, with so little time and so many options.  The practice allows us to visit our interior landscape, slow down, pay attention to the qualities of time and spirit, to explore who we are, instead of focusing on what we do.  Buddhism trains the heart to recognize happiness, not by racing onto the next thing, but by paying attention and ending suffering.','Ajahn Amaro','true','true','photo.png');
+INSERT INTO "teachers" VALUES(153,'','Sally Clough Armstrong began practicing vipassana meditation in India in 1981. She moved to the Bay Area in 1988, and worked at Spirit Rock until 1994 in a number of roles, including executive director. She began teaching in 1996, and is one of the guiding teachers of Spirit Rock''s Dedicated Practitioner Program.
+
+Sally has always been inspired by the depth and the breadth of the Buddha’s teaching, as presented in the suttas of the Pali Canon, because the truth and power of the Buddha’s words still speak to us today.  Her intention in teaching is to make these ancient texts and practices accessible and relevant to all levels of practitioner, from the very new to the dedicated meditator.','Sally Clough Armstrong','true','false','photo.png');
+INSERT INTO "teachers" VALUES(174,'','My greatest joy is giving the gift of love and hope through the dharma, knowing it is possible for humans to transform their hearts.  These dharma gifts include paying attention, practicing clarity and kindness and addressing the suffering of the world--which, of course, includes ourselves.
+
+Right now I''m most enthusiastic about the first gift, paying attention, because it makes every part of our lives better.  Paying attention allows us to become more clear,  and each moment of clarity is a gift to ourselves and those around us.  Clarity keeps us from contributing to more suffering.  The gift of clarity and kindness also supports a peaceful heart, which allows us to address the suffering in the world with love.  When we practice clarity, we offer the possibility for humans to live in a different way.  But a peaceful heart is only the beginning.  We also have to take action,  go out and directly address the suffering with peace in our hearts.
+
+As a parent, grandparent and a psychotherapist, I teach out of the stories of my life and the lives of those around me.  I am especially touched by personal narrative, accounts of spiritual journeys, and how these become vehicles for connecting with the dharma.  I believe in revealing my own story so that others are more at ease to reveal theirs.  Truth talking is a way out of suffering.  Discovering how our hearts and minds work and creating a dialogue supports right speech practice.  This is an on-going primary practice that we can do all the time.  My hope is that I encourage people how to pay attention and to tell the truth by example.
+','Sylvia Boorstein','true','false','photo.png');
+INSERT INTO "centers" VALUES(3,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Forest Refuge');
+INSERT INTO "centers" VALUES(6,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Retreat Center');
+INSERT INTO "downloaded_talks" VALUES(6);
+INSERT INTO "downloaded_talks" VALUES(9);
+INSERT INTO "downloaded_talks" VALUES(11);
+INSERT INTO "talk_stars" VALUES(9);
+INSERT INTO "talk_stars" VALUES(4);
+INSERT INTO "talk_stars" VALUES(6);
+INSERT INTO "teacher_stars" VALUES(193);
+INSERT INTO "talks" VALUES(46,'Opening Talk','',6,96,'/teacher/96/talk/46/20060203-Joseph_Goldstein-IMSRC-opening_talk-46.mp3',59.366667,'2011-07-24 22:28:52','2006-02-03 00:00:00',3813,'');
+INSERT INTO "talks" VALUES(47,'Wisdom & Compassion','',6,96,'/teacher/96/talk/47/20060208-Joseph_Goldstein-IMSRC-wisdom_compassion-47.mp3',59.366667,'2011-07-24 22:28:52','2006-02-08 00:00:00',3813,'');
+INSERT INTO "talk_stars" VALUES(46);
+INSERT INTO "centers" VALUES(1,'','','Unknown');
