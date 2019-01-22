@@ -1,6 +1,10 @@
 CREATE TABLE talks (_id INTEGER PRIMARY KEY,title TEXT,description TEXT,venue_id INTEGER,teacher_id INTEGER,audio_url TEXT,duration_in_minutes REAL,update_date TEXT,rec_date TEXT,retreat_id INTEGER,file_path TEXT NOT NULL DEFAULT '');
 CREATE TABLE teachers (_id INTEGER PRIMARY KEY,website TEXT,bio TEXT,name TEXT,public INTEGER,monastic INTEGER,photo TEXT);
 CREATE TABLE centers (_id INTEGER PRIMARY KEY,website TEXT,description TEXT,name TEXT);
+CREATE TABLE talk_stars (_id INTEGER PRIMARY KEY);
+CREATE TABLE teacher_stars (_id INTEGER PRIMARY KEY);
+CREATE TABLE center_stars (_id INTEGER PRIMARY KEY);
+CREATE TABLE downloaded_talks (_id INTEGER PRIMARY KEY);
 INSERT INTO "talks" VALUES(1,'Patience And The Gentle Heart','Patience is a quality not often appreciated but so necessary in our
 lives and our practice. When we are patient, we can open fully to and
 connect with what is true in the moment - moment after moment, even
@@ -67,3 +71,14 @@ As a parent, grandparent and a psychotherapist, I teach out of the stories of my
 ','Sylvia Boorstein','true','false','photo.png');
 INSERT INTO "centers" VALUES(3,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Forest Refuge');
 INSERT INTO "centers" VALUES(6,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Retreat Center');
+INSERT INTO "downloaded_talks" VALUES(6);
+INSERT INTO "downloaded_talks" VALUES(9);
+INSERT INTO "downloaded_talks" VALUES(11);
+INSERT INTO "talk_stars" VALUES(9);
+INSERT INTO "talk_stars" VALUES(4);
+INSERT INTO "talk_stars" VALUES(6);
+INSERT INTO "teacher_stars" VALUES(193);
+INSERT INTO "talks" VALUES(46,'Opening Talk','',6,96,'/teacher/96/talk/46/20060203-Joseph_Goldstein-IMSRC-opening_talk-46.mp3',59.366667,'2011-07-24 22:28:52','2006-02-03 00:00:00',3813,'');
+INSERT INTO "talks" VALUES(47,'Wisdom & Compassion','',6,96,'/teacher/96/talk/47/20060208-Joseph_Goldstein-IMSRC-wisdom_compassion-47.mp3',59.366667,'2011-07-24 22:28:52','2006-02-08 00:00:00',3813,'');
+INSERT INTO "talk_stars" VALUES(46);
+INSERT INTO "centers" VALUES(1,'','','Unknown');

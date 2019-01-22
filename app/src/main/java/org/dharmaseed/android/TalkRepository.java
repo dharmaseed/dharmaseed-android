@@ -67,8 +67,10 @@ public class TalkRepository extends Repository
 
         String innerJoin = "";
 
+        boolean teachers = false;
         if (queryColumns.contains(DBManager.C.Teacher.TABLE_NAME))
         {
+            teachers = true;
             innerJoin += joinTalkIdTeacherId();
         }
 
@@ -85,6 +87,12 @@ public class TalkRepository extends Repository
         String where = "";
         if (searchTerms != null && searchTerms.size() > 0)
         {
+            // get the teachers table if we haven't already
+            if (!teachers)
+            {
+                innerJoin += joinTalkIdTeacherId();
+            }
+
             // we only need the center table if we have search terms
             innerJoin += innerJoin(
                     DBManager.C.Center.TABLE_NAME,

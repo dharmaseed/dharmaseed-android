@@ -18,34 +18,14 @@ import static org.junit.Assert.*;
 public class TalkRepositoryTest
 {
 
-    private static SQLiteOpenHelper dbManager;
+    private static MockDBManager dbManager;
     private TalkRepository talkRepository;
 
     @BeforeClass
     public static void setUp() throws Exception
     {
-        createDB();
-    }
-
-    private static void createDB() throws Exception
-    {
-        dbManager = new MockDBManager(InstrumentationRegistry.getTargetContext());
-        SQLiteDatabase db = dbManager.getWritableDatabase();
-        InputStream fis = InstrumentationRegistry.getContext().getAssets().open("inserts.txt");
-        String line = "";
-        int ch;
-        // run every statement from "inserts.txt"
-        while ((ch = fis.read()) != -1)
-        {
-            if (ch < 8 || ch > 'z') continue;
-            line += (char) ch;
-            // execute the statement once we hit a semicolon followed by a newline
-            if (ch == ';' && fis.read() == '\n')
-            {
-                db.execSQL(line);
-                line = "";
-            }
-        }
+        dbManager = MockDBManager.getInstance(InstrumentationRegistry.getTargetContext());
+        dbManager.init(InstrumentationRegistry.getContext());
     }
 
     @AfterClass
@@ -112,6 +92,230 @@ public class TalkRepositoryTest
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery("SELECT _id, teacher_id FROM talks ORDER BY rec_date DESC", null);
 
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksTwoSearchTerms_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
+
+        List<String> searchTerms = new ArrayList<>();
+        searchTerms.add("Joseph");
+        searchTerms.add("Compassion");
+
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT t._id, t.teacher_id " +
+                     "FROM talks t " +
+                     "INNER JOIN teachers te ON te._id = t.teacher_id " +
+                     "INNER JOIN centers c ON c._id = t.venue_id " +
+                     "WHERE ((t.title LIKE '%Joseph%') OR (t.description LIKE '%Joseph%') " +
+                     "OR (te.name LIKE '%Joseph%') OR (c.name LIKE '%Joseph%')) AND " +
+                     " ((t.title LIKE '%Compassion%') OR (t.description LIKE '%Compassion%') " +
+                     "OR (te.name LIKE '%Compassion%') OR (c.name LIKE '%Compassion%')) " +
+                     "ORDER BY rec_date DESC", null);
+
+        // there should only be one result
+        assertEquals(1, actual.getCount());
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksOneSearchTerm_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
+
+        List<String> searchTerms = new ArrayList<>();
+        searchTerms.add("Sally");
+
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT t._id, t.teacher_id " +
+                        "FROM talks t " +
+                        "INNER JOIN teachers te ON te._id = t.teacher_id " +
+                        "INNER JOIN centers c ON c._id = t.venue_id " +
+                        "WHERE (t.title LIKE '%Sally%') OR (t.description LIKE '%Sally%') " +
+                        "OR (te.name LIKE '%Sally%') OR (c.name LIKE '%Sally%') " +
+                        "ORDER BY rec_date DESC", null);
+
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void selectIdsTeacherIdsStarred_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
+        Cursor actual = talkRepository.getTalks(columns, null, true, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT talks._id, teacher_id " +
+                     "FROM talks " +
+                    "INNER JOIN talk_stars ON talks._id = talk_stars._id " +
+                     "ORDER BY rec_date DESC ",
+                null);
+
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void selectIdsTeacherIdsDownloaded_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
+        Cursor actual = talkRepository.getTalks(columns, null, false, true);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT talks._id, teacher_id " +
+                        "FROM talks " +
+                        "INNER JOIN downloaded_talks dt ON talks._id = dt._id " +
+                        "ORDER BY rec_date DESC ",
+                null);
+
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksDownloadedStarred_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        Cursor actual = talkRepository.getTalks(null, null, true, true);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT * " +
+                        "FROM talks " +
+                        "INNER JOIN downloaded_talks dt ON talks._id = dt._id " +
+                        "INNER JOIN talk_stars ts ON talks._id = ts._id " +
+                        "ORDER BY rec_date DESC ",
+                null);
+
+        List<String> columns = new ArrayList<>();
+
+        // compare every column
+        columns.add(DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TITLE);
+        columns.add(DBManager.C.Talk.TEACHER_ID);
+        columns.add(DBManager.C.Talk.RECORDING_DATE);
+        columns.add(DBManager.C.Talk.VENUE_ID);
+        columns.add(DBManager.C.Talk.FILE_PATH);
+        columns.add(DBManager.C.Talk.AUDIO_URL);
+        columns.add(DBManager.C.Talk.UPDATE_DATE);
+        columns.add(DBManager.C.Talk.DESCRIPTION);
+        columns.add(DBManager.C.Talk.DURATION_IN_MINUTES);
+        columns.add(DBManager.C.Talk.RETREAT_ID);
+
+        // only 2 talks are starred and downloaded
+        assertEquals(2, actual.getCount());
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksSearchStarred_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+
+        List<String> searchTerms = new ArrayList<>();
+        searchTerms.add("Joseph");
+
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, true, false);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT t._id " +
+                        "FROM talks t " +
+                        "INNER JOIN teachers te ON te._id = t.teacher_id " +
+                        "INNER JOIN centers c ON c._id = t.venue_id " +
+                        "INNER JOIN talk_stars ts ON t._id = ts._id " +
+                        "WHERE ((t.title LIKE '%Joseph%') OR (t.description LIKE '%Joseph%') " +
+                        "OR (te.name LIKE '%Joseph%') OR (c.name LIKE '%Joseph%')) " +
+                        "ORDER BY rec_date DESC", null);
+
+        // there are two starred talks by joseph
+        assertEquals(2, actual.getCount());
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksSearchDownloaded_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+
+        List<String> searchTerms = new ArrayList<>();
+        searchTerms.add("Metta");
+
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, true);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT t._id " +
+                        "FROM talks t " +
+                        "INNER JOIN teachers te ON te._id = t.teacher_id " +
+                        "INNER JOIN centers c ON c._id = t.venue_id " +
+                        "INNER JOIN downloaded_talks dt ON t._id = dt._id " +
+                        "WHERE ((t.title LIKE '%Metta%') OR (t.description LIKE '%Metta%') " +
+                        "OR (te.name LIKE '%Metta%') OR (c.name LIKE '%Metta%')) " +
+                        "ORDER BY rec_date DESC", null);
+
+        // there is one downloaded talk with the word "metta" in it
+        assertEquals(1, actual.getCount());
+        assertCursors(expected, actual, columns);
+    }
+
+    @Test
+    public void getTalksSearchStarredDownloaded_isCorrect()
+    {
+        talkRepository = new TalkRepository(dbManager);
+
+        List<String> columns = new ArrayList<>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+
+        List<String> searchTerms = new ArrayList<>();
+        searchTerms.add("Mind");
+
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, true, true);
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        Cursor expected = db.rawQuery(
+                "SELECT t._id " +
+                        "FROM talks t " +
+                        "INNER JOIN teachers te ON te._id = t.teacher_id " +
+                        "INNER JOIN centers c ON c._id = t.venue_id " +
+                        "INNER JOIN downloaded_talks dt ON t._id = dt._id " +
+                        "INNER JOIN talk_stars ts ON t._id = ts._id " +
+                        "WHERE ((t.title LIKE '%Mind%') OR (t.description LIKE '%Mind%') " +
+                        "OR (te.name LIKE '%Mind%') OR (c.name LIKE '%Mind%')) " +
+                        "ORDER BY rec_date DESC", null);
+
+        assertEquals(1, actual.getCount());
         assertCursors(expected, actual, columns);
     }
 
