@@ -34,8 +34,12 @@ public class TeacherRepository extends Repository
 
     public Cursor getTeachers(List<String> searchTerms, boolean isStarred)
     {
-        String query = "SELECT teachers._id, teachers.name FROM teachers ";
-        String innerJoin = "";
+        String query = "SELECT teachers._id, teachers.name, count(talks._id) AS talk_count FROM teachers ";
+        String innerJoin = innerJoin(
+                DBManager.C.Talk.TABLE_NAME,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID
+        );
 
         if (isStarred)
         {
@@ -60,6 +64,7 @@ public class TeacherRepository extends Repository
 
         query += where;
 
+        query += " GROUP BY teachers._id";
         query += " ORDER BY teachers.monastic DESC, teachers.name ASC";
 
         Log.d(LOG_TAG, query);

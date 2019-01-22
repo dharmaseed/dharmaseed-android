@@ -24,6 +24,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -464,5 +465,16 @@ public class DBManager extends SQLiteOpenHelper {
         }
         cursor.close();
         return outOfDate;
+    }
+
+    /**
+     * Get an alias for a fully qualified column name. This is useful in naming columns in a query
+     * using SQL AS clauses and referencing them later
+     * @param fullyQualifiedColumn Name of the column with the table name prepended (i.e. "talks.title")
+     * @return The alias for this column
+     */
+    @NonNull
+    public static String getAlias(String fullyQualifiedColumn) {
+        return fullyQualifiedColumn.replace(".", "_");
     }
 }
