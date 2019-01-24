@@ -72,7 +72,7 @@ public class NavigationActivity extends AppCompatActivity
     EditText searchBox;
     String extraSearchTerms;
     LinearLayout searchCluster, header;
-    TextView headerPrimary, headerDescription;
+    TextView headerPrimary, headerDescription, websiteLink, donationLink;
     boolean starFilterOn;
     Menu menu;
     DBManager dbManager;
@@ -171,7 +171,10 @@ public class NavigationActivity extends AppCompatActivity
         header = (LinearLayout)findViewById(R.id.nav_sub_header);
         headerPrimary = (TextView)findViewById(R.id.nav_sub_header_primary);
         headerDescription = (TextView)findViewById(R.id.nav_sub_header_description);
-        headerDescription.setMovementMethod(LinkMovementMethod.getInstance());
+        websiteLink = (TextView)findViewById(R.id.nav_links_website);
+        donationLink = (TextView)findViewById(R.id.nav_links_donate);
+        websiteLink.setMovementMethod(LinkMovementMethod.getInstance());
+        donationLink.setMovementMethod(LinkMovementMethod.getInstance());
 
         // Configure navigation view
         navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -299,14 +302,17 @@ public class NavigationActivity extends AppCompatActivity
 
         headerPrimary.setText(teacher.getName());
 
-        String descriptionHtml = teacher.getBio().replace("\n", "\n<p>") + "\n<p>";
         if (!teacher.getWebsite().isEmpty()) {
-            descriptionHtml += String.format("<a href=%s>Visit teacher's website</a><p>\n", teacher.getWebsite());
+            websiteLink.setText(Html.fromHtml(String.format("<a href=%s>Teacher's website</a>", teacher.getWebsite())));
+        } else {
+            websiteLink.setText("");
         }
         if (!teacher.getDonationUrl().isEmpty()) {
-            descriptionHtml += String.format("<a href=%s>Donate to this teacher</a><p>\n", teacher.getDonationUrl());
+            donationLink.setText(Html.fromHtml(String.format("<a href=%s>Donate to this teacher</a>", teacher.getDonationUrl())));
+        } else {
+            donationLink.setText("");
         }
-        headerDescription.setText(Html.fromHtml(descriptionHtml));
+        headerDescription.setText(teacher.getBio());
     }
 
     public void displayTalksByTeacher(long id)
@@ -334,9 +340,12 @@ public class NavigationActivity extends AppCompatActivity
 
         String descriptionHtml = center.getDescription().replace("\n", "\n<p>") + "\n<p>";
         if (!center.getWebsite().isEmpty()) {
-            descriptionHtml += String.format("<a href=%s>Visit center's website</a><p>\n", center.getWebsite());
+            websiteLink.setText(Html.fromHtml(String.format("<a href=%s>Center's website</a>", center.getWebsite())));
+        } else {
+            websiteLink.setText("");
         }
-        headerDescription.setText(Html.fromHtml(descriptionHtml));
+        donationLink.setText("");
+        headerDescription.setText(center.getDescription());
     }
 
     private void displayTalksByCenter(long id)
