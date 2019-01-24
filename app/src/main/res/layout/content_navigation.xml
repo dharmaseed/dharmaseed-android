@@ -46,6 +46,39 @@
             android:textStyle="bold"
             />
 
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="25dp"
+                android:id="@+id/nav_links_header"
+                android:orientation="horizontal"
+                android:background="@color/button_material_light">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:layout_gravity="left"
+                    android:gravity="left"
+                    android:text="Visit website"
+                    android:id="@+id/nav_links_website"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:textStyle=""
+            />
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:layout_gravity="right"
+                    android:gravity="right"
+                    android:text="Donate to teacher"
+                    android:id="@+id/nav_links_donate"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:textStyle=""
+            />
+
+        </LinearLayout>
+
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
