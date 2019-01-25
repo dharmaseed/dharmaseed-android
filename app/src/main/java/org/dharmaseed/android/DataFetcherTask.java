@@ -88,6 +88,16 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 JSONObject json = new JSONObject(response.body().string());
                 String newEdition = json.getString("edition");
                 JSONArray items = json.getJSONArray("items");
+                if (json.has("x_items")) {
+                    JSONArray x_items = json.getJSONArray("x_items");
+
+                    List<Integer> idsToDelete = new ArrayList<>();
+                    for (int i = 0; i < x_items.length(); i++) {
+                        idsToDelete.add(x_items.getInt(i));
+                    }
+
+                    dbManager.deleteIDs(idsToDelete, tableName);
+                }
                 Log.d("dataFetcher", "Retrieved "+tableName+" edition "+newEdition+". New items: "+items.length());
 
                 // Fetch new items, starting with the latest ones

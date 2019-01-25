@@ -433,7 +433,7 @@ public class PlayTalkActivity extends AppCompatActivity
         if (!TalkManager.delete(talk)) {
             showToast("Unable to delete '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
         } else {
-            dbManager.deleteTalk(talk);
+            dbManager.removeDownload(talk);
             showToast("Deleted '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
             toggleDownloadImage();
             Log.d(LOG_TAG, "Deleted talk " + talk.getId());
