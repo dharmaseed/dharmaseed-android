@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by bbethke on 2/7/16.
@@ -368,6 +369,25 @@ public class DBManager extends SQLiteOpenHelper {
         }
     }
 
+    /**
+     * Delete all ids from DB with a query like:
+     * DELETE FROM `table_name` WHERE _id IN (ids[0], ids[1], ... ids[n-1])
+     * @param ids
+     * @param tableName
+     */
+    public void deleteIDs(List<Integer> ids, String tableName) {
+        if (!ids.isEmpty()) {
+            String idsToDelete = "(" + ids.get(0);
+            for (Integer item : ids) {
+                idsToDelete += "," + item;
+            }
+            idsToDelete += ")";
+
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete(tableName, "_id IN " + idsToDelete, null);
+        }
+    }
+
     public static String getTeacherPhotoFilename(int teacherID) {
         return "teacher-"+teacherID+".png";
     }
@@ -423,7 +443,7 @@ public class DBManager extends SQLiteOpenHelper {
      * @param talk the talk to delete
      * @return true if all rows were updated successfully, false if at least one was not
      */
-    public boolean deleteTalk(Talk talk) {
+    public boolean removeDownload(Talk talk) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(C.Talk.FILE_PATH, ""); // a path of "" indicates that the talk is not downloaded
