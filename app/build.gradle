@@ -27,8 +27,8 @@ android {
         applicationId "org.dharmaseed.android"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 9
-        versionName "1.0.0-rc6"
+        versionCode 10
+        versionName "1.0.0-rc7"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -51,4 +51,3 @@ dependencies {
     androidTestImplementation 'com.android.support:support-annotations:24.0.0'
     androidTestImplementation 'com.android.support.test:runner:0.5'
 }
-
