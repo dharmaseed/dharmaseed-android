@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class DBManager extends SQLiteOpenHelper {
 
-    private static final int DB_VERSION = 35;
+    private static final int DB_VERSION = 1;
     private static final String DB_NAME = "Dharmaseed.db";
 
     private static DBManager instance = null;
@@ -273,41 +273,6 @@ public class DBManager extends SQLiteOpenHelper {
                 "DBManager",
                 "Upgrading database from v" + oldVersion + " to v" + newVersion
         );
-
-        if(oldVersion < DB_VERSION) {
-            didUpdate = true; // re-sync with dharmaseed api
-
-            // DB version 29 introduced "public" and "monastic" fields into the teachers table
-            // (See #21)
-            db.execSQL(C.Teacher.DROP_TABLE);
-            db.execSQL(C.Teacher.CREATE_TABLE);
-            clearEdition(db, C.Teacher.TABLE_NAME);
-
-            // DB version 30 added the "retreat" table (see #23)
-            db.execSQL(C.Retreat.DROP_TABLE);
-            db.execSQL(C.Retreat.CREATE_TABLE);
-
-            // DB version 31 added the "file_path" column to the talk table
-            // DB version 32 changed the column `recording_date` to `rec_date` in the talk table
-            // see (#30 for v32)
-            db.execSQL(C.Talk.DROP_TABLE);
-            db.execSQL(C.Talk.CREATE_TABLE);
-            clearEdition(db, C.Talk.TABLE_NAME);
-
-            // DB version 33 added the "downloaded_talks" table (see #32)
-            db.execSQL(C.DownloadedTalks.DROP_TABLE);
-            db.execSQL(C.DownloadedTalks.CREATE_TABLE);
-
-            // DB version 34 added the "has_venue_view" column to the center table
-            db.execSQL(C.Center.DROP_TABLE);
-            db.execSQL(C.Center.CREATE_TABLE);
-            clearEdition(db, C.Center.TABLE_NAME);
-
-            // DB version 35 added the "donation_url" column to the teachers table (see #41)
-            db.execSQL(C.Teacher.DROP_TABLE);
-            db.execSQL(C.Teacher.CREATE_TABLE);
-            clearEdition(db, C.Teacher.TABLE_NAME);
-        }
     }
 
     @Override
@@ -479,7 +444,7 @@ public class DBManager extends SQLiteOpenHelper {
             long lastSync = cursor.getLong(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
             Date nowDate = new Date();
             long now = nowDate.getTime();
-            if(now - lastSync > 1000*60*60*12) { // Update every 12 hours
+            if(now - lastSync > 1000*60*60*1) { // Update every hour
                 outOfDate = true;
             }
         }
