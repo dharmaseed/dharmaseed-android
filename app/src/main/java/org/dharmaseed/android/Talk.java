@@ -56,6 +56,8 @@ public class Talk {
         }
         setDate(recDate);
 
+        setTeacherId(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID)));
+
         setTeacherName(cursor.getString(cursor.getColumnIndexOrThrow("teacher_name")).trim());
 
         setCenterName(cursor.getString(cursor.getColumnIndexOrThrow("center_name")).trim());

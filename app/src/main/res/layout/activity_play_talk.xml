@@ -106,15 +106,32 @@
 
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/download_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#0000"
-            android:contentDescription="@string/download_content_desc"
-            android:onClick="onDownloadButtonClicked"
-            app:srcCompat="@drawable/ic_file_download_green_24dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/download_button"
+                android:layout_width="0dp"
+                android:layout_height="34dp"
+                android:layout_weight="1"
+                android:background="#0000"
+                android:contentDescription="@string/download_content_desc"
+                android:onClick="onDownloadButtonClicked"
+                app:srcCompat="@drawable/ic_file_download_green_24dp" />
+
+            <ImageButton
+                android:id="@+id/share_button"
+                android:layout_width="0dp"
+                android:layout_height="34dp"
+                android:layout_weight="1"
+                android:background="#0000"
+                android:contentDescription="Share Talk"
+                android:onClick="onShareButtonClicked"
+                android:tint="@color/colorPrimary"
+                app:srcCompat="@drawable/ic_share_button_green" />
+        </LinearLayout>
 
     </LinearLayout>
 
