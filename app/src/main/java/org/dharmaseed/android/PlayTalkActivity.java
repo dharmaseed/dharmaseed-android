@@ -196,7 +196,7 @@ public class PlayTalkActivity extends AppCompatActivity
     private Cursor getCursor() {
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
-                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
+                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
                         + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
                 DBManager.C.Talk.TITLE,
                 DBManager.C.Talk.TABLE_NAME,
@@ -207,6 +207,7 @@ public class PlayTalkActivity extends AppCompatActivity
                 DBManager.C.Talk.UPDATE_DATE,
                 DBManager.C.Talk.RETREAT_ID,
                 DBManager.C.Talk.FILE_PATH,
+                DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
                 DBManager.C.Center.TABLE_NAME,
@@ -424,6 +425,25 @@ public class PlayTalkActivity extends AppCompatActivity
     public void onDeleteTalkClicked(View view) {
         DialogFragment dialog = new DeleteTalkFragment();
         dialog.show(getFragmentManager(), "DeleteTalkFragment");
+    }
+
+    /**
+     * Share a link to the dharmaseed website for this talk
+     */
+    public void onShareButtonClicked(View view) {
+        String url = String.format("https://dharmaseed.org/teacher/%d/talk/%d/", talk.getTeacherId(), talk.getId());
+        Log.d(LOG_TAG,"Sharing link to " + url);
+
+        Intent share = new Intent(android.content.Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+
+        // Add data to the intent, the receiving app will decide
+        // what to do with it.
+        share.putExtra(Intent.EXTRA_SUBJECT, talk.getTitle());
+        share.putExtra(Intent.EXTRA_TEXT, url);
+
+        startActivity(Intent.createChooser(share, "Share talk"));
     }
 
     /**
