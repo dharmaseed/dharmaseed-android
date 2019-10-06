@@ -44,12 +44,20 @@ public abstract class TalkManager {
         long size = 0;
 
         try {
-            URL talkUrl = new URL(talk.getDownloadUrl());
+            URL talkUrl = new URL(talk.getAudioUrl());
             HttpURLConnection connection = (HttpURLConnection) talkUrl.openConnection();
 
             int response = connection.getResponseCode();
+            while (response != HttpURLConnection.HTTP_OK &&
+                    (response == HttpURLConnection.HTTP_MOVED_PERM || response == HttpURLConnection.HTTP_MOVED_TEMP)) {
+                talkUrl = new URL(connection.getHeaderField("Location"));
+                connection = (HttpURLConnection) talkUrl.openConnection();
+                Log.i(LOG_TAG, "Following redirect to " + talkUrl);
+                response = connection.getResponseCode();
+            }
+
             if (response != HttpURLConnection.HTTP_OK) {
-                Log.e(LOG_TAG, "Talk " + talk.getId() + " URL returned " + response);
+                Log.e(LOG_TAG, "Talk URL " + connection.getURL() + " returned " + response);
                 return FAILURE;
             }
 

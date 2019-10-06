@@ -12,7 +12,6 @@ public class Talk {
     private String title;
     private String description;
     private String audioUrl;
-    private String downloadUrl; // this is different from the audio url
     private String date;
     private String teacherName;
     private String centerName;
@@ -41,14 +40,6 @@ public class Talk {
 
         String url = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.AUDIO_URL));
         setAudioUrl("http://www.dharmaseed.org" + url);
-
-        String[] data = url.split("/");
-        String downloadPrefix = "https://media.dharmaseed.org/cache/DS/";
-
-        if (data.length > 0) {
-            // we want the path after the last '/'
-            setDownloadUrl(downloadPrefix + data[data.length - 1]);
-        }
 
         String recDate = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.RECORDING_DATE));
         if(recDate == null) {
@@ -81,10 +72,6 @@ public class Talk {
 
     public String getAudioUrl() {
         return audioUrl;
-    }
-
-    public String getDownloadUrl() {
-        return downloadUrl;
     }
 
     public double getDurationInMinutes() {
@@ -145,10 +132,6 @@ public class Talk {
 
     private void setAudioUrl(String audioUrl) {
         this.audioUrl = audioUrl;
-    }
-
-    private void setDownloadUrl(String downloadUrl) {
-        this.downloadUrl = downloadUrl;
     }
 
     private void setDurationInMinutes(double durationInMinutes) {
