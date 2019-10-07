@@ -1,11 +1,15 @@
 package org.dharmaseed.android;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -187,7 +191,8 @@ public class TalkRepository extends Repository {
                 DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId);
     }
 
-    /** Check if we have talks downloaded in old/inaccessible locations, and mark them as not downloaded if so
+    /**
+     * Check if we have talks downloaded in old/inaccessible locations, and mark them as not downloaded if so
      *
      */
     public void removeOldDownloads()
@@ -205,16 +210,52 @@ public class TalkRepository extends Repository {
         {
             int id = downloaded.getInt(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID)));
-            String path = downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH))).trim();
+            File file = new File(downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
+                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH))).trim());
 
-            String fullPath = new File(path).getAbsolutePath();
-            String downloadPath = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
+            String directory = file.getAbsoluteFile().getParent();
+            String downloadDirectory = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
 
-            if (! fullPath.startsWith(downloadPath)) {
-                Log.w(LOG_TAG, "Removing old download for talk " + id);
+            if (! directory.equals(downloadDirectory)) {
+                Log.w(LOG_TAG, "Detected old style download for talk " + file.toString());
                 dbManager.removeDownload(id);
+
+                try {
+                    File copyTarget = new File(downloadsDir.toString() + "/" + file.getName());
+                    copy(file, copyTarget);
+                    dbManager.addDownload(id, copyTarget.toString());
+                    Log.i(LOG_TAG, "Successfully moved old talk to " + copyTarget.toString());
+                    file.delete();
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, e.toString());
+                }
             }
+        }
+    }
+
+    /**
+     * Copy src to dst.  From https://stackoverflow.com/questions/9292954/how-to-make-a-copy-of-a-file-in-android
+     * Unfortunately, Files.copy is not available before API version 26
+     * @param src
+     * @param dst
+     * @throws IOException
+     */
+    private static void copy(File src, File dst) throws IOException {
+        InputStream in = new FileInputStream(src);
+        try {
+            OutputStream out = new FileOutputStream(dst);
+            try {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            } finally {
+                out.close();
+            }
+        } finally {
+            in.close();
         }
     }
 
