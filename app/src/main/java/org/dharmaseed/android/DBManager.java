@@ -46,10 +46,11 @@ public class DBManager extends SQLiteOpenHelper {
 
     private static final int DB_VERSION = 1;
     private static final String DB_NAME = "Dharmaseed.db";
+    private static final String LOG_TAG = "DBManager";
 
     private static DBManager instance = null;
-
     private boolean didUpdate;
+    private Context context;
 
     // Database contract class
     final class C {
@@ -189,7 +190,7 @@ public class DBManager extends SQLiteOpenHelper {
 
     private DBManager(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
-
+        this.context = context;
         didUpdate = false;
 
         if (context != null) {
@@ -233,6 +234,8 @@ public class DBManager extends SQLiteOpenHelper {
     protected String getDbName() {
         return DB_NAME;
     }
+
+    public Context getContext() { return context; }
 
     @Override
     public void onConfigure(SQLiteDatabase db) {
@@ -381,20 +384,21 @@ public class DBManager extends SQLiteOpenHelper {
     /**
      * Updates the Talk table to set the "file_path" column to the talk path
      * also add the Talk ID to the downloaded_talks table
-     * @param talk the talk to add
+     * @param talkId the talk ID
+     * @param talkPath the path to the talk's downloaded file
      * @return true if all rows were updated successfully, false if at least one was not
      */
-    public boolean addDownload(Talk talk) {
+    public boolean addDownload(int talkId, String talkPath) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
-        cv.put(C.Talk.FILE_PATH, talk.getPath());
-        String whereClause = C.Talk.ID + "=" + talk.getId();
+        cv.put(C.Talk.FILE_PATH, talkPath);
+        String whereClause = C.Talk.ID + "=" + talkId;
         if (db.update(C.Talk.TABLE_NAME, cv, whereClause, null) != 1)
             return false;
 
         // add id to downloaded_talks table
         cv.clear();
-        cv.put(C.DownloadedTalks.ID, talk.getId());
+        cv.put(C.DownloadedTalks.ID, talkId);
         // insert returns a -1 on error
         if (db.insert(C.DownloadedTalks.TABLE_NAME, null, cv) == -1)
             return false;
@@ -402,26 +406,34 @@ public class DBManager extends SQLiteOpenHelper {
         return true;
     }
 
+    public boolean addDownload(Talk talk) {
+        return addDownload(talk.getId(), talk.getPath());
+    }
+
     /**
      * Updates the Talk table to set the "file_path" column to the empty string and removes
      * the talk id from the downloaded_talks table
-     * @param talk the talk to delete
+     * @param talkId the talk ID to delete
      * @return true if all rows were updated successfully, false if at least one was not
      */
-    public boolean removeDownload(Talk talk) {
+    public boolean removeDownload(int talkId) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(C.Talk.FILE_PATH, ""); // a path of "" indicates that the talk is not downloaded
-        String whereClause = C.Talk.ID + "=" + talk.getId();
+        String whereClause = C.Talk.ID + "=" + talkId;
         if (db.update(C.Talk.TABLE_NAME, cv, whereClause, null) != 1)
             return false;
 
         // remove row from downloaded_talks table
-        whereClause = C.DownloadedTalks.ID + "=" + talk.getId();
+        whereClause = C.DownloadedTalks.ID + "=" + talkId;
         if (db.delete(C.DownloadedTalks.TABLE_NAME, whereClause, null) != 1)
             return false;
 
         return true;
+    }
+
+    public boolean removeDownload(Talk talk) {
+        return removeDownload(talk.getId());
     }
 
     /**

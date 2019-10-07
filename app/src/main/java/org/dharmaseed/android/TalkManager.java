@@ -1,5 +1,6 @@
 package org.dharmaseed.android;
 
+import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
@@ -18,7 +19,7 @@ import java.net.URL;
 public abstract class TalkManager {
 
     // folder where talks are stored on the device
-    public static final String DIR_NAME = "dharmaseed";
+    public static final String DIR_NAME = "downloads";
     public static final String FILE_PREFIX = "ds_";
 
     private static final String LOG_TAG = "TalkManager";
@@ -36,7 +37,7 @@ public abstract class TalkManager {
         if (!isExternalStorageWritable())
             return FAILURE;
 
-        File dir = getDir();
+        File dir = getDir(talk.getContext());
         if (dir == null)
             return FAILURE;
 
@@ -44,12 +45,21 @@ public abstract class TalkManager {
         long size = 0;
 
         try {
-            URL talkUrl = new URL(talk.getDownloadUrl());
+            URL talkUrl = new URL(talk.getAudioUrl());
+            Log.i(LOG_TAG, "Downloading " + talkUrl);
             HttpURLConnection connection = (HttpURLConnection) talkUrl.openConnection();
 
             int response = connection.getResponseCode();
+            while (response != HttpURLConnection.HTTP_OK &&
+                    (response == HttpURLConnection.HTTP_MOVED_PERM || response == HttpURLConnection.HTTP_MOVED_TEMP)) {
+                talkUrl = new URL(connection.getHeaderField("Location"));
+                connection = (HttpURLConnection) talkUrl.openConnection();
+                Log.i(LOG_TAG, "Following redirect to " + talkUrl);
+                response = connection.getResponseCode();
+            }
+
             if (response != HttpURLConnection.HTTP_OK) {
-                Log.e(LOG_TAG, "Talk " + talk.getId() + " URL returned " + response);
+                Log.e(LOG_TAG, "Talk URL " + connection.getURL() + " returned " + response);
                 return FAILURE;
             }
 
@@ -71,6 +81,8 @@ public abstract class TalkManager {
             inputStream.close();
 
             talk.setPath(talkPath);
+            Log.i(LOG_TAG, "Downloaded talk to " + talkPath);
+
             return size;
         } catch (MalformedURLException murlex) {
             Log.e(LOG_TAG, murlex.getMessage());
@@ -86,9 +98,9 @@ public abstract class TalkManager {
     /**
      * @return the directory where we store talks
      */
-    public static File getDir() {
+    public static File getDir(Context context) {
         File file = new File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
+                context.getFilesDir(),
                 DIR_NAME
         );
 
@@ -126,8 +138,7 @@ public abstract class TalkManager {
         if (file.exists())
             result = file.delete();
 
-        if (result)
-            talk.setPath("");
+         talk.setPath("");
 
         // if the file somehow didn't exist then we'll just say it was deleted anyway
         return result;
