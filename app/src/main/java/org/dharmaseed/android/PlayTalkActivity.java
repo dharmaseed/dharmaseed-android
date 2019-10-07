@@ -308,7 +308,7 @@ public class PlayTalkActivity extends AppCompatActivity
                 mediaPlayer.reset();
                 if (talk.isDownloaded()) {
                     Log.d(LOG_TAG, "Playing from " + talk.getPath());
-                    mediaPlayer.setDataSource(talk.getPath());
+                    mediaPlayer.setDataSource("file://" + talk.getPath());
                 } else {
                     mediaPlayer.setDataSource(talk.getAudioUrl());
                 }
