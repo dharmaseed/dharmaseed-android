@@ -5,16 +5,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TalkRepository extends Repository {
 
     private static final String LOG_TAG = "TalkRepository";
-    private DBManager dbManager;
     private List<String> talkAdapterColumns;
 
-    public TalkRepository(SQLiteOpenHelper dbManager) {
+    public TalkRepository(DBManager dbManager) {
         super(dbManager);
 
         talkAdapterColumns = new ArrayList<String>();
@@ -25,6 +25,8 @@ public class TalkRepository extends Repository {
         talkAdapterColumns.add(DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME);
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DURATION_IN_MINUTES);
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
+
+        removeOldDownloads();
     }
 
     /**
@@ -185,6 +187,36 @@ public class TalkRepository extends Repository {
                 DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId);
     }
 
+    /** Check if we have talks downloaded in old/inaccessible locations, and mark them as not downloaded if so
+     *
+     */
+    public void removeOldDownloads()
+    {
+        File downloadsDir = TalkManager.getDir(dbManager.getContext());
+        Log.i(LOG_TAG, "HI " + downloadsDir.toString());
+
+        ArrayList<String> columns = new ArrayList<String>();
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH);
+
+        Cursor downloaded = getTalks(columns, null, false, true);
+
+        while (downloaded.moveToNext())
+        {
+            int id = downloaded.getInt(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
+                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID)));
+            String path = downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
+                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH))).trim();
+
+            String fullPath = new File(path).getAbsolutePath();
+            String downloadPath = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
+
+            if (! fullPath.startsWith(downloadPath)) {
+                Log.w(LOG_TAG, "Removing old download for talk " + id);
+                dbManager.removeDownload(id);
+            }
+        }
+    }
 
     private String joinStarredTalks() {
         return innerJoin(

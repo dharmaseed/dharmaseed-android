@@ -96,7 +96,7 @@ public class PlayTalkActivity extends AppCompatActivity
             Cursor cursor = getCursor();
             if (cursor.moveToFirst()) {
                 // convert DB result to an object
-                talk = new Talk(cursor);
+                talk = new Talk(cursor, getApplicationContext());
                 talk.setId(talkID);
             } else {
                 Log.e(LOG_TAG, "Could not look up talk, id="+talkID);
@@ -305,6 +305,7 @@ public class PlayTalkActivity extends AppCompatActivity
             setPPButton("ic_media_pause");
         } else {
             try {
+                mediaPlayer.reset();
                 if (talk.isDownloaded()) {
                     Log.d(LOG_TAG, "Playing from " + talk.getPath());
                     mediaPlayer.setDataSource(talk.getPath());
@@ -312,7 +313,8 @@ public class PlayTalkActivity extends AppCompatActivity
                     mediaPlayer.setDataSource(talk.getAudioUrl());
                 }
                 mediaPlayer.prepareAsync();
-            } catch (Exception e) {
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
                 Log.e(LOG_TAG, e.toString());
             }
         }
@@ -362,36 +364,7 @@ public class PlayTalkActivity extends AppCompatActivity
      * Download the talk if we have permission. If we don't have permission, request it
      */
     private void downloadTalk() {
-        int permission = ContextCompat.checkSelfPermission(
-                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-        );
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            // requestPermissions will ask the user for permission asynchronously
-            // and will call onRequestPermissionsResult() with the results
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    PERMISSIONS_WRITE_EXTERNAL_STORAGE
-            );
-        } else if (permission == PackageManager.PERMISSION_GRANTED) {
-            new DownloadTalkTask().execute(talk);
-        } else {
-            // should never happen
-            Log.w(LOG_TAG, "Permission was " + permission);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
-        switch (requestCode) {
-            case PERMISSIONS_WRITE_EXTERNAL_STORAGE:
-                // we asked for and received permission
-                if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-                    new DownloadTalkTask().execute(talk);
-                }
-                // if we didn't receive permission, don't do anything
-                return;
-        }
+        new DownloadTalkTask().execute(talk);
     }
 
     public void toggleDownloadImage() {
@@ -538,4 +511,3 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 }
-

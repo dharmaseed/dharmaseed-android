@@ -11,9 +11,9 @@ import java.util.List;
 public abstract class Repository
 {
 
-    protected SQLiteOpenHelper dbManager;
+    protected DBManager dbManager;
 
-    public Repository(SQLiteOpenHelper dbManager)
+    public Repository(DBManager dbManager)
     {
         this.dbManager = dbManager;
     }

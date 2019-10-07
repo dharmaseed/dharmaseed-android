@@ -1,6 +1,9 @@
 package org.dharmaseed.android;
 
+import android.content.Context;
 import android.database.Cursor;
+
+import java.io.File;
 
 /**
  * Model of the TALK table in the DB
@@ -23,10 +26,13 @@ public class Talk {
     private int teacherId;
     private int retreatId;
 
+    private Context context;
+
     private double durationInMinutes;
 
-    public Talk(Cursor cursor) {
+    public Talk(Cursor cursor, Context context) {
         this.create(cursor);
+        this.context = context;
     }
 
     /**
@@ -60,6 +66,7 @@ public class Talk {
         setDurationInMinutes(cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES)));
 
         setPath(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.FILE_PATH)));
+
     }
 
     public String getTitle() {
@@ -108,6 +115,10 @@ public class Talk {
 
     public int getRetreatId() {
         return retreatId;
+    }
+
+    public Context getContext() {
+        return context;
     }
 
     /**
