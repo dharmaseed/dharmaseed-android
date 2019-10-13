@@ -19,6 +19,7 @@
 
 package org.dharmaseed.android;
 
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -40,8 +41,13 @@ public class TalkPlayerFragment extends Fragment
 
     public TalkPlayerFragment() {
         mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioAttributes(
+                new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+        );
         mediaPlayer.setOnPreparedListener(this);
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mediaPrepared = false;
         userSeekBarPosition = 0;
     }
@@ -86,7 +92,9 @@ public class TalkPlayerFragment extends Fragment
     public void onDestroy() {
         super.onDestroy();
         Log.i("talkPlayerFragment", "Destroying mediaPlayer");
-        mediaPlayer.stop();
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+        }
         mediaPlayer.release();
     }
 }
