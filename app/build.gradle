@@ -20,16 +20,16 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId "org.dharmaseed.android"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 33
         versionCode 14
         versionName "1.2.0"
         vectorDrawables.useSupportLibrary = true
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
         release {
@@ -43,11 +43,11 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:appcompat-v7:26.0.0'
-    implementation 'com.android.support:design:26.0.0'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:3.0.1'
-    implementation 'com.android.support:support-v4:26.0.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     // Required for instrumented tests
-    androidTestImplementation 'com.android.support:support-annotations:24.0.0'
-    androidTestImplementation 'com.android.support.test:runner:0.5'
+    androidTestImplementation 'androidx.annotation:annotation:1.0.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
 }

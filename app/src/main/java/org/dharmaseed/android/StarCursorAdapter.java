@@ -22,8 +22,8 @@ package org.dharmaseed.android;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.CursorAdapter;
+import androidx.core.content.ContextCompat;
+import androidx.cursoradapter.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
