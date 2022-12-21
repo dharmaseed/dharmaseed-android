@@ -18,7 +18,7 @@ public class TalkRepository extends Repository {
     private static final String LOG_TAG = "TalkRepository";
     private List<String> talkAdapterColumns;
 
-    public TalkRepository(DBManager dbManager) {
+    public TalkRepository(AbstractDBManager dbManager) {
         super(dbManager);
 
         talkAdapterColumns = new ArrayList<String>();
@@ -216,7 +216,7 @@ public class TalkRepository extends Repository {
             String directory = file.getAbsoluteFile().getParent();
             String downloadDirectory = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
 
-            if (! directory.equals(downloadDirectory)) {
+            if (directory != null && ! directory.equals(downloadDirectory)) {
                 Log.w(LOG_TAG, "Detected old style download for talk " + file.toString());
                 dbManager.removeDownload(id);
 

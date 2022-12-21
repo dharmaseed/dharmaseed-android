@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.io.InputStream;
 
-public class MockDBManager extends SQLiteOpenHelper
+public class MockDBManager extends AbstractDBManager
 {
 
     public static MockDBManager instance = null;
@@ -16,6 +16,7 @@ public class MockDBManager extends SQLiteOpenHelper
     {
         // name is null because we want an in-memory DB
         super(context, null, null, 1);
+        this.context = context;
         initialized = false;
     }
 
