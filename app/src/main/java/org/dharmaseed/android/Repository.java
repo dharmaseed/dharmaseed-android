@@ -11,9 +11,9 @@ import java.util.List;
 public abstract class Repository
 {
 
-    protected DBManager dbManager;
+    protected AbstractDBManager dbManager;
 
-    public Repository(DBManager dbManager)
+    public Repository(AbstractDBManager dbManager)
     {
         this.dbManager = dbManager;
     }

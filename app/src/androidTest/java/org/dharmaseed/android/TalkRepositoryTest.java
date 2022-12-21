@@ -23,8 +23,8 @@ public class TalkRepositoryTest
     @BeforeClass
     public static void setUp() throws Exception
     {
-        dbManager = MockDBManager.getInstance(InstrumentationRegistry.getTargetContext());
-        dbManager.init(InstrumentationRegistry.getContext());
+        dbManager = MockDBManager.getInstance(InstrumentationRegistry.getInstrumentation().getTargetContext());
+        dbManager.init(InstrumentationRegistry.getInstrumentation().getContext());
 
         allTalkColumns = new ArrayList<>();
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
