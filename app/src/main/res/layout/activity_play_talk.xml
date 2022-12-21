@@ -129,7 +129,7 @@
                 android:background="#0000"
                 android:contentDescription="Share Talk"
                 android:onClick="onShareButtonClicked"
-                android:tint="@color/colorPrimary"
+                app:tint="@color/colorPrimary"
                 app:srcCompat="@drawable/ic_share_button_green" />
         </LinearLayout>
 
@@ -175,7 +175,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@android:drawable/ic_media_rew"
-            android:tint="@color/colorPrimary"
+            app:tint="@color/colorPrimary"
             android:id="@+id/activity_play_talk_rw_button"
             android:onClick="rewindButtonClicked"
             />
@@ -184,7 +184,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@android:drawable/ic_media_play"
-            android:tint="@color/colorPrimary"
+            app:tint="@color/colorPrimary"
             android:id="@+id/activity_play_talk_play_button"
             android:onClick="playTalkButtonClicked"
             />
@@ -193,7 +193,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@android:drawable/ic_media_ff"
-            android:tint="@color/colorPrimary"
+            app:tint="@color/colorPrimary"
             android:id="@+id/activity_play_talk_ff_button"
             android:onClick="fastForwardButtonClicked"
             />
