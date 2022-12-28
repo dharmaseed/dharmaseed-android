@@ -22,30 +22,29 @@ package org.dharmaseed.android;
 import android.app.DialogFragment;
 import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
-import android.os.Handler;
-import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.media.MediaPlayer;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.ui.StyledPlayerControlView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -54,13 +53,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class PlayTalkActivity extends AppCompatActivity
-        implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
+        implements DeleteTalkFragment.DeleteTalkListener {
 
-    TalkPlayerFragment talkPlayerFragment;
     int talkID;
     DBManager dbManager;
-    boolean userDraggingSeekBar;
-    int userSeekBarPosition;
+    ExoPlayer mediaPlayer;
 
     private static Talk talk;
 
@@ -132,10 +129,6 @@ public class PlayTalkActivity extends AppCompatActivity
             photoView.setImageDrawable(icon);
         }
 
-        // set the image of the download button based on whether the talk is
-        // downloaded or not
-        toggleDownloadImage();
-
         // Set date
         TextView dateView = (TextView) findViewById(R.id.play_talk_date);
         String recDate = talk.getDate();
@@ -148,47 +141,13 @@ public class PlayTalkActivity extends AppCompatActivity
         }
 
         // Get/create a persistent fragment to manage the MediaPlayer instance
-        FragmentManager fm = getSupportFragmentManager();
-        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
-        if (talkPlayerFragment == null) {
-            // add the fragment
-            talkPlayerFragment = new TalkPlayerFragment();
-            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
-        } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
-            setPPButton("ic_media_pause");
-        }
+        mediaPlayer = ((DharmaseedApplication)getApplication()).getMediaPlayer();
+        StyledPlayerControlView controlView = findViewById(R.id.activity_play_talk_control_view);
+        controlView.setPlayer(mediaPlayer);
 
-        // Set the talk duration
-        final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
-        double duration = talk.getDurationInMinutes();
-        String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
-        durationView.setText(durationStr);
-
-        // Start a handler to periodically update the seek bar and talk time
-        final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
-        seekBar.setMax((int)(duration*60*1000));
-        userDraggingSeekBar = false;
-        userSeekBarPosition = 0;
-        seekBar.setOnSeekBarChangeListener(this);
-        final Handler handler = new Handler();
-        final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                handler.postDelayed(this, 1000);
-                if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
-                    try {
-                        int pos = mediaPlayer.getCurrentPosition();
-                        int mpDuration = mediaPlayer.getDuration();
-                        seekBar.setMax(mpDuration);
-                        seekBar.setProgress(pos);
-                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
-                        durationView.setText(posStr + "/" + mpDurStr);
-                    } catch(IllegalStateException e) {}
-                }
-            }
-        });
+        // set the image of the download button based on whether the talk is
+        // downloaded or not
+        toggleDownloadImage();
     }
 
     private Cursor getCursor() {
@@ -285,79 +244,6 @@ public class PlayTalkActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-
-    public void setPPButton(String drawableName) {
-        ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
-        playButton.setImageDrawable(ContextCompat.getDrawable(this,
-                getResources().getIdentifier(drawableName, "drawable", "android")));
-    }
-
-    public void playTalkButtonClicked(View view) {
-        Log.d(LOG_TAG, "button pressed");
-        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        if(mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            setPPButton("ic_media_play");
-        } else if(talkPlayerFragment.getMediaPrepared()) {
-            mediaPlayer.start();
-            setPPButton("ic_media_pause");
-        } else {
-            try {
-                mediaPlayer.reset();
-                if (talk.isDownloaded()) {
-                    Log.d(LOG_TAG, "Playing from " + talk.getPath());
-                    mediaPlayer.setDataSource("file://" + talk.getPath());
-                } else {
-                    mediaPlayer.setDataSource(talk.getAudioUrl());
-                }
-                mediaPlayer.prepareAsync();
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-                Log.e(LOG_TAG, e.toString());
-            }
-        }
-    }
-
-    public void fastForwardButtonClicked(View view) {
-        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        int currentPosition = mediaPlayer.getCurrentPosition();
-        int newPosition = Math.min(currentPosition + 15000, mediaPlayer.getDuration());
-        mediaPlayer.seekTo(newPosition);
-    }
-
-    public void rewindButtonClicked(View view) {
-        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        int currentPosition = mediaPlayer.getCurrentPosition();
-        int newPosition = Math.max(currentPosition - 15000, 0);
-        mediaPlayer.seekTo(newPosition);
-    }
-
-    @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        if(fromUser) {
-            userSeekBarPosition = progress;
-            String posStr = DateUtils.formatElapsedTime(progress / 1000);
-            String mpDurStr = DateUtils.formatElapsedTime(seekBar.getMax() / 1000);
-            TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
-            durationView.setText(posStr + "/" + mpDurStr);
-        }
-    }
-
-    @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-        userDraggingSeekBar = true;
-    }
-
-    @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
-        userDraggingSeekBar = false;
-        talkPlayerFragment.setUserSeekBarPosition(userSeekBarPosition);
-        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        try {
-            mediaPlayer.seekTo(userSeekBarPosition);
-        } catch (IllegalStateException e) {}
-    }
-
     /**
      * Download the talk if we have permission. If we don't have permission, request it
      */
@@ -367,6 +253,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void toggleDownloadImage() {
         ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
+        String mediaUri = "";
         if (talk.isDownloaded()) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_check_circle_green_24dp);
             downloadButton.setImageDrawable(icon);
@@ -376,6 +263,7 @@ public class PlayTalkActivity extends AppCompatActivity
                     onDeleteTalkClicked(view);
                 }
             });
+            mediaUri = "file://" + talk.getPath();
         } else {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_file_download_green_24dp);
             downloadButton.setImageDrawable(icon);
@@ -385,7 +273,10 @@ public class PlayTalkActivity extends AppCompatActivity
                     onDownloadButtonClicked(view);
                 }
             });
+            mediaUri = talk.getAudioUrl();
         }
+        MediaItem mediaItem = MediaItem.fromUri(mediaUri);
+        mediaPlayer.setMediaItem(mediaItem);
     }
 
     public void onDownloadButtonClicked(View view) {

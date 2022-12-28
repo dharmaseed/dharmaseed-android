@@ -149,55 +149,16 @@
             android:textAppearance="?android:attr/textAppearanceSmall" />
     </ScrollView>
 
-    <SeekBar
+    <com.google.android.exoplayer2.ui.StyledPlayerControlView
+        android:id="@+id/activity_play_talk_control_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/play_talk_seek_bar"
-        android:layout_gravity="center_horizontal" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Duration"
-        android:id="@+id/play_talk_talk_duration"
-        />
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
+        android:layout_height="120dp"
+        app:show_shuffle_button="false"
+        app:show_next_button="false"
+        app:show_previous_button="false"
+        app:show_subtitle_button="false"
+        app:show_timeout="0"
         >
-
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_rew"
-            app:tint="@color/colorPrimary"
-            android:id="@+id/activity_play_talk_rw_button"
-            android:onClick="rewindButtonClicked"
-            />
-
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_play"
-            app:tint="@color/colorPrimary"
-            android:id="@+id/activity_play_talk_play_button"
-            android:onClick="playTalkButtonClicked"
-            />
-
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_ff"
-            app:tint="@color/colorPrimary"
-            android:id="@+id/activity_play_talk_ff_button"
-            android:onClick="fastForwardButtonClicked"
-            />
-
-    </LinearLayout>
+    </com.google.android.exoplayer2.ui.StyledPlayerControlView>
 
 </LinearLayout>
