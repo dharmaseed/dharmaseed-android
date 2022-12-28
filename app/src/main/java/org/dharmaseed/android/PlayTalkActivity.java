@@ -45,6 +45,7 @@ import android.widget.Toast;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.ui.StyledPlayerControlView;
+import com.google.android.exoplayer2.ui.StyledPlayerView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

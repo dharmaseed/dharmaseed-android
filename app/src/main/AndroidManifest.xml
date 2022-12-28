@@ -24,6 +24,10 @@
     <!-- For downloading talks -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
+    <!-- For keeping android from killing our app when playing talks in the background with screen off -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- For displaying a notification to the user when a talk is playing -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"

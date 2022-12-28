@@ -1,5 +1,8 @@
 package org.dharmaseed.android;
 
+import static com.google.android.exoplayer2.C.USAGE_MEDIA;
+import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
+
 import android.app.Application;
 import android.content.Context;
 
@@ -25,6 +28,9 @@ public class DharmaseedApplication extends Application {
                     .setMediaSourceFactory(
                             new DefaultMediaSourceFactory(context)
                                     .setDataSourceFactory(dataSourceFactory))
+                    .setWakeMode(WAKE_MODE_NETWORK)
+                    .setHandleAudioBecomingNoisy(true)
+                    .setUseLazyPreparation(true)
                     .build();
         }
         return mediaPlayer;
