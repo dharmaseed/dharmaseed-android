@@ -33,12 +33,15 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,10 +57,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class PlayTalkActivity extends AppCompatActivity
-        implements DeleteTalkFragment.DeleteTalkListener {
-
+        implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
+    
     int talkID;
     DBManager dbManager;
+    boolean userDraggingSeekBar;
+    int userSeekBarPosition;
     ExoPlayer mediaPlayer;
 
     private static Talk talk;
@@ -143,9 +148,37 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Get/create a persistent fragment to manage the MediaPlayer instance
         mediaPlayer = ((DharmaseedApplication)getApplication()).getMediaPlayer();
-        StyledPlayerControlView controlView = findViewById(R.id.activity_play_talk_control_view);
-        controlView.setPlayer(mediaPlayer);
 
+        // Set the talk duration
+        final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+        double duration = talk.getDurationInMinutes();
+        String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
+        durationView.setText(durationStr);
+
+        // Start a handler to periodically update the seek bar and talk time
+        final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+        seekBar.setMax((int)(duration*60*1000));
+        userDraggingSeekBar = false;
+        userSeekBarPosition = 0;
+        seekBar.setOnSeekBarChangeListener(this);
+        final Handler handler = new Handler();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                handler.postDelayed(this, 1000);
+                if (! userDraggingSeekBar) {
+                    try {
+                        int pos = (int) mediaPlayer.getCurrentPosition();
+                        int mpDuration = (int) mediaPlayer.getDuration();
+                        seekBar.setMax(mpDuration);
+                        seekBar.setProgress(pos);
+                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                        durationView.setText(posStr + "/" + mpDurStr);
+                    } catch(IllegalStateException e) {}
+                }
+            }
+        });
         // set the image of the download button based on whether the talk is
         // downloaded or not
         toggleDownloadImage();
@@ -243,6 +276,59 @@ public class PlayTalkActivity extends AppCompatActivity
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+    public void setPPButton(String drawableName) {
+        ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
+        playButton.setImageDrawable(ContextCompat.getDrawable(this,
+                getResources().getIdentifier(drawableName, "drawable", "android")));
+    }
+
+    public void playTalkButtonClicked(View view) {
+        Log.d(LOG_TAG, "button pressed");
+        if(mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            setPPButton("ic_media_play");
+        } else {
+            mediaPlayer.prepare();
+            mediaPlayer.play();
+            setPPButton("ic_media_pause");
+        }
+    }
+
+    public void fastForwardButtonClicked(View view) {
+        long currentPosition = mediaPlayer.getCurrentPosition();
+        long newPosition = Math.min(currentPosition + 15000, mediaPlayer.getDuration());
+        mediaPlayer.seekTo(newPosition);
+    }
+
+    public void rewindButtonClicked(View view) {
+        long currentPosition = mediaPlayer.getCurrentPosition();
+        long newPosition = Math.max(currentPosition - 15000, 0);
+        mediaPlayer.seekTo(newPosition);
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        if(fromUser) {
+            userSeekBarPosition = progress;
+            String posStr = DateUtils.formatElapsedTime(progress / 1000);
+            String mpDurStr = DateUtils.formatElapsedTime(seekBar.getMax() / 1000);
+            TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+            durationView.setText(posStr + "/" + mpDurStr);
+        }
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        userDraggingSeekBar = true;
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        userDraggingSeekBar = false;
+        mediaPlayer.seekTo(userSeekBarPosition);
     }
 
     /**
