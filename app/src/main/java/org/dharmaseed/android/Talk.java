@@ -67,6 +67,7 @@ public class Talk {
 
         setPath(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.FILE_PATH)));
 
+        cursor.close();
     }
 
     public String getTitle() {
