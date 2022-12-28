@@ -5,6 +5,7 @@ import android.content.Context;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 
 public class DharmaseedApplication extends Application {
@@ -17,10 +18,13 @@ public class DharmaseedApplication extends Application {
             Context context = getApplicationContext();
             DefaultHttpDataSource.Factory httpFactory = new DefaultHttpDataSource.Factory()
                     .setAllowCrossProtocolRedirects(true);
-            mediaPlayer = new ExoPlayer.Builder(context).
-                    setMediaSourceFactory(
+            DefaultDataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(
+                    context, httpFactory
+            );
+            mediaPlayer = new ExoPlayer.Builder(context)
+                    .setMediaSourceFactory(
                             new DefaultMediaSourceFactory(context)
-                                    .setDataSourceFactory(httpFactory))
+                                    .setDataSourceFactory(dataSourceFactory))
                     .build();
         }
         return mediaPlayer;
