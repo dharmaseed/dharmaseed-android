@@ -20,7 +20,9 @@
 package org.dharmaseed.android;
 
 import android.app.DialogFragment;
+import android.content.ComponentName;
 import android.graphics.drawable.Animatable;
+import android.media.AudioManager;
 import android.os.AsyncTask;
 import androidx.fragment.app.FragmentManager;
 import android.content.Intent;
@@ -34,6 +36,11 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -64,13 +71,14 @@ public class PlayTalkActivity extends AppCompatActivity
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
     ExoPlayer mediaPlayer;
+    MediaBrowserCompat mediaBrowser;
 
-    private static Talk talk;
+    Talk talk;
 
-    private static final String LOG_TAG = "PlayTalkActivity";
+    static final String LOG_TAG = "PlayTalkActivity";
 
     // request code for writing external storage (the number is arbitrary)
-    private static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
+    static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,7 +190,37 @@ public class PlayTalkActivity extends AppCompatActivity
         // set the image of the download button based on whether the talk is
         // downloaded or not
         toggleDownloadImage();
+
+        // Create MediaBrowserServiceCompat
+        mediaBrowser = new MediaBrowserCompat(this,
+                new ComponentName(this, PlaybackService.class),
+                connectionCallbacks,
+                null); // optional Bundle
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mediaBrowser.connect();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // (see "stay in sync with the MediaSession")
+        if (MediaControllerCompat.getMediaController(PlayTalkActivity.this) != null) {
+            MediaControllerCompat.getMediaController(PlayTalkActivity.this).unregisterCallback(controllerCallback);
+        }
+        mediaBrowser.disconnect();
+
+    }
+
 
     private Cursor getCursor() {
         SQLiteDatabase db = dbManager.getReadableDatabase();
@@ -287,6 +325,10 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void playTalkButtonClicked(View view) {
         Log.d(LOG_TAG, "button pressed");
+
+        MediaControllerCompat mediaController = MediaControllerCompat.getMediaController(this);
+        mediaController.getTransportControls().playFromMediaId(Integer.toString(talkID), null);
+
         if(mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             setPPButton("ic_media_play");
@@ -486,4 +528,54 @@ public class PlayTalkActivity extends AppCompatActivity
             toggleDownloadImage();
         }
     }
+
+
+    private final MediaBrowserCompat.ConnectionCallback connectionCallbacks =
+            new MediaBrowserCompat.ConnectionCallback() {
+                @Override
+                public void onConnected() {
+
+                    // Get the token for the MediaSession
+                    MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
+
+                    // Create a MediaControllerCompat
+                    MediaControllerCompat mediaController =
+                            new MediaControllerCompat(PlayTalkActivity.this, // Context
+                                    token);
+
+                    // Save the controller
+                    MediaControllerCompat.setMediaController(PlayTalkActivity.this, mediaController);
+
+                    // Finish building the UI
+                    // TODO buildTransportControls();
+
+                    mediaController.registerCallback(controllerCallback);
+                }
+
+                @Override
+                public void onConnectionSuspended() {
+                    // The Service has crashed. Disable transport controls until it automatically reconnects
+                }
+
+                @Override
+                public void onConnectionFailed() {
+                    // The Service has refused our connection
+                }
+            };
+
+    MediaControllerCompat.Callback controllerCallback =
+            new MediaControllerCompat.Callback() {
+                @Override
+                public void onMetadataChanged(MediaMetadataCompat metadata) {}
+
+                @Override
+                public void onPlaybackStateChanged(PlaybackStateCompat state) {}
+
+                @Override
+                public void onSessionDestroyed() {
+                    mediaBrowser.disconnect();
+                    // maybe schedule a reconnection using a new MediaBrowser instance
+                }
+            };
+
 }
