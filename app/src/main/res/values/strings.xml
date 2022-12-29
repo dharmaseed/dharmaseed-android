@@ -40,4 +40,6 @@
     <string name="pause">Pause</string>
     <string name="download_only">Download Only</string>
     <string name="download_only_title">Downloaded only</string>
+
+    <string name="notification_channel_playing">Currently playing</string>
 </resources>

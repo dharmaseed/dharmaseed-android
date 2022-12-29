@@ -102,7 +102,7 @@ public class PlayTalkActivity extends AppCompatActivity
         // for example, if the user selects a talk, exits, and re-opens it, no need
         // to hit the DB again, since we already have that talk saved
         if (talk == null || talk.getId() != talkID) {
-            Cursor cursor = getCursor();
+            Cursor cursor = getCursor(dbManager, talkID);
             if (cursor.moveToFirst()) {
                 // convert DB result to an object
                 talk = new Talk(cursor, getApplicationContext());
@@ -222,7 +222,7 @@ public class PlayTalkActivity extends AppCompatActivity
     }
 
 
-    private Cursor getCursor() {
+    public static Cursor getCursor(DBManager dbManager, int talkID) {
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
                 "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "

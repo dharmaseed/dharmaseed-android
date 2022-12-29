@@ -1,10 +1,19 @@
 package org.dharmaseed.android;
 
+import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.media.MediaBrowserCompat;
@@ -15,14 +24,26 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
 import androidx.media.session.MediaButtonReceiver;
 
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 public class PlaybackService extends MediaBrowserServiceCompat {
@@ -32,6 +53,8 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
+
+    private ExoPlayer mediaPlayer;
 
     @Override
     public void onCreate() {
@@ -55,6 +78,22 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
         // Set the session's token so that client activities can communicate with it.
         setSessionToken(mediaSession.getSessionToken());
+
+        // Create the media player
+        Context context = this;
+        DefaultHttpDataSource.Factory httpFactory = new DefaultHttpDataSource.Factory()
+                .setAllowCrossProtocolRedirects(true);
+        DefaultDataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(
+                context, httpFactory
+        );
+        mediaPlayer = new ExoPlayer.Builder(context)
+                .setMediaSourceFactory(
+                        new DefaultMediaSourceFactory(context)
+                                .setDataSourceFactory(dataSourceFactory))
+                .setWakeMode(WAKE_MODE_NETWORK)
+                .setHandleAudioBecomingNoisy(true)
+                .setUseLazyPreparation(true)
+                .build();
     }
 
     @Override
@@ -63,10 +102,20 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         Log.d(LOG_TAG, "onStartCommand");
 
         // Given a media session and its context (usually the component containing the session)
-// Create a NotificationCompat.Builder
+        // Create a NotificationCompat.Builder
         Context context = this;
 
-// Get the session's metadata
+        // Create a notification channel
+        NotificationChannelCompat chan = new NotificationChannelCompat.Builder(
+                CHANNEL_ID_PLAYING, NotificationManagerCompat.IMPORTANCE_LOW)
+                .setName(getString(R.string.notification_channel_playing))
+                //.setDescription(getString(R.string.notification_channel_playing_description))
+                .setShowBadge(false)
+                .build();
+        NotificationManagerCompat mNotificationManager = NotificationManagerCompat.from(context);
+        mNotificationManager.createNotificationChannel(chan);
+
+        // Get the session's metadata
         MediaControllerCompat controller = mediaSession.getController();
         MediaMetadataCompat mediaMetadata = controller.getMetadata();
         MediaDescriptionCompat description = mediaMetadata.getDescription();
@@ -108,7 +157,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 // Take advantage of MediaStyle features
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0)
+                        .setShowActionsInCompactView(2)
 
                         // Add a cancel button
                         .setShowCancelButton(true)
@@ -154,10 +203,58 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onPlayFromMediaId(String mediaId, Bundle extras) {
             Log.d(TAG, "onPlayFromMediaId: mediaId: " + mediaId + " extras: " + extras.toString());
-//            FeedMedia p = DBReader.getFeedMedia(Long.parseLong(mediaId));
-//            if (p != null) {
-//                startPlaying(p, false);
-//            }
+
+            // Look up talk metadata
+            Talk talk;
+            int talkID = Integer.parseInt(mediaId);
+            Cursor cursor = PlayTalkActivity.getCursor(
+                    DBManager.getInstance(PlaybackService.this), talkID);
+            if (cursor.moveToFirst()) {
+                // convert DB result to an object
+                talk = new Talk(cursor, getApplicationContext());
+                talk.setId(talkID);
+            } else {
+                Log.e(LOG_TAG, "Could not look up talk, id="+talkID);
+                cursor.close();
+                return;
+            }
+            cursor.close();
+
+            // Set media session metadata
+            MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, talk.getTeacherName());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, talk.getTitle());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, talk.getCenterName());
+            builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long)talk.getDurationInMinutes()*60*1000);
+            builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, talk.getTitle());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, talk.getTeacherName());
+            String photoFilename = talk.getPhotoFileName();
+            Log.i(LOG_TAG, "photoFilename: "+photoFilename);
+            try {
+                FileInputStream photo = openFileInput(photoFilename);
+                builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BitmapFactory.decodeStream(photo));
+            } catch(FileNotFoundException e) {
+                Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
+                builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, icon);
+            }
+            mediaSession.setMetadata(builder.build());
+
+            // Start media session
+            mediaSession.setActive(true);
+
+            // Look up the URI of the media to play
+            String mediaUri = "";
+            if (talk.isDownloaded()) {
+                mediaUri = "file://" + talk.getPath();
+            } else {
+                mediaUri = talk.getAudioUrl();
+            }
+            MediaItem mediaItem = MediaItem.fromUri(mediaUri);
+            mediaPlayer.setMediaItem(mediaItem);
+
+            // Start playback service
+            Intent intent = new Intent(PlaybackService.this, PlaybackService.class);
+            startService(intent);
         }
 
 //        @Override
