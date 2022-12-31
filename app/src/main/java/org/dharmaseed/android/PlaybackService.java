@@ -141,6 +141,12 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                     builder.setActiveQueueItemId(talk.getId());
                 }
                 builder.setActions(sessionActions);
+
+                // Add the duration of the media here
+                Bundle extras = new Bundle();
+                extras.putLong(MediaMetadataCompat.METADATA_KEY_DURATION,
+                        mediaPlayer.getDuration());
+                builder.setExtras(extras);
                 mediaSession.setPlaybackState(builder.build());
 
             } finally {
@@ -180,13 +186,11 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         // Create an intent to launch the play talk activity when the notification is clicked
         Intent playTalkIntent = new Intent(getApplicationContext(), PlayTalkActivity.class);
         playTalkIntent.putExtra(TALK_DETAIL_EXTRA, (long) talk.getId());
-//        TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
-//        stackBuilder.addNextIntentWithParentStack(playTalkIntent);
-//        stackBuilder.addNextIntent(playTalkIntent);
-//        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,
-//                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                playTalkIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
+        stackBuilder.addNextIntentWithParentStack(playTalkIntent);
+        stackBuilder.addNextIntent(playTalkIntent);
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         builder
                 // Add the metadata for the currently playing track

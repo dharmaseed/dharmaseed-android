@@ -565,12 +565,19 @@ public class PlayTalkActivity extends AppCompatActivity
                     // TODO Setting media duration is risky like this because it only gets published
                     // when we start playing a new talk for the first time, so if the activity is
                     // restarted we may miss updating it here.
-                    mediaDuration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
+                    // mediaDuration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
                 }
 
                 @Override
                 public void onPlaybackStateChanged(PlaybackStateCompat state) {
                     mediaPlaybackState = state;
+
+                    if (state.getExtras() != null) {
+                        long playingMediaDuration = state.getExtras().getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
+                        if (playingMediaDuration != com.google.android.exoplayer2.C.TIME_UNSET) {
+                            mediaDuration = playingMediaDuration;
+                        }
+                    }
 
                     // Update Play/Pause button
                     if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
@@ -588,7 +595,7 @@ public class PlayTalkActivity extends AppCompatActivity
                         seekBar.setProgress(pos);
                         String posStr = DateUtils.formatElapsedTime(pos / 1000);
                         String mpDurStr = DateUtils.formatElapsedTime(mediaDuration / 1000);
-                        durationView.setText(posStr + "/" + mpDurStr);
+                        durationView.setText(posStr + " / " + mpDurStr);
                     }
                 }
 
