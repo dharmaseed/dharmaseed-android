@@ -13,9 +13,10 @@
   
   
 * Current problems
-  * Play talk -> click notification -> back -> takes you to navigation activity but things like the starred state and search queries are erased
+  * [x] - Play talk -> click notification -> back -> takes you to navigation activity but things like the starred state and search queries are erased
   * Can't delete notification
   * No player controls in notification
-  * Blank icon in notification
+  * [x] - Blank icon in notification
   * Talk duration gets messed up often
   * Need to implement fragment to show currently playing talk while navigating elsewhere
+  * Back navigation is broken only on Pixel 3 emulator???

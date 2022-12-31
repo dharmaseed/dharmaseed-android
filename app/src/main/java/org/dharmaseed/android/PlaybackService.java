@@ -169,10 +169,13 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         // Create an intent to launch the play talk activity when the notification is clicked
         Intent playTalkIntent = new Intent(getApplicationContext(), PlayTalkActivity.class);
         playTalkIntent.putExtra(TALK_DETAIL_EXTRA, (long) talk.getId());
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
-        stackBuilder.addNextIntentWithParentStack(playTalkIntent);
-        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+//        TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
+//        stackBuilder.addNextIntentWithParentStack(playTalkIntent);
+//        stackBuilder.addNextIntent(playTalkIntent);
+//        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,
+//                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                playTalkIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         builder
                 // Add the metadata for the currently playing track
@@ -193,7 +196,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
                 // Add an app icon and set its accent color
                 // Be careful about the color
-                .setSmallIcon(R.drawable.dharmaseed_icon)
+                .setSmallIcon(R.drawable.ic_notification_icon)
                 .setColor(ContextCompat.getColor(context, R.color.colorPrimaryDark))
 
                 // Add a pause button
