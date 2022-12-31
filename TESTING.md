@@ -9,14 +9,15 @@
   * Make sure the controls and UI work on the notification
   * Make sure we can close the notification and it stops the talk
   * Make sure the play talk UI components update correctly as we navigate away from and back to it
-  
-  
+* Test using https://github.com/googlesamples/android-media-controller  
+* Test on very old and very new devices using the emulator 
   
 * Current problems
   * [x] - Play talk -> click notification -> back -> takes you to navigation activity but things like the starred state and search queries are erased
   * Can't delete notification
-  * No player controls in notification
+  * [x] - No player controls in notification
   * [x] - Blank icon in notification
   * Talk duration gets messed up often
   * Need to implement fragment to show currently playing talk while navigating elsewhere
   * Back navigation is broken only on Pixel 3 emulator???
+

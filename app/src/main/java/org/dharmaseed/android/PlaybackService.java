@@ -65,6 +65,16 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
     private Handler handler;
 
+    // These are the available actions we advertise when the media session is active
+    private final long sessionActions =
+                    PlaybackStateCompat.ACTION_PLAY |
+                    PlaybackStateCompat.ACTION_PAUSE |
+                    PlaybackStateCompat.ACTION_PLAY_PAUSE |
+                    PlaybackStateCompat.ACTION_STOP |
+                    PlaybackStateCompat.ACTION_REWIND |
+                    PlaybackStateCompat.ACTION_FAST_FORWARD |
+                    PlaybackStateCompat.ACTION_SEEK_TO |
+                    PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID;
 
     @Override
     public void onCreate() {
@@ -80,7 +90,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
         // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE);
+                .setActions(sessionActions);
         mediaSession.setPlaybackState(stateBuilder.build());
 
         // MySessionCallback() has methods that handle callbacks from a media controller
@@ -130,6 +140,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 if (talk != null) {
                     builder.setActiveQueueItemId(talk.getId());
                 }
+                builder.setActions(sessionActions);
                 mediaSession.setPlaybackState(builder.build());
 
             } finally {
@@ -199,15 +210,26 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 .setSmallIcon(R.drawable.ic_notification_icon)
                 .setColor(ContextCompat.getColor(context, R.color.colorPrimaryDark))
 
+//                // Add a rewind button
+//                .addAction(new NotificationCompat.Action(
+//                        android.R.drawable.ic_media_rew,
+//                        getString(R.string.rewind),
+//                        MediaButtonReceiver.buildMediaButtonPendingIntent(context,
+//                                PlaybackStateCompat.ACTION_REWIND)))
+//
                 // Add a pause button
                 .addAction(new NotificationCompat.Action(
-                        getResources().getIdentifier(
-                                "ic_media_pause",
-                                "drawable",
-                                "android"),
+                        android.R.drawable.ic_media_pause,
                         getString(R.string.pause),
                         MediaButtonReceiver.buildMediaButtonPendingIntent(context,
                                 PlaybackStateCompat.ACTION_PLAY_PAUSE)))
+//
+//                // Add a fast forward button
+//                .addAction(new NotificationCompat.Action(
+//                        android.R.drawable.ic_media_ff,
+//                        getString(R.string.fast_forward),
+//                        MediaButtonReceiver.buildMediaButtonPendingIntent(context,
+//                                PlaybackStateCompat.ACTION_FAST_FORWARD)))
 
                 // Take advantage of MediaStyle features
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
@@ -311,7 +333,10 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
             // Set media session state
             mediaSession.setPlaybackState(new PlaybackStateCompat.Builder()
-                    .setState(PlaybackStateCompat.STATE_PLAYING, 42, 1)
+                    .setState(PlaybackStateCompat.STATE_PLAYING,
+                            mediaPlayer.getCurrentPosition(),
+                            1)
+                    .setActions(sessionActions)
                     .build()
             );
         }
@@ -333,6 +358,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         public void onPause() {
             Log.d(TAG, "onPause()");
             mediaPlayer.pause();
+            stopForeground(false);
 //            if (getStatus() == PlayerStatus.PLAYING) {
 //                pause(!UserPreferences.isPersistNotify(), true);
 //            }
@@ -342,7 +368,9 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         public void onStop() {
             Log.d(TAG, "onStop()");
             mediaPlayer.stop();
-//            mediaPlayer.stopPlayback(true);
+            stopSelf();
+            stopForeground(false);
+            mediaSession.setActive(false);
         }
 
 //        @Override
