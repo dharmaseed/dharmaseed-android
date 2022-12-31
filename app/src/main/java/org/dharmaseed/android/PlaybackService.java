@@ -2,9 +2,13 @@ package org.dharmaseed.android;
 
 import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
 
+import static org.dharmaseed.android.NavigationActivity.TALK_DETAIL_EXTRA;
+
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TaskStackBuilder;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
@@ -162,6 +166,14 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID_PLAYING);
 
+        // Create an intent to launch the play talk activity when the notification is clicked
+        Intent playTalkIntent = new Intent(getApplicationContext(), PlayTalkActivity.class);
+        playTalkIntent.putExtra(TALK_DETAIL_EXTRA, (long) talk.getId());
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
+        stackBuilder.addNextIntentWithParentStack(playTalkIntent);
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
         builder
                 // Add the metadata for the currently playing track
                 .setContentTitle(description.getTitle())
@@ -170,7 +182,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 .setLargeIcon(description.getIconBitmap())
 
                 // Enable launching the player by clicking the notification
-                .setContentIntent(controller.getSessionActivity())
+                .setContentIntent(resultPendingIntent)
 
                 // Stop the service when the notification is swiped away
                 .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(context,
@@ -197,7 +209,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 // Take advantage of MediaStyle features
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(2)
+                        .setShowActionsInCompactView(0)
 
                         // Add a cancel button
                         .setShowCancelButton(true)

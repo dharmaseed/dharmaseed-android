@@ -70,7 +70,6 @@ public class PlayTalkActivity extends AppCompatActivity
     DBManager dbManager;
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
-    ExoPlayer mediaPlayer;  // TODO delete me
     MediaBrowserCompat mediaBrowser;
     PlaybackStateCompat mediaPlaybackState;
     long mediaDuration;
@@ -155,9 +154,6 @@ public class PlayTalkActivity extends AppCompatActivity
             dateView.setText("");
             Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
         }
-
-        // Get/create a persistent fragment to manage the MediaPlayer instance
-        mediaPlayer = ((DharmaseedApplication)getApplication()).getMediaPlayer();
 
         // Set the talk duration
         final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
@@ -385,7 +381,6 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void toggleDownloadImage() {
         ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
-        String mediaUri = "";
         if (talk.isDownloaded()) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_check_circle_green_24dp);
             downloadButton.setImageDrawable(icon);
@@ -395,7 +390,6 @@ public class PlayTalkActivity extends AppCompatActivity
                     onDeleteTalkClicked(view);
                 }
             });
-            mediaUri = "file://" + talk.getPath();
         } else {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_file_download_green_24dp);
             downloadButton.setImageDrawable(icon);
@@ -405,10 +399,7 @@ public class PlayTalkActivity extends AppCompatActivity
                     onDownloadButtonClicked(view);
                 }
             });
-            mediaUri = talk.getAudioUrl();
         }
-        MediaItem mediaItem = MediaItem.fromUri(mediaUri);
-        mediaPlayer.setMediaItem(mediaItem);
     }
 
     public void onDownloadButtonClicked(View view) {
@@ -574,13 +565,11 @@ public class PlayTalkActivity extends AppCompatActivity
                     // TODO Setting media duration is risky like this because it only gets published
                     // when we start playing a new talk for the first time, so if the activity is
                     // restarted we may miss updating it here.
-                    Log.d(LOG_TAG, "metadata changed");
                     mediaDuration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
                 }
 
                 @Override
                 public void onPlaybackStateChanged(PlaybackStateCompat state) {
-                    Log.d(LOG_TAG, state.toString());
                     mediaPlaybackState = state;
 
                     // Update Play/Pause button
