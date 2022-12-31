@@ -9,6 +9,7 @@
   * Make sure the controls and UI work on the notification
   * Make sure we can close the notification and it stops the talk
   * Make sure the play talk UI components update correctly as we navigate away from and back to it
+  * Pause and resume the talk from the notification and the UI and make sure the service is running every whenever the talk is playing, as noted in the "X apps are active" info of the pulldown settings
 * Test using https://github.com/googlesamples/android-media-controller  
 * Test on very old and very new devices using the emulator 
   

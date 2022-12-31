@@ -273,6 +273,10 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         public void onPlay() {
             Log.d(TAG, "onPlay()");
             mediaPlayer.play();
+            
+            // Start playback service
+            Intent intent = new Intent(PlaybackService.this, PlaybackService.class);
+            startService(intent);
         }
 
         @Override
