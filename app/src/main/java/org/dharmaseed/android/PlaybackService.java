@@ -15,6 +15,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaDescriptionCompat;
@@ -38,6 +39,8 @@ import androidx.media.session.MediaButtonReceiver;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
@@ -52,9 +55,12 @@ public class PlaybackService extends MediaBrowserServiceCompat {
     public static final String CHANNEL_ID_PLAYING = "playing";
 
     private MediaSessionCompat mediaSession;
-    private PlaybackStateCompat.Builder stateBuilder;
 
     private ExoPlayer mediaPlayer;
+    private Talk talk;
+
+    private Handler handler;
+
 
     @Override
     public void onCreate() {
@@ -69,7 +75,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 //                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
         // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
-        stateBuilder = new PlaybackStateCompat.Builder()
+        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
                 .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE);
         mediaSession.setPlaybackState(stateBuilder.build());
 
@@ -94,7 +100,41 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 .setHandleAudioBecomingNoisy(true)
                 .setUseLazyPreparation(true)
                 .build();
+
+        // Poll the media player regularly and update our media session playback state
+        handler = new Handler();
+        exoplayerPoller.run();
     }
+
+    private Runnable exoplayerPoller = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                // Update player status and post to media session
+                PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder();
+                int state = PlaybackStateCompat.STATE_NONE;
+                float playbackSpeed = 1.0f;
+                if (mediaPlayer.isPlaying()) {
+                    state = PlaybackStateCompat.STATE_PLAYING;
+                    playbackSpeed = 1.0f;
+                } else {
+                    state = PlaybackStateCompat.STATE_PAUSED;
+                    playbackSpeed = 0.0f;
+                }
+                builder.setState(state, mediaPlayer.getCurrentPosition(), playbackSpeed);
+                builder.setBufferedPosition(mediaPlayer.getBufferedPosition());
+                if (talk != null) {
+                    builder.setActiveQueueItemId(talk.getId());
+                }
+                mediaSession.setPlaybackState(builder.build());
+
+            } finally {
+                // Run this again in a little bit
+                int mediaPlayerPollIntervalMs = 100;
+                handler.postDelayed(this, mediaPlayerPollIntervalMs);
+            }
+        }
+    };
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -191,13 +231,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onPlay() {
             Log.d(TAG, "onPlay()");
-//            PlayerStatus status = getStatus();
-//            if (status == PlayerStatus.PAUSED || status == PlayerStatus.PREPARED) {
-//                resume();
-//            } else if (status == PlayerStatus.INITIALIZED) {
-//                setStartWhenPrepared(true);
-//                prepare();
-//            }
+            mediaPlayer.play();
         }
 
         @Override
@@ -205,7 +239,6 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             Log.d(TAG, "onPlayFromMediaId: mediaId: " + mediaId + " extras: " + extras.toString());
 
             // Look up talk metadata
-            Talk talk;
             int talkID = Integer.parseInt(mediaId);
             Cursor cursor = PlayTalkActivity.getCursor(
                     DBManager.getInstance(PlaybackService.this), talkID);
@@ -237,7 +270,8 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
                 builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, icon);
             }
-            mediaSession.setMetadata(builder.build());
+            MediaMetadataCompat mediaMetadata = builder.build();
+            mediaSession.setMetadata(mediaMetadata);
 
             // Start media session
             mediaSession.setActive(true);
@@ -255,6 +289,16 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             // Start playback service
             Intent intent = new Intent(PlaybackService.this, PlaybackService.class);
             startService(intent);
+
+            // Start playing the talk
+            mediaPlayer.prepare();
+            mediaPlayer.play();
+
+            // Set media session state
+            mediaSession.setPlaybackState(new PlaybackStateCompat.Builder()
+                    .setState(PlaybackStateCompat.STATE_PLAYING, 42, 1)
+                    .build()
+            );
         }
 
 //        @Override
@@ -273,6 +317,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onPause() {
             Log.d(TAG, "onPause()");
+            mediaPlayer.pause();
 //            if (getStatus() == PlayerStatus.PLAYING) {
 //                pause(!UserPreferences.isPersistNotify(), true);
 //            }
@@ -281,6 +326,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onStop() {
             Log.d(TAG, "onStop()");
+            mediaPlayer.stop();
 //            mediaPlayer.stopPlayback(true);
         }
 
@@ -290,17 +336,17 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 //            seekDelta(-UserPreferences.getRewindSecs() * 1000);
 //        }
 
-        @Override
-        public void onRewind() {
-            Log.d(TAG, "onRewind()");
-//            seekDelta(-UserPreferences.getRewindSecs() * 1000);
-        }
-
-        @Override
-        public void onFastForward() {
-            Log.d(TAG, "onFastForward()");
-//            seekDelta(UserPreferences.getFastForwardSecs() * 1000);
-        }
+//        @Override
+//        public void onRewind() {
+//            Log.d(TAG, "onRewind()");
+//            mediaPlayer.seekBack();
+//        }
+//
+//        @Override
+//        public void onFastForward() {
+//            Log.d(TAG, "onFastForward()");
+//            mediaPlayer.seekForward();
+//        }
 
 //        @Override
 //        public void onSkipToNext() {
@@ -318,7 +364,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onSeekTo(long pos) {
             Log.d(TAG, "onSeekTo()");
-//            seekTo((int) pos);
+            mediaPlayer.seekTo(pos);
         }
 
         @Override

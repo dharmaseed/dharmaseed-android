@@ -70,8 +70,10 @@ public class PlayTalkActivity extends AppCompatActivity
     DBManager dbManager;
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
-    ExoPlayer mediaPlayer;
+    ExoPlayer mediaPlayer;  // TODO delete me
     MediaBrowserCompat mediaBrowser;
+    PlaybackStateCompat mediaPlaybackState;
+    long mediaDuration;
 
     Talk talk;
 
@@ -169,24 +171,24 @@ public class PlayTalkActivity extends AppCompatActivity
         userDraggingSeekBar = false;
         userSeekBarPosition = 0;
         seekBar.setOnSeekBarChangeListener(this);
-        final Handler handler = new Handler();
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                handler.postDelayed(this, 1000);
-                if (! userDraggingSeekBar) {
-                    try {
-                        int pos = (int) mediaPlayer.getCurrentPosition();
-                        int mpDuration = (int) mediaPlayer.getDuration();
-                        seekBar.setMax(mpDuration);
-                        seekBar.setProgress(pos);
-                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
-                        durationView.setText(posStr + "/" + mpDurStr);
-                    } catch(IllegalStateException e) {}
-                }
-            }
-        });
+//        final Handler handler = new Handler();
+//        handler.post(new Runnable() {
+//            @Override
+//            public void run() {
+//                handler.postDelayed(this, 1000);
+//                if (! userDraggingSeekBar) {
+//                    try {
+//                        int pos = (int) mediaPlayer.getCurrentPosition();
+//                        int mpDuration = (int) mediaPlayer.getDuration();
+//                        seekBar.setMax(mpDuration);
+//                        seekBar.setProgress(pos);
+//                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
+//                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+//                        durationView.setText(posStr + "/" + mpDurStr);
+//                    } catch(IllegalStateException e) {}
+//                }
+//            }
+//        });
         // set the image of the download button based on whether the talk is
         // downloaded or not
         toggleDownloadImage();
@@ -196,6 +198,8 @@ public class PlayTalkActivity extends AppCompatActivity
                 new ComponentName(this, PlaybackService.class),
                 connectionCallbacks,
                 null); // optional Bundle
+
+        mediaPlaybackState = new PlaybackStateCompat.Builder().build();
     }
 
     @Override
@@ -327,28 +331,27 @@ public class PlayTalkActivity extends AppCompatActivity
         Log.d(LOG_TAG, "button pressed");
 
         MediaControllerCompat mediaController = MediaControllerCompat.getMediaController(this);
-        mediaController.getTransportControls().playFromMediaId(Integer.toString(talkID), null);
-
-        if(mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            setPPButton("ic_media_play");
+        MediaControllerCompat.TransportControls controls = mediaController.getTransportControls();
+        if (mediaPlaybackState.getActiveQueueItemId() != talkID) {
+            controls.playFromMediaId(Integer.toString(talkID), null);
+        } else if (mediaPlaybackState.getState() == PlaybackStateCompat.STATE_PLAYING) {
+            controls.pause();
         } else {
-            mediaPlayer.prepare();
-            mediaPlayer.play();
-            setPPButton("ic_media_pause");
+            controls.play();
         }
+
     }
 
     public void fastForwardButtonClicked(View view) {
-        long currentPosition = mediaPlayer.getCurrentPosition();
-        long newPosition = Math.min(currentPosition + 15000, mediaPlayer.getDuration());
-        mediaPlayer.seekTo(newPosition);
+        long currentPosition = mediaPlaybackState.getPosition();
+        long newPosition = Math.min(currentPosition + 15000, mediaDuration);
+        MediaControllerCompat.getMediaController(this).getTransportControls().seekTo(newPosition);
     }
 
     public void rewindButtonClicked(View view) {
-        long currentPosition = mediaPlayer.getCurrentPosition();
+        long currentPosition = mediaPlaybackState.getPosition();
         long newPosition = Math.max(currentPosition - 15000, 0);
-        mediaPlayer.seekTo(newPosition);
+        MediaControllerCompat.getMediaController(this).getTransportControls().seekTo(newPosition);
     }
 
     @Override
@@ -370,7 +373,7 @@ public class PlayTalkActivity extends AppCompatActivity
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         userDraggingSeekBar = false;
-        mediaPlayer.seekTo(userSeekBarPosition);
+        MediaControllerCompat.getMediaController(this).getTransportControls().seekTo(userSeekBarPosition);
     }
 
     /**
@@ -530,6 +533,7 @@ public class PlayTalkActivity extends AppCompatActivity
     }
 
 
+    private MediaControllerCompat mediaController;
     private final MediaBrowserCompat.ConnectionCallback connectionCallbacks =
             new MediaBrowserCompat.ConnectionCallback() {
                 @Override
@@ -539,7 +543,7 @@ public class PlayTalkActivity extends AppCompatActivity
                     MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
 
                     // Create a MediaControllerCompat
-                    MediaControllerCompat mediaController =
+                    mediaController =
                             new MediaControllerCompat(PlayTalkActivity.this, // Context
                                     token);
 
@@ -563,17 +567,46 @@ public class PlayTalkActivity extends AppCompatActivity
                 }
             };
 
-    MediaControllerCompat.Callback controllerCallback =
+    private final MediaControllerCompat.Callback controllerCallback =
             new MediaControllerCompat.Callback() {
                 @Override
-                public void onMetadataChanged(MediaMetadataCompat metadata) {}
+                public void onMetadataChanged(MediaMetadataCompat metadata) {
+                    // TODO Setting media duration is risky like this because it only gets published
+                    // when we start playing a new talk for the first time, so if the activity is
+                    // restarted we may miss updating it here.
+                    Log.d(LOG_TAG, "metadata changed");
+                    mediaDuration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
+                }
 
                 @Override
-                public void onPlaybackStateChanged(PlaybackStateCompat state) {}
+                public void onPlaybackStateChanged(PlaybackStateCompat state) {
+                    Log.d(LOG_TAG, state.toString());
+                    mediaPlaybackState = state;
+
+                    // Update Play/Pause button
+                    if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                        setPPButton("ic_media_pause");
+                    } else {
+                        setPPButton("ic_media_play");
+                    }
+
+                    // Update seek bar and duration text
+                    TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+                    SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+                    if (! userDraggingSeekBar) {
+                        int pos = (int) state.getPosition();
+                        seekBar.setMax((int) mediaDuration);
+                        seekBar.setProgress(pos);
+                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                        String mpDurStr = DateUtils.formatElapsedTime(mediaDuration / 1000);
+                        durationView.setText(posStr + "/" + mpDurStr);
+                    }
+                }
 
                 @Override
                 public void onSessionDestroyed() {
                     mediaBrowser.disconnect();
+                    Log.d(LOG_TAG, "disconnected");
                     // maybe schedule a reconnection using a new MediaBrowser instance
                 }
             };
