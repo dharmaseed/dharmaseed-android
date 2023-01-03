@@ -18,7 +18,7 @@
   * Can't delete notification
   * [x] - No player controls in notification
   * [x] - Blank icon in notification
-  * Talk duration gets messed up often
+  * [x] - Talk duration gets messed up often
   * Need to implement fragment to show currently playing talk while navigating elsewhere
   * Back navigation is broken only on Pixel 3 emulator???
 

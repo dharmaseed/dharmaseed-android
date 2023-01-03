@@ -339,15 +339,11 @@ public class PlayTalkActivity extends AppCompatActivity
     }
 
     public void fastForwardButtonClicked(View view) {
-        long currentPosition = mediaPlaybackState.getPosition();
-        long newPosition = Math.min(currentPosition + 15000, mediaDuration);
-        MediaControllerCompat.getMediaController(this).getTransportControls().seekTo(newPosition);
+        MediaControllerCompat.getMediaController(this).getTransportControls().fastForward();
     }
 
     public void rewindButtonClicked(View view) {
-        long currentPosition = mediaPlaybackState.getPosition();
-        long newPosition = Math.max(currentPosition - 15000, 0);
-        MediaControllerCompat.getMediaController(this).getTransportControls().seekTo(newPosition);
+        MediaControllerCompat.getMediaController(this).getTransportControls().rewind();
     }
 
     @Override

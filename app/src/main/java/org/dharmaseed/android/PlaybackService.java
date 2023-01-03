@@ -74,6 +74,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                     PlaybackStateCompat.ACTION_REWIND |
                     PlaybackStateCompat.ACTION_FAST_FORWARD |
                     PlaybackStateCompat.ACTION_SEEK_TO |
+                    PlaybackStateCompat.ACTION_SET_PLAYBACK_SPEED |
                     PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID;
 
     @Override
@@ -248,7 +249,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         // Display the notification and place the service in the foreground
         startForeground(R.id.notification_playing, builder.build());
 
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     @Nullable
@@ -272,8 +273,9 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onPlay() {
             Log.d(TAG, "onPlay()");
+            mediaPlayer.prepare();
             mediaPlayer.play();
-            
+
             // Start playback service
             Intent intent = new Intent(PlaybackService.this, PlaybackService.class);
             startService(intent);
@@ -387,17 +389,17 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 //            seekDelta(-UserPreferences.getRewindSecs() * 1000);
 //        }
 
-//        @Override
-//        public void onRewind() {
-//            Log.d(TAG, "onRewind()");
-//            mediaPlayer.seekBack();
-//        }
-//
-//        @Override
-//        public void onFastForward() {
-//            Log.d(TAG, "onFastForward()");
-//            mediaPlayer.seekForward();
-//        }
+        @Override
+        public void onRewind() {
+            Log.d(TAG, "onRewind()");
+            mediaPlayer.seekBack();
+        }
+
+        @Override
+        public void onFastForward() {
+            Log.d(TAG, "onFastForward()");
+            mediaPlayer.seekForward();
+        }
 
 //        @Override
 //        public void onSkipToNext() {
@@ -421,7 +423,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         @Override
         public void onSetPlaybackSpeed(float speed) {
             Log.d(TAG, "onSetPlaybackSpeed()");
-//            setSpeed(speed);
+            mediaPlayer.setPlaybackSpeed(speed);
         }
 
 //        @Override
