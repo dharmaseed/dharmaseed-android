@@ -4,23 +4,15 @@ import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
 
 import static org.dharmaseed.android.NavigationActivity.TALK_DETAIL_EXTRA;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.app.TaskStackBuilder;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
@@ -28,9 +20,6 @@ import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.View;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,8 +32,6 @@ import androidx.media.session.MediaButtonReceiver;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
@@ -121,22 +108,19 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         exoplayerPoller.run();
     }
 
-    private Runnable exoplayerPoller = new Runnable() {
+    private final Runnable exoplayerPoller = new Runnable() {
         @Override
         public void run() {
             try {
                 // Update player status and post to media session
                 PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder();
-                int state = PlaybackStateCompat.STATE_NONE;
-                float playbackSpeed = 1.0f;
                 if (mediaPlayer.isPlaying()) {
-                    state = PlaybackStateCompat.STATE_PLAYING;
-                    playbackSpeed = 1.0f;
+                    builder.setState(PlaybackStateCompat.STATE_PLAYING,
+                            mediaPlayer.getCurrentPosition(), 1.0f);
                 } else {
-                    state = PlaybackStateCompat.STATE_PAUSED;
-                    playbackSpeed = 0.0f;
+                    builder.setState(PlaybackStateCompat.STATE_PAUSED,
+                            mediaPlayer.getCurrentPosition(), 0.0f);
                 }
-                builder.setState(state, mediaPlayer.getCurrentPosition(), playbackSpeed);
                 builder.setBufferedPosition(mediaPlayer.getBufferedPosition());
                 if (talk != null) {
                     builder.setActiveQueueItemId(talk.getId());
@@ -165,7 +149,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
         // Given a media session and its context (usually the component containing the session)
         // Create a NotificationCompat.Builder
-        Context context = this;
+        Context context = getApplicationContext();
 
         // Create a notification channel
         NotificationChannelCompat chan = new NotificationChannelCompat.Builder(
@@ -215,31 +199,31 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 .setSmallIcon(R.drawable.ic_notification_icon)
                 .setColor(ContextCompat.getColor(context, R.color.colorPrimaryDark))
 
-//                // Add a rewind button
-//                .addAction(new NotificationCompat.Action(
-//                        android.R.drawable.ic_media_rew,
-//                        getString(R.string.rewind),
-//                        MediaButtonReceiver.buildMediaButtonPendingIntent(context,
-//                                PlaybackStateCompat.ACTION_REWIND)))
-//
+                // Add a rewind button
+                .addAction(new NotificationCompat.Action(
+                        android.R.drawable.ic_media_rew,
+                        getString(R.string.rewind),
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(context,
+                                PlaybackStateCompat.ACTION_REWIND)))
+
                 // Add a pause button
                 .addAction(new NotificationCompat.Action(
                         android.R.drawable.ic_media_pause,
                         getString(R.string.pause),
                         MediaButtonReceiver.buildMediaButtonPendingIntent(context,
                                 PlaybackStateCompat.ACTION_PLAY_PAUSE)))
-//
-//                // Add a fast forward button
-//                .addAction(new NotificationCompat.Action(
-//                        android.R.drawable.ic_media_ff,
-//                        getString(R.string.fast_forward),
-//                        MediaButtonReceiver.buildMediaButtonPendingIntent(context,
-//                                PlaybackStateCompat.ACTION_FAST_FORWARD)))
+
+                // Add a fast forward button
+                .addAction(new NotificationCompat.Action(
+                        android.R.drawable.ic_media_ff,
+                        getString(R.string.fast_forward),
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(context,
+                                PlaybackStateCompat.ACTION_FAST_FORWARD)))
 
                 // Take advantage of MediaStyle features
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0)
+                        .setShowActionsInCompactView(0, 1, 2)
 
                         // Add a cancel button
                         .setShowCancelButton(true)
@@ -324,7 +308,7 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             mediaSession.setActive(true);
 
             // Look up the URI of the media to play
-            String mediaUri = "";
+            String mediaUri;
             if (talk.isDownloaded()) {
                 mediaUri = "file://" + talk.getPath();
             } else {
@@ -449,6 +433,6 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 //                onRewind();
 //            }
 //        }
-    };
+    }
 
 }
