@@ -52,6 +52,8 @@ import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
+import java.util.Timer;
 
 public class PlayTalkActivity extends AppCompatActivity
         implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
@@ -60,14 +62,53 @@ public class PlayTalkActivity extends AppCompatActivity
     int talkID;
     DBManager dbManager;
     boolean userDraggingSeekBar;
-    int userSeekBarPosition;
+
+    Timer timer;
 
     private static Talk talk;
 
     private static final String LOG_TAG = "PlayTalkActivity";
 
+    protected static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     // request code for writing external storage (the number is arbitrary)
     private static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
+
+    public void setButtonsEnabled(boolean enabled)
+    {
+        int[] button_ids = {
+                R.id.activity_play_talk_rw_button,
+                R.id.activity_play_talk_ff_button,
+                R.id.activity_play_talk_play_button
+        };
+        for (int id: button_ids) {
+            ImageButton button = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
+            button.setEnabled(enabled);
+        }
+        SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+        seekBar.setEnabled(enabled);
+    }
+
+    protected void prepareTalkPlayerFragment(TalkPlayerFragment talkPlayerFragment)
+    {
+        final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+        setButtonsEnabled(false);
+        try {
+            Log.i(LOG_TAG,"play button for "+talkID+": preparing...");
+            mediaPlayer.reset();
+            if (talk.isDownloaded()) {
+                Log.d(LOG_TAG, "Playing from " + talk.getPath());
+                mediaPlayer.setDataSource("file://" + talk.getPath());
+            } else {
+                mediaPlayer.setDataSource(talk.getAudioUrl());
+            }
+            mediaPlayer.prepareAsync();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+            Log.e(LOG_TAG, e.toString());
+        }
+        Log.i(LOG_TAG,"created player fragment for "+talkID);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +117,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null) {
+        if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
@@ -97,7 +138,7 @@ public class PlayTalkActivity extends AppCompatActivity
                 talk = new Talk(cursor, getApplicationContext());
                 talk.setId(talkID);
             } else {
-                Log.e(LOG_TAG, "Could not look up talk, id="+talkID);
+                Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
                 cursor.close();
                 return;
             }
@@ -123,11 +164,11 @@ public class PlayTalkActivity extends AppCompatActivity
         // Set teacher photo
         String photoFilename = talk.getPhotoFileName();
         ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
-        Log.i(LOG_TAG, "photoFilename: "+photoFilename);
+        Log.i(LOG_TAG, "photoFilename: " + photoFilename);
         try {
             FileInputStream photo = openFileInput(photoFilename);
             photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
             photoView.setImageDrawable(icon);
         }
@@ -139,23 +180,12 @@ public class PlayTalkActivity extends AppCompatActivity
         // Set date
         TextView dateView = (TextView) findViewById(R.id.play_talk_date);
         String recDate = talk.getDate();
-        SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
         try {
             dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
-        } catch(ParseException e) {
+        } catch (ParseException e) {
             dateView.setText("");
             Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
-        }
-
-        // Get/create a persistent fragment to manage the MediaPlayer instance
-        FragmentManager fm = getSupportFragmentManager();
-        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
-        if (talkPlayerFragment == null) {
-            // add the fragment
-            talkPlayerFragment = new TalkPlayerFragment();
-            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
-        } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
-            setPPButton("ic_media_pause");
         }
 
         // Set the talk duration
@@ -164,32 +194,94 @@ public class PlayTalkActivity extends AppCompatActivity
         String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
         durationView.setText(durationStr);
 
-        // Start a handler to periodically update the seek bar and talk time
+        // Initialise seek bar
         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
         seekBar.setMax((int)(duration*60*1000));
         userDraggingSeekBar = false;
-        userSeekBarPosition = 0;
         seekBar.setOnSeekBarChangeListener(this);
-        final Handler handler = new Handler();
-        final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        handler.post(new Runnable() {
+
+        // Get/create a persistent fragment to manage the MediaPlayer instance
+        FragmentManager fm = getSupportFragmentManager();
+        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
+        if (talkPlayerFragment == null) {
+            // add the fragment
+            talkPlayerFragment = new TalkPlayerFragment();
+            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
+            prepareTalkPlayerFragment(talkPlayerFragment);
+        } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
+            setPPButton("ic_media_pause");
+            Log.i(LOG_TAG,"talk "+talkID+" already playing!");
+        }
+
+        // initialise timers
+        timer = new Timer();
+
+        // - periodically update the seek bar and talk time
+        timer.schedule(new java.util.TimerTask() {
             @Override
             public void run() {
-                handler.postDelayed(this, 1000);
-                if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
-                    try {
-                        int pos = mediaPlayer.getCurrentPosition();
-                        int mpDuration = mediaPlayer.getDuration();
-                        seekBar.setMax(mpDuration);
-                        seekBar.setProgress(pos);
-                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
-                        durationView.setText(posStr + "/" + mpDurStr);
-                    } catch(IllegalStateException e) {}
-                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateSeekBar();
+                    }
+                });
             }
-        });
+        }, 1000, 1000);
+
+        // - periodically update play progress information
+        timer.schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updatePlayProgress();
+                    }
+                });
+            }
+        }, 10000, 10000);
+
+        Log.i(LOG_TAG,"started timers");
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(LOG_TAG, "stopping timers");
+        timer.cancel();
+    }
+
+    public void updateSeekBar()
+    {
+        if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
+            Log.d(LOG_TAG,"talk "+talkID+": updating seekBar");
+            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+            final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+            final TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
+            try {
+                int pos = mediaPlayer.getCurrentPosition();
+                int mpDuration = mediaPlayer.getDuration();
+                seekBar.setMax(mpDuration);
+                seekBar.setProgress(pos);
+                String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                durationView.setText(posStr + "/" + mpDurStr);
+            } catch(IllegalStateException e) {}
+        }
+    }
+
+    public void updatePlayProgress()
+    {
+        if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
+            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
+            final int pos = mediaPlayer.getCurrentPosition();
+            SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
+            final String now = parser.format(GregorianCalendar.getInstance().getTime());
+            Log.d(LOG_TAG, "talk "+talkID+": progress POS="+pos+" on DATE="+now);
+        }
+    }
+
 
     private Cursor getCursor() {
         SQLiteDatabase db = dbManager.getReadableDatabase();
@@ -298,23 +390,12 @@ public class PlayTalkActivity extends AppCompatActivity
         if(mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             setPPButton("ic_media_play");
+            updatePlayProgress();
         } else if(talkPlayerFragment.getMediaPrepared()) {
             mediaPlayer.start();
             setPPButton("ic_media_pause");
         } else {
-            try {
-                mediaPlayer.reset();
-                if (talk.isDownloaded()) {
-                    Log.d(LOG_TAG, "Playing from " + talk.getPath());
-                    mediaPlayer.setDataSource("file://" + talk.getPath());
-                } else {
-                    mediaPlayer.setDataSource(talk.getAudioUrl());
-                }
-                mediaPlayer.prepareAsync();
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-                Log.e(LOG_TAG, e.toString());
-            }
+            Log.e(LOG_TAG, "media not prepared; this should not be possible!");
         }
     }
 
@@ -322,7 +403,9 @@ public class PlayTalkActivity extends AppCompatActivity
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         int currentPosition = mediaPlayer.getCurrentPosition();
         int newPosition = Math.min(currentPosition + 15000, mediaPlayer.getDuration());
+        Log.i(LOG_TAG,"play button for "+talkID+": seeking to "+newPosition);
         mediaPlayer.seekTo(newPosition);
+        updatePlayProgress();
     }
 
     public void rewindButtonClicked(View view) {
@@ -330,12 +413,12 @@ public class PlayTalkActivity extends AppCompatActivity
         int currentPosition = mediaPlayer.getCurrentPosition();
         int newPosition = Math.max(currentPosition - 15000, 0);
         mediaPlayer.seekTo(newPosition);
+        updatePlayProgress();
     }
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         if(fromUser) {
-            userSeekBarPosition = progress;
             String posStr = DateUtils.formatElapsedTime(progress / 1000);
             String mpDurStr = DateUtils.formatElapsedTime(seekBar.getMax() / 1000);
             TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
@@ -351,11 +434,17 @@ public class PlayTalkActivity extends AppCompatActivity
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         userDraggingSeekBar = false;
-        talkPlayerFragment.setUserSeekBarPosition(userSeekBarPosition);
         MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         try {
-            mediaPlayer.seekTo(userSeekBarPosition);
+            mediaPlayer.seekTo(seekBar.getProgress());
+            updatePlayProgress();
         } catch (IllegalStateException e) {}
+    }
+
+    public int getSeekBarProgress()
+    {
+        SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+        return seekBar.getProgress();
     }
 
     /**
