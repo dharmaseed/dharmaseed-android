@@ -199,6 +199,8 @@ public class PlayTalkActivity extends AppCompatActivity
         seekBar.setMax((int)(duration*60*1000));
         userDraggingSeekBar = false;
         seekBar.setOnSeekBarChangeListener(this);
+        final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
+        seekBar.setProgress(pos);
 
         // Get/create a persistent fragment to manage the MediaPlayer instance
         FragmentManager fm = getSupportFragmentManager();
@@ -279,6 +281,7 @@ public class PlayTalkActivity extends AppCompatActivity
             SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
             final String now = parser.format(GregorianCalendar.getInstance().getTime());
             Log.d(LOG_TAG, "talk "+talkID+": progress POS="+pos+" on DATE="+now);
+            dbManager.setTalkProgress(talkID, now, pos/(1000*60.0));
         }
     }
 
