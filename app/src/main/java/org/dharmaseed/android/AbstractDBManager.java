@@ -162,6 +162,19 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
         }
 
+        public abstract class TalkHistory {
+            public static final String ID = "_id";
+            public static final String PROGRESS_IN_MINUTES = "progress_in_minutes";
+            public static final String DATE_TIME = "date_time";
+            public static final String TABLE_NAME = "talk_history";
+            public static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" + ID + " INTEGER PRIMARY KEY,"
+                    + DATE_TIME + " TEXT,"
+                    + PROGRESS_IN_MINUTES + " REAL"
+                    + ")";
+            public static final String DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
+        }
+
+
         public abstract class TeacherStars {
             public static final String ID = "_id";
 
