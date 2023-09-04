@@ -25,18 +25,18 @@
     android:minHeight="95dp">
 
     <ImageView
-        android:layout_width="60dp"
-        android:layout_height="90dp"
-        android:paddingTop="5dp"
         android:id="@+id/item_view_photo"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
         android:adjustViewBounds="true"
+        android:paddingTop="5dp"
         android:scaleType="fitStart" />
 
     <LinearLayout
-        android:orientation="vertical"
-        android:layout_weight="1"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
         android:paddingLeft="5dp">
 
         <TextView
@@ -46,52 +46,58 @@
             android:layout_gravity="left"
             android:text="Talk Title"
             android:textAppearance="?android:attr/textAppearanceListItem"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark" />
+            android:textColor="@color/colorPrimaryDark"
+            android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/item_view_detail1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Teacher"
             android:textAppearance="?android:attr/textAppearanceListItem"
-            android:id="@+id/item_view_detail1"
             android:textColor="@color/colorPrimary" />
 
         <TextView
+            android:id="@+id/item_view_detail2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Center"
             android:textAppearance="?android:attr/textAppearanceListItem"
-            android:id="@+id/item_view_detail2"
             android:textColor="@color/colorPrimary" />
 
 
         <RelativeLayout
-            android:orientation="horizontal"
-            android:layout_weight="1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
             android:paddingLeft="0dp">
 
             <TextView
+                android:id="@+id/item_view_detail3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:text="Date"
                 android:textAppearance="?android:attr/textAppearanceListItem"
-                android:id="@+id/item_view_detail3"
                 android:textColor="@color/colorPrimary" />
 
             <TextView
+                android:id="@+id/item_view_detail4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:text="Duration"
                 android:textAppearance="?android:attr/textAppearanceListItem"
-                android:id="@+id/item_view_detail4"
                 android:textColor="@color/colorPrimary" />
 
         </RelativeLayout>
+
+        <ProgressBar
+            android:id="@+id/item_view_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 
