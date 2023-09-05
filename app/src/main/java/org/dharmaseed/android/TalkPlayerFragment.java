@@ -70,11 +70,10 @@ public class TalkPlayerFragment extends Fragment
     public void onPrepared(MediaPlayer mp) {
         Log.i("talkPlayerFragment", "media prepared");
         mediaPrepared = true;
-        //mediaPlayer.start();
         PlayTalkActivity activity = (PlayTalkActivity) getActivity();
-        activity.setPPButton("ic_media_play");
-        activity.setButtonsEnabled(true);
-        mediaPlayer.seekTo(activity.getSeekBarProgress());
+        activity.setTalkProgress(activity.getSeekBarProgress(), false);
+        mediaPlayer.start();
+        activity.setPPButton("ic_media_pause");
     }
 
     @Override
