@@ -1,6 +1,6 @@
 package org.dharmaseed.android;
 
-import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
+import static androidx.media3.common.C.WAKE_MODE_NETWORK;
 
 import static org.dharmaseed.android.NavigationActivity.TALK_DETAIL_EXTRA;
 
@@ -30,11 +30,11 @@ import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
 import androidx.media.session.MediaButtonReceiver;
 
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
-import com.google.android.exoplayer2.upstream.DefaultDataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.common.MediaItem;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

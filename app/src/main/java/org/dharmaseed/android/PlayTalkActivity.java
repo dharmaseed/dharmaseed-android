@@ -52,10 +52,10 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.ui.StyledPlayerControlView;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.common.MediaItem;
+import androidx.media3.ui.PlayerControlView;
+import androidx.media3.ui.PlayerView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -570,7 +570,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
                     if (state.getExtras() != null) {
                         long playingMediaDuration = state.getExtras().getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
-                        if (playingMediaDuration != com.google.android.exoplayer2.C.TIME_UNSET) {
+                        if (playingMediaDuration != androidx.media3.common.C.TIME_UNSET) {
                             mediaDuration = playingMediaDuration;
                         }
                     }

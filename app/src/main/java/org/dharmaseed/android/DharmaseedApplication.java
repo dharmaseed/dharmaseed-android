@@ -2,16 +2,16 @@ package org.dharmaseed.android;
 
 // TODO Delete me
 
-import static com.google.android.exoplayer2.C.USAGE_MEDIA;
-import static com.google.android.exoplayer2.C.WAKE_MODE_NETWORK;
+import static androidx.media3.common.C.USAGE_MEDIA;
+import static androidx.media3.common.C.WAKE_MODE_NETWORK;
 
 import android.app.Application;
 import android.content.Context;
 
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
-import com.google.android.exoplayer2.upstream.DefaultDataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
 
 public class DharmaseedApplication extends Application {
 
