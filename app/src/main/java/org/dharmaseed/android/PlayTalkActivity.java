@@ -19,28 +19,20 @@
 
 package org.dharmaseed.android;
 
+import static androidx.media3.common.C.TIME_UNSET;
+
 import android.app.DialogFragment;
 import android.content.ComponentName;
-import android.graphics.drawable.Animatable;
-import android.media.AudioManager;
-import android.os.AsyncTask;
-import androidx.fragment.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
+import android.media.AudioManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaControllerCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -52,16 +44,23 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.media3.exoplayer.ExoPlayer;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.media3.common.MediaItem;
-import androidx.media3.ui.PlayerControlView;
-import androidx.media3.ui.PlayerView;
+import androidx.media3.common.Player;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionToken;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.ExecutionException;
 
 public class PlayTalkActivity extends AppCompatActivity
         implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
@@ -70,9 +69,8 @@ public class PlayTalkActivity extends AppCompatActivity
     DBManager dbManager;
     boolean userDraggingSeekBar;
     int userSeekBarPosition;
-    MediaBrowserCompat mediaBrowser;
-    PlaybackStateCompat mediaPlaybackState;
-    long mediaDuration;
+
+    MediaController mediaController;
 
     Talk talk;
 
@@ -167,42 +165,57 @@ public class PlayTalkActivity extends AppCompatActivity
         userDraggingSeekBar = false;
         userSeekBarPosition = 0;
         seekBar.setOnSeekBarChangeListener(this);
-//        final Handler handler = new Handler();
-//        handler.post(new Runnable() {
-//            @Override
-//            public void run() {
-//                handler.postDelayed(this, 1000);
-//                if (! userDraggingSeekBar) {
-//                    try {
-//                        int pos = (int) mediaPlayer.getCurrentPosition();
-//                        int mpDuration = (int) mediaPlayer.getDuration();
-//                        seekBar.setMax(mpDuration);
-//                        seekBar.setProgress(pos);
-//                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
-//                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
-//                        durationView.setText(posStr + "/" + mpDurStr);
-//                    } catch(IllegalStateException e) {}
-//                }
-//            }
-//        });
+
+        final Handler handler = new Handler();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                handler.postDelayed(this, 1000);
+                if (mediaController != null &&
+                        mediaController.getPlaybackState() == Player.STATE_READY
+                        && ! userDraggingSeekBar) {
+                    try {
+                        int pos = (int)mediaController.getCurrentPosition();
+                        int mpDuration = (int)mediaController.getDuration();
+                        if (mpDuration != TIME_UNSET) {
+                            seekBar.setMax(mpDuration);
+                            seekBar.setProgress(pos);
+                            String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                            String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                            durationView.setText(posStr + "/" + mpDurStr);
+                        }
+                    } catch(IllegalStateException e) {}
+                }
+            }
+        });
+
+
+
+
         // set the image of the download button based on whether the talk is
         // downloaded or not
         toggleDownloadImage();
-
-        // Create MediaBrowserServiceCompat
-        mediaBrowser = new MediaBrowserCompat(this,
-                new ComponentName(this, PlaybackService.class),
-                connectionCallbacks,
-                null); // optional Bundle
-
-        mediaPlaybackState = new PlaybackStateCompat.Builder().build();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        mediaBrowser.connect();
-    }
+
+        SessionToken sessionToken =
+                new SessionToken(this, new ComponentName(this, PlaybackService.class));
+        ListenableFuture<MediaController> controllerFuture =
+                new MediaController.Builder(this, sessionToken).buildAsync();
+
+        controllerFuture.addListener(() -> {
+                try {
+                    mediaController = controllerFuture.get();
+                    mediaController.addListener(playerListener);
+                } catch (InterruptedException | ExecutionException e) {
+                    Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
+                }
+            }, ContextCompat.getMainExecutor(this));
+
+        }
 
     @Override
     public void onResume() {
@@ -213,12 +226,7 @@ public class PlayTalkActivity extends AppCompatActivity
     @Override
     public void onStop() {
         super.onStop();
-        // (see "stay in sync with the MediaSession")
-        if (MediaControllerCompat.getMediaController(PlayTalkActivity.this) != null) {
-            MediaControllerCompat.getMediaController(PlayTalkActivity.this).unregisterCallback(controllerCallback);
-        }
-        mediaBrowser.disconnect();
-
+        mediaController.release();
     }
 
 
@@ -326,24 +334,28 @@ public class PlayTalkActivity extends AppCompatActivity
     public void playTalkButtonClicked(View view) {
         Log.d(LOG_TAG, "button pressed");
 
-        MediaControllerCompat mediaController = MediaControllerCompat.getMediaController(this);
-        MediaControllerCompat.TransportControls controls = mediaController.getTransportControls();
-        if (mediaPlaybackState.getActiveQueueItemId() != talkID) {
-            controls.playFromMediaId(Integer.toString(talkID), null);
-        } else if (mediaPlaybackState.getState() == PlaybackStateCompat.STATE_PLAYING) {
-            controls.pause();
+        String talkIDString = Integer.toString(talkID);
+        MediaItem currentItem = mediaController.getCurrentMediaItem();
+        if (currentItem == null ||
+                ! currentItem.mediaId.equals(talkIDString)) {
+            MediaItem item = new MediaItem.Builder().setMediaId(talkIDString).build();
+            mediaController.setMediaItem(item);
+            mediaController.prepare();
+            mediaController.play();
+        } else if (mediaController.isPlaying()) {
+            mediaController.pause();
         } else {
-            controls.play();
+            mediaController.play();
         }
 
     }
 
     public void fastForwardButtonClicked(View view) {
-        MediaControllerCompat.getMediaController(this).getTransportControls().fastForward();
+        mediaController.seekForward();
     }
 
     public void rewindButtonClicked(View view) {
-        MediaControllerCompat.getMediaController(this).getTransportControls().rewind();
+        mediaController.seekBack();
     }
 
     @Override
@@ -365,7 +377,7 @@ public class PlayTalkActivity extends AppCompatActivity
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         userDraggingSeekBar = false;
-        MediaControllerCompat.getMediaController(this).getTransportControls().seekTo(userSeekBarPosition);
+        mediaController.seekTo(userSeekBarPosition);
     }
 
     /**
@@ -519,88 +531,19 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 
-
-    private MediaControllerCompat mediaController;
-    private final MediaBrowserCompat.ConnectionCallback connectionCallbacks =
-            new MediaBrowserCompat.ConnectionCallback() {
-                @Override
-                public void onConnected() {
-
-                    // Get the token for the MediaSession
-                    MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
-
-                    // Create a MediaControllerCompat
-                    mediaController =
-                            new MediaControllerCompat(PlayTalkActivity.this, // Context
-                                    token);
-
-                    // Save the controller
-                    MediaControllerCompat.setMediaController(PlayTalkActivity.this, mediaController);
-
-                    // Finish building the UI
-                    // TODO buildTransportControls();
-
-                    mediaController.registerCallback(controllerCallback);
-                }
+    private final Player.Listener playerListener =
+            new Player.Listener() {
 
                 @Override
-                public void onConnectionSuspended() {
-                    // The Service has crashed. Disable transport controls until it automatically reconnects
-                }
-
-                @Override
-                public void onConnectionFailed() {
-                    // The Service has refused our connection
-                }
-            };
-
-    private final MediaControllerCompat.Callback controllerCallback =
-            new MediaControllerCompat.Callback() {
-                @Override
-                public void onMetadataChanged(MediaMetadataCompat metadata) {
-                    // TODO Setting media duration is risky like this because it only gets published
-                    // when we start playing a new talk for the first time, so if the activity is
-                    // restarted we may miss updating it here.
-                    // mediaDuration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
-                }
-
-                @Override
-                public void onPlaybackStateChanged(PlaybackStateCompat state) {
-                    mediaPlaybackState = state;
-
-                    if (state.getExtras() != null) {
-                        long playingMediaDuration = state.getExtras().getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
-                        if (playingMediaDuration != androidx.media3.common.C.TIME_UNSET) {
-                            mediaDuration = playingMediaDuration;
-                        }
-                    }
-
+                public void onIsPlayingChanged(boolean isPlaying) {
                     // Update Play/Pause button
-                    if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    if (isPlaying) {
                         setPPButton("ic_media_pause");
                     } else {
                         setPPButton("ic_media_play");
                     }
-
-                    // Update seek bar and duration text
-                    TextView durationView = (TextView) findViewById(R.id.play_talk_talk_duration);
-                    SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
-                    if (! userDraggingSeekBar) {
-                        int pos = (int) state.getPosition();
-                        seekBar.setMax((int) mediaDuration);
-                        seekBar.setProgress(pos);
-                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                        String mpDurStr = DateUtils.formatElapsedTime(mediaDuration / 1000);
-                        durationView.setText(posStr + " / " + mpDurStr);
-                    }
                 }
 
-                @Override
-                public void onSessionDestroyed() {
-                    mediaBrowser.disconnect();
-                    Log.d(LOG_TAG, "disconnected");
-                    // maybe schedule a reconnection using a new MediaBrowser instance
-                }
             };
 
 }

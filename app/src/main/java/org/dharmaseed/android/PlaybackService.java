@@ -1,43 +1,23 @@
 package org.dharmaseed.android;
 
 import static androidx.media3.common.C.WAKE_MODE_NETWORK;
-
 import static com.google.common.util.concurrent.Futures.immediateFuture;
-import static org.dharmaseed.android.NavigationActivity.TALK_DETAIL_EXTRA;
 
-import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.os.Handler;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaDescriptionCompat;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaControllerCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationChannelCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.ContextCompat;
-import androidx.media3.common.MediaMetadata;
-import androidx.media3.common.Player;
-import androidx.media3.session.MediaLibraryService;
-import androidx.media.session.MediaButtonReceiver;
-
-import androidx.media3.exoplayer.ExoPlayer;
+import androidx.annotation.OptIn;
 import androidx.media3.common.MediaItem;
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.common.MediaMetadata;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 
@@ -46,7 +26,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -56,6 +35,7 @@ public class PlaybackService extends MediaSessionService {
     private MediaSession mediaSession;
 
     @Override
+    @OptIn(markerClass = UnstableApi.class)
     public void onCreate() {
         super.onCreate();
 
@@ -150,7 +130,6 @@ public class PlaybackService extends MediaSessionService {
 
     }
 
-    // Remember to release the player and media session in onDestroy
     @Override
     public void onDestroy() {
         mediaSession.getPlayer().release();
