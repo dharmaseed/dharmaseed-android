@@ -2,6 +2,7 @@ package org.dharmaseed.android;
 
 import static androidx.media3.common.C.WAKE_MODE_NETWORK;
 
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static org.dharmaseed.android.NavigationActivity.TALK_DETAIL_EXTRA;
 
 import android.app.PendingIntent;
@@ -27,6 +28,7 @@ import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
 import androidx.media3.session.MediaLibraryService;
 import androidx.media.session.MediaButtonReceiver;
@@ -39,9 +41,13 @@ import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
 
 public class PlaybackService extends MediaSessionService {
     private static final String MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id";
@@ -116,6 +122,116 @@ public class PlaybackService extends MediaSessionService {
     }
 
     private class SessionCallback implements MediaSession.Callback {
+
+        @Override
+        public ListenableFuture<List<MediaItem>> onAddMediaItems(MediaSession mediaSession, MediaSession.ControllerInfo controller, List<MediaItem> mediaItems) {
+
+            Vector<MediaItem> resolvedItems = new Vector<MediaItem>();
+
+            for (MediaItem item : mediaItems) {
+
+                // Look up talk from its ID
+                int talkID = Integer.parseInt(item.mediaId);
+                Cursor cursor = PlayTalkActivity.getCursor(
+                        DBManager.getInstance(PlaybackService.this), talkID);
+                if (cursor.moveToFirst()) {
+                    // convert DB result to an object
+                    talk = new Talk(cursor, getApplicationContext());
+                    talk.setId(talkID);
+                } else {
+                    Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
+                    cursor.close();
+                    continue;
+                }
+                cursor.close();
+
+                // Set media session metadata
+                MediaMetadata mediaMetadata = new MediaMetadata.Builder()
+                        .setArtist(talk.getTeacherName())
+                        .setTitle(talk.getTitle())
+                        .setAlbumTitle(talk.getCenterName())
+                        .setDisplayTitle(talk.getTitle())
+                        .setSubtitle(talk.getTeacherName())
+                        .build();
+    // TODO set photo
+
+                // Look up the URI of the media to play
+                String mediaUri;
+                if (talk.isDownloaded()) {
+                    mediaUri = "file://" + talk.getPath();
+                } else {
+                    mediaUri = talk.getAudioUrl();
+                }
+
+                resolvedItems.add(item.buildUpon()
+                                .setUri(mediaUri)
+                      //          .setMediaMetadata(mediaMetadata)
+                                .build());
+
+
+
+
+
+
+
+//                builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, talk.getTeacherName());
+//                builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, talk.getTitle());
+//                builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, talk.getCenterName());
+//                builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long) talk.getDurationInMinutes() * 60 * 1000);
+//                builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, talk.getTitle());
+//                builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, talk.getTeacherName());
+//                String photoFilename = talk.getPhotoFileName();
+//                Log.i(LOG_TAG, "photoFilename: " + photoFilename);
+//                try {
+//                    FileInputStream photo = openFileInput(photoFilename);
+//                    builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BitmapFactory.decodeStream(photo));
+//                } catch (FileNotFoundException e) {
+//                    Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
+//                    builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, icon);
+//                }
+//                MediaMetadataCompat mediaMetadata = builder.build();
+//                mediaSession.setMetadata(mediaMetadata);
+
+
+
+            }
+//
+//            // Start media session
+//            mediaSession.setActive(true);
+//
+//            // Look up the URI of the media to play
+//            String mediaUri;
+//            if (talk.isDownloaded()) {
+//                mediaUri = "file://" + talk.getPath();
+//            } else {
+//                mediaUri = talk.getAudioUrl();
+//            }
+//            MediaItem mediaItem = MediaItem.fromUri(mediaUri);
+//            mediaPlayer.setMediaItem(mediaItem);
+//
+//            // Start playback service
+//            Intent intent = new Intent(PlaybackService.this, PlaybackService.class);
+//            startService(intent);
+//
+//            // Start playing the talk
+//            mediaPlayer.prepare();
+//            mediaPlayer.play();
+//
+//            // Set media session state
+//            mediaSession.setPlaybackState(new PlaybackStateCompat.Builder()
+//                    .setState(PlaybackStateCompat.STATE_PLAYING,
+//                            mediaPlayer.getCurrentPosition(),
+//                            1)
+//                    .setActions(sessionActions)
+//                    .build()
+
+
+
+            return immediateFuture(resolvedItems);
+        }
+
+
+
 
     }
 
