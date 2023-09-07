@@ -23,6 +23,8 @@ import android.app.DialogFragment;
 import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
 import android.os.Handler;
+
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
 import android.content.Intent;
@@ -74,8 +76,11 @@ public class PlayTalkActivity extends AppCompatActivity
     // request code for writing external storage (the number is arbitrary)
     private static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
-    protected void prepareTalkPlayerFragment(TalkPlayerFragment talkPlayerFragment)
+    protected void prepareTalkPlayerFragment()
     {
+        if (talkPlayerFragment == null)
+            Log.e(LOG_TAG, "talkPlayerFragment must be non-null!");
+
         final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
         try {
             mediaPlayer.reset();
@@ -89,7 +94,8 @@ public class PlayTalkActivity extends AppCompatActivity
             e.printStackTrace();
             Log.e(LOG_TAG, e.toString());
         }
-        Log.i(LOG_TAG,"created player fragment for "+talkID);
+        Log.i(LOG_TAG,"preparing media player for "+talkID);
+        mediaPlayer.prepareAsync();
     }
 
     @Override
@@ -183,7 +189,6 @@ public class PlayTalkActivity extends AppCompatActivity
             // add the fragment
             talkPlayerFragment = new TalkPlayerFragment();
             fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
-            prepareTalkPlayerFragment(talkPlayerFragment);
 
             // retrieve progress from TalkHistory DB table
             final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
@@ -419,11 +424,10 @@ public class PlayTalkActivity extends AppCompatActivity
             mediaPlayer.start();
             setPPButton("ic_media_pause");
         } else {
-            Log.i(LOG_TAG, "preparing media player for talk "+talkID);
             ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
             playButton.setAlpha(.5f);
             playButton.setClickable(false);
-            mediaPlayer.prepareAsync();
+            prepareTalkPlayerFragment();
         }
     }
 
