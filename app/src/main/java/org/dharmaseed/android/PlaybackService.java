@@ -27,7 +27,8 @@ import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
-import androidx.media.MediaBrowserServiceCompat;
+import androidx.media3.common.Player;
+import androidx.media3.session.MediaLibraryService;
 import androidx.media.session.MediaButtonReceiver;
 
 import androidx.media3.exoplayer.ExoPlayer;
@@ -35,19 +36,21 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.session.MediaSession;
+import androidx.media3.session.MediaSessionService;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-public class PlaybackService extends MediaBrowserServiceCompat {
+public class PlaybackService extends MediaSessionService {
     private static final String MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id";
     private static final String LOG_TAG = "PlaybackService";
     public static final String CHANNEL_ID_PLAYING = "playing";
 
-    private MediaSessionCompat mediaSession;
+    private MediaSession mediaSession;
 
-    private ExoPlayer mediaPlayer;
+    private ExoPlayer mediaPlayer;  // TODO destroy this in onDestroy
     private Talk talk;
 
     private Handler handler;
@@ -68,25 +71,6 @@ public class PlaybackService extends MediaBrowserServiceCompat {
     public void onCreate() {
         super.onCreate();
 
-        // Create a MediaSessionCompat
-        mediaSession = new MediaSessionCompat(getApplicationContext(), LOG_TAG);
-
-//        // Enable callbacks from MediaButtons and TransportControls
-//        mediaSession.setFlags(
-//                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-//                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-
-        // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
-        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(sessionActions);
-        mediaSession.setPlaybackState(stateBuilder.build());
-
-        // MySessionCallback() has methods that handle callbacks from a media controller
-        mediaSession.setCallback(new SessionCallback());
-
-        // Set the session's token so that client activities can communicate with it.
-        setSessionToken(mediaSession.getSessionToken());
-
         // Create the media player
         Context context = this;
         DefaultHttpDataSource.Factory httpFactory = new DefaultHttpDataSource.Factory()
@@ -101,7 +85,31 @@ public class PlaybackService extends MediaBrowserServiceCompat {
                 .setWakeMode(WAKE_MODE_NETWORK)
                 .setHandleAudioBecomingNoisy(true)
                 .setUseLazyPreparation(true)
+                .setHandleAudioBecomingNoisy(true)
+                .setSeekParameters()
                 .build();
+
+        // Create a media session
+        mediaSession = new MediaSession.Builder(this, mediaPlayer)
+                .setCallback(new SessionCallback())
+                .build();
+
+//        // Enable callbacks from MediaButtons and TransportControls
+//        mediaSession.setFlags(
+//                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+//                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+
+        // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
+        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
+                .setActions(sessionActions);
+        mediaSession.setPlaybackState(stateBuilder.build());
+
+        // MySessionCallback() has methods that handle callbacks from a media controller
+        // mediaSession.setCallback(new SessionCallback());
+
+        // Set the session's token so that client activities can communicate with it.
+        setSessionToken(mediaSession.getSessionToken());
+
 
         // Poll the media player regularly and update our media session playback state
         handler = new Handler();
@@ -141,6 +149,16 @@ public class PlaybackService extends MediaBrowserServiceCompat {
             }
         }
     };
+
+    // Remember to release the player and media session in onDestroy
+    @Override
+    public void onDestroy() {
+        mediaSession.getPlayer().release();
+        mediaSession.release();
+        mediaSession = null;
+        super.onDestroy();
+    }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -236,21 +254,26 @@ public class PlaybackService extends MediaBrowserServiceCompat {
         return START_STICKY;
     }
 
+//    @Nullable
+//    @Override
+//    public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid, @Nullable Bundle rootHints) {
+//        return new BrowserRoot(MY_EMPTY_MEDIA_ROOT_ID, null);
+//    }
+
+//    @Override
+//    public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaBrowserCompat.MediaItem>> result) {
+//        result.sendResult(null);
+//    }
+
     @Nullable
     @Override
-    public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid, @Nullable Bundle rootHints) {
-        return new BrowserRoot(MY_EMPTY_MEDIA_ROOT_ID, null);
-    }
-
-    @Override
-    public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaBrowserCompat.MediaItem>> result) {
-        result.sendResult(null);
+    public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
+        return mediaSession;
     }
 
 
-
-//    private final MediaSessionCompat.Callback sessionCallback = new MediaSessionCompat.Callback() {
-    private class SessionCallback extends MediaSessionCompat.Callback {
+    //    private final MediaSessionCompat.Callback sessionCallback = new MediaSessionCompat.Callback() {
+    private class SessionCallback implements MediaSession.Callback {
 
         private static final String TAG = "SessionCallback";
 
