@@ -75,4 +75,5 @@
 
     <include layout="@layout/content_navigation" />
 
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
