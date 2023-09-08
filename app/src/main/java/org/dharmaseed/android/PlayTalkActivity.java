@@ -91,28 +91,6 @@ public class PlayTalkActivity extends AppCompatActivity
     // request code for writing external storage (the number is arbitrary)
     static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
-    protected void prepareTalkPlayerFragment()
-    {
-        if (talkPlayerFragment == null)
-            Log.e(LOG_TAG, "talkPlayerFragment must be non-null!");
-
-        final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        try {
-            mediaPlayer.reset();
-            if (talk.isDownloaded()) {
-                Log.d(LOG_TAG, "Playing from " + talk.getPath());
-                mediaPlayer.setDataSource("file://" + talk.getPath());
-            } else {
-                mediaPlayer.setDataSource(talk.getAudioUrl());
-            }
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-            Log.e(LOG_TAG, e.toString());
-        }
-        Log.i(LOG_TAG,"preparing media player for "+talkID);
-        mediaPlayer.prepareAsync();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -197,22 +175,9 @@ public class PlayTalkActivity extends AppCompatActivity
         userDraggingSeekBar = false;
         seekBar.setOnSeekBarChangeListener(this);
 
-        // Get/create a persistent fragment to manage the MediaPlayer instance
-        FragmentManager fm = getSupportFragmentManager();
-        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
-        if (talkPlayerFragment == null) {
-            // add the fragment
-            talkPlayerFragment = new TalkPlayerFragment();
-            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
-
-            // retrieve progress from TalkHistory DB table
-            final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
-            setTalkProgress(pos, false);
-        } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
-            setPPButton("ic_media_pause");
-            updateSeekBar();
-            Log.i(LOG_TAG,"talk "+talkID+" already playing!");
-        }
+        // retrieve progress from TalkHistory DB table
+        final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
+        setTalkProgress(pos, false);
 
         // initialise timers
         timer = new Timer();
@@ -281,16 +246,20 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void updateSeekBar()
     {
-        if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
-            Log.d(LOG_TAG,"talk "+talkID+": updating seekBar");
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+        if (mediaController != null &&
+                mediaController.getPlaybackState() == Player.STATE_READY
+                && ! userDraggingSeekBar) {
             try {
-                int pos = mediaPlayer.getCurrentPosition();
-                int mpDuration = mediaPlayer.getDuration();
-                seekBar.setMax(mpDuration);
-                seekBar.setProgress(pos);
-                updateDurationText(pos);
+                int pos = (int)mediaController.getCurrentPosition();
+                int mpDuration = (int)mediaController.getDuration();
+                if (mpDuration != TIME_UNSET) {
+                    final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+                    seekBar.setMax(mpDuration);
+                    seekBar.setProgress(pos);
+                    String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                    String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                    updateDurationText(pos);
+                }
             } catch(IllegalStateException e) {}
         }
     }
@@ -304,13 +273,11 @@ public class PlayTalkActivity extends AppCompatActivity
     public int getTalkProgress()
     {
         int pos = getSeekBarProgress();
-        if (talkPlayerFragment.getMediaPrepared()) {
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            try {
-                pos = mediaPlayer.getCurrentPosition();
-            } catch (IllegalStateException e) {}
+        if (mediaController.getPlaybackState() == Player.STATE_IDLE) {
+            return getSeekBarProgress();
+        } else {
+            return (int)mediaController.getCurrentPosition();
         }
-        return pos;
     }
 
     public void logTalkProgress()
@@ -342,18 +309,16 @@ public class PlayTalkActivity extends AppCompatActivity
         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
         final int newPos = Math.max(0,Math.min(pos, seekBar.getMax()));
         Log.i(LOG_TAG, "setting progress for talk "+talkID+" to "+newPos+" (originally "+pos+")");
-        if (talkPlayerFragment.getMediaPrepared()) {
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            try {
-                mediaPlayer.seekTo(newPos);
-            } catch (IllegalStateException e) {}
+        if (mediaController != null && mediaController.getPlaybackState() != Player.STATE_IDLE) {
+            mediaController.seekTo(pos);
         } else {
             seekBar.setProgress(newPos);
             updateDurationText(seekBar.getProgress());
         }
 
-        if (logProgress)
+        if (logProgress) {
             logTalkProgress();
+        }
     }
 
     public static Cursor getCursor(DBManager dbManager, int talkID) {
@@ -469,13 +434,15 @@ public class PlayTalkActivity extends AppCompatActivity
                 ! currentItem.mediaId.equals(talkIDString)) {
             MediaItem item = new MediaItem.Builder().setMediaId(talkIDString).build();
             mediaController.setMediaItem(item);
+
+            ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
             playButton.setAlpha(.5f);
             playButton.setClickable(false);
             mediaController.prepare();
 
             // TODO: Set these somewhere else?
-            playButton.setAlpha(1f);
-            playButton.setClickable(true);
+//            playButton.setAlpha(1f);
+//            playButton.setClickable(true);
 
             mediaController.play();
         } else if (mediaController.isPlaying()) {
