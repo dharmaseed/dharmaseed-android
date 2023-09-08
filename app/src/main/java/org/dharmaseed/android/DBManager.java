@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class DBManager extends AbstractDBManager {
 
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
     private static final String DB_NAME = "Dharmaseed.db";
     private static final String LOG_TAG = "DBManager";
 
@@ -59,7 +59,7 @@ public class DBManager extends AbstractDBManager {
         if (context != null) {
             File dbFile = context.getDatabasePath(DB_NAME);
             if(! dbFile.exists()) {
-                Log.i("dbManager", "Trying to populate with pre-seeded database");
+                Log.i(LOG_TAG, "Trying to populate with pre-seeded database");
                 try {
                     // Copy the pre-seeded database if it exists
                     InputStream dbIn = context.getAssets().open(DB_NAME);
@@ -102,6 +102,7 @@ public class DBManager extends AbstractDBManager {
         db.execSQL(C.Center.CREATE_TABLE);
         db.execSQL(C.Retreat.CREATE_TABLE);
         db.execSQL(C.TalkStars.CREATE_TABLE);
+        db.execSQL(C.TalkHistory.CREATE_TABLE);
         db.execSQL(C.TeacherStars.CREATE_TABLE);
         db.execSQL(C.CenterStars.CREATE_TABLE);
         db.execSQL(C.DownloadedTalks.CREATE_TABLE);
@@ -126,15 +127,25 @@ public class DBManager extends AbstractDBManager {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i(
-                "DBManager",
+                LOG_TAG,
                 "Upgrading database from v" + oldVersion + " to v" + newVersion
         );
+        if (oldVersion == 1 && newVersion > 1) {
+            db.execSQL(C.TalkHistory.CREATE_TABLE);
+            Log.i(LOG_TAG,"Upgrade: Created talk history table");
+        }
     }
 
     @Override
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // do nothing for now - this just prevents exceptions if the user
-        // downgrades
+        Log.i(
+                LOG_TAG,
+                "Downgrading database from v" + oldVersion + " to v" + newVersion
+        );
+        if (newVersion <= 1) {
+            db.execSQL(C.TalkHistory.DROP_TABLE);
+            Log.i(LOG_TAG,"Downgrade: Dropped talk history table");
+        }
     }
 
     /**
@@ -229,9 +240,45 @@ public class DBManager extends AbstractDBManager {
         db.insert(starTableName, null, v);
     }
 
+
     public void removeStar(String starTableName, int id) {
         SQLiteDatabase db = getWritableDatabase();
         db.delete(starTableName, "_id="+id, null);
+    }
+
+    public double getTalkProgress(int id) {
+        SQLiteDatabase db = getReadableDatabase();
+        String query = String.format("SELECT %s FROM %s WHERE %s=%s",
+                C.TalkHistory.PROGRESS_IN_MINUTES,
+                C.TalkHistory.TABLE_NAME,
+                C.TalkHistory.ID,
+                id);
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.getCount() <= 0)
+            return 0.0;
+        cursor.moveToFirst();
+        return cursor.getDouble(0);
+    }
+
+    public void setTalkProgress(int id, String date_time, double progress) {
+        SQLiteDatabase db = getWritableDatabase();
+        String query = String.format("SELECT _id FROM %s WHERE _id=%s",
+                C.TalkHistory.TABLE_NAME,
+                id);
+
+        ContentValues v = new ContentValues();
+        v.put(C.TalkHistory.ID, id);
+        v.put(C.TalkHistory.DATE_TIME, date_time);
+        v.put(C.TalkHistory.PROGRESS_IN_MINUTES, progress);
+        if (db.rawQuery(query, null).getCount() <= 0) {
+            db.insert(C.TalkHistory.TABLE_NAME, null, v);
+            Log.i(LOG_TAG, "Created new talk history item for talk "+id+"("+progress+" min)");
+        } else {
+            db.update(C.TalkHistory.TABLE_NAME, v, C.TalkHistory.ID+"=?",
+                    new String[]{Integer.toString(id)});
+            Log.i(LOG_TAG, "Updated talk history item for talk "+id+"("+progress+" min)");
+        }
+        db.close();
     }
 
     public boolean addDownload(Talk talk) {

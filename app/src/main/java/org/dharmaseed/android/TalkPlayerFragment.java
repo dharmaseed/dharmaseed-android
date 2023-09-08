@@ -24,6 +24,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 import android.util.Log;
+import android.widget.ImageButton;
 
 /**
  * Created by bbethke on 3/12/16.
@@ -36,19 +37,17 @@ public class TalkPlayerFragment extends Fragment
 
     private MediaPlayer mediaPlayer;
     private boolean mediaPrepared;
-    private int userSeekBarPosition;
 
     public TalkPlayerFragment() {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioAttributes(
                 new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
         );
         mediaPlayer.setOnPreparedListener(this);
         mediaPrepared = false;
-        userSeekBarPosition = 0;
     }
 
     // this method is only called once for this fragment
@@ -67,17 +66,13 @@ public class TalkPlayerFragment extends Fragment
         return mediaPrepared;
     }
 
-    public void setUserSeekBarPosition(int userSeekBarPosition) {
-        this.userSeekBarPosition = userSeekBarPosition;
-    }
-
     @Override
     public void onPrepared(MediaPlayer mp) {
-        Log.i("talkPlayerFragment", "playing talk");
+        Log.i("talkPlayerFragment", "media prepared");
         mediaPrepared = true;
-        mediaPlayer.seekTo(userSeekBarPosition);
-        mediaPlayer.start();
         PlayTalkActivity activity = (PlayTalkActivity) getActivity();
+        activity.setTalkProgress(activity.getSeekBarProgress(), false);
+        mediaPlayer.start();
         activity.setPPButton("ic_media_pause");
     }
 

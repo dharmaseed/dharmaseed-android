@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.ProgressBar;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -94,8 +95,23 @@ public class TalkCursorAdapter extends StarCursorAdapter {
             photoView.setImageDrawable(icon);
         }
 
+        // get talk ID from cursor
+        final int talkID = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
+
+        // Show talk progress
+        ProgressBar talk_progress = (ProgressBar) view.findViewById(R.id.item_view_progress);
+        int duration_s = (int) (60*duration);
+        int progress_s = (int) (60*dbManager.getTalkProgress(talkID));
+        if (progress_s > 0) {
+            talk_progress.setMax(duration_s);
+            talk_progress.setProgress(progress_s);
+            talk_progress.setVisibility(View.VISIBLE);
+        } else {
+            talk_progress.setVisibility(View.GONE);
+        }
+
         // Set talk stars
-        handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID)));
+        handleStars(view, talkID);
     }
 
 
