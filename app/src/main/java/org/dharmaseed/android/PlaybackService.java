@@ -3,14 +3,19 @@ package org.dharmaseed.android;
 import static androidx.media3.common.C.WAKE_MODE_NETWORK;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.util.UnstableApi;
@@ -18,9 +23,13 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.session.CommandButton;
+import androidx.media3.session.DefaultMediaNotificationProvider;
+import androidx.media3.session.MediaNotification;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
@@ -61,6 +70,59 @@ public class PlaybackService extends MediaSessionService {
                 .setCallback(new SessionCallback())
                 .build();
 
+        // Set a custom media notification
+        setMediaNotificationProvider(new NotificationProvider(this));
+
+    }
+
+    @Override
+    public void onDestroy() {
+        mediaSession.getPlayer().release();
+        mediaSession.release();
+        mediaSession = null;
+        super.onDestroy();
+    }
+
+    @Nullable
+    @Override
+    public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
+        return mediaSession;
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    private class NotificationProvider implements MediaNotification.Provider {
+
+        private DefaultMediaNotificationProvider defaultProvider;
+
+        @OptIn(markerClass = UnstableApi.class)
+        public NotificationProvider(Context context) {
+            defaultProvider = new DefaultMediaNotificationProvider.Builder(context).build();
+            defaultProvider.setSmallIcon(R.drawable.ic_notification_icon);
+        }
+
+        @Override
+        public boolean handleCustomCommand(MediaSession session, String action, Bundle extras) {
+            return defaultProvider.handleCustomCommand(session, action, extras);
+        }
+
+        @Override
+        public MediaNotification createNotification(MediaSession mediaSession, ImmutableList<CommandButton> customLayout, MediaNotification.ActionFactory actionFactory, Callback onNotificationChangedCallback) {
+            MediaNotification notification = defaultProvider.createNotification(mediaSession, customLayout, actionFactory, onNotificationChangedCallback);
+
+            // Create an intent to launch the play talk activity when the notification is clicked
+            Intent playTalkIntent = new Intent(getApplicationContext(), PlayTalkActivity.class);
+            playTalkIntent.putExtra(NavigationActivity.TALK_DETAIL_EXTRA,
+                    (long) Integer.parseInt(mediaSession.getPlayer().getCurrentMediaItem().mediaId));
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
+            stackBuilder.addNextIntentWithParentStack(playTalkIntent);
+            stackBuilder.addNextIntent(playTalkIntent);
+            notification.notification.contentIntent = stackBuilder.getPendingIntent(0,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+
+
+            return notification;
+        }
     }
 
     private class SessionCallback implements MediaSession.Callback {
@@ -69,7 +131,7 @@ public class PlaybackService extends MediaSessionService {
         public ListenableFuture<List<MediaItem>> onAddMediaItems(MediaSession mediaSession, MediaSession.ControllerInfo controller, List<MediaItem> mediaItems) {
 
             Talk talk;
-            Vector<MediaItem> resolvedItems = new Vector<MediaItem>();
+            Vector<MediaItem> resolvedItems = new Vector<>();
 
             for (MediaItem item : mediaItems) {
 
@@ -130,18 +192,5 @@ public class PlaybackService extends MediaSessionService {
 
     }
 
-    @Override
-    public void onDestroy() {
-        mediaSession.getPlayer().release();
-        mediaSession.release();
-        mediaSession = null;
-        super.onDestroy();
-    }
-
-    @Nullable
-    @Override
-    public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
-        return mediaSession;
-    }
 
 }
