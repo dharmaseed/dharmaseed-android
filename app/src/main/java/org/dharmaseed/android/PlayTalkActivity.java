@@ -25,21 +25,14 @@ import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
-import android.os.Handler;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -189,11 +182,11 @@ public class PlayTalkActivity extends AppCompatActivity
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSeekBar();
+                        updatePlayerUI();
                     }
                 });
             }
-        }, 1000, 1000);
+        }, 0, 1000);
 
         // - periodically update play progress information
         timer.schedule(new java.util.TimerTask() {
@@ -206,7 +199,7 @@ public class PlayTalkActivity extends AppCompatActivity
                     }
                 });
             }
-        }, 10000, 10000);
+        }, 0, 10000);
 
         Log.i(LOG_TAG,"started timers");
     }
@@ -224,6 +217,8 @@ public class PlayTalkActivity extends AppCompatActivity
                 try {
                     mediaController = controllerFuture.get();
                     mediaController.addListener(playerListener);
+                    playerListener.onIsPlayingChanged(mediaController.isPlaying());
+                    updatePlayerUI();
                 } catch (InterruptedException | ExecutionException e) {
                     Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
                 }
@@ -244,23 +239,44 @@ public class PlayTalkActivity extends AppCompatActivity
         timer.cancel();
     }
 
-    public void updateSeekBar()
+    public void updatePlayerUI()
     {
-        if (mediaController != null &&
-                mediaController.getPlaybackState() == Player.STATE_READY
+        if (mediaController != null) {
+
+            // Hide UI controls if we're currently playing a different talk
+            MediaItem mediaItem = mediaController.getCurrentMediaItem();
+            int controlVisibility = View.INVISIBLE;
+            if (mediaItem != null && Integer.parseInt(mediaItem.mediaId) == talkID) {
+                controlVisibility = View.VISIBLE;
+            }
+            int[] controlIDs = {
+                R.id.play_talk_seek_bar,
+                R.id.play_talk_talk_duration,
+                R.id.activity_play_talk_ff_button,
+                R.id.activity_play_talk_rw_button
+            };
+            for (int controlID : controlIDs) {
+                findViewById(controlID).setVisibility(controlVisibility);
+            }
+
+
+            // Update seek bar position
+            if (mediaController.getPlaybackState() == Player.STATE_READY
                 && ! userDraggingSeekBar) {
-            try {
-                int pos = (int)mediaController.getCurrentPosition();
-                int mpDuration = (int)mediaController.getDuration();
-                if (mpDuration != TIME_UNSET) {
-                    final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
-                    seekBar.setMax(mpDuration);
-                    seekBar.setProgress(pos);
-                    String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                    String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
-                    updateDurationText(pos);
+                try {
+                    int pos = (int) mediaController.getCurrentPosition();
+                    int mpDuration = (int) mediaController.getDuration();
+                    if (mpDuration != TIME_UNSET) {
+                        final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+                        seekBar.setMax(mpDuration);
+                        seekBar.setProgress(pos);
+                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
+                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
+                        updateDurationText(pos);
+                    }
+                } catch (IllegalStateException e) {
                 }
-            } catch(IllegalStateException e) {}
+            }
         }
     }
 
@@ -272,11 +288,11 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public int getTalkProgress()
     {
-        int pos = getSeekBarProgress();
-        if (mediaController.getPlaybackState() == Player.STATE_IDLE) {
+        if (mediaController == null || mediaController.getPlaybackState() == Player.STATE_IDLE) {
             return getSeekBarProgress();
         } else {
-            return (int)mediaController.getCurrentPosition();
+            return (int) mediaController.getCurrentPosition();
+
         }
     }
 
@@ -630,17 +646,22 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 
-    // TODO: Delete eventually once PlayerFragment is finished
     private final Player.Listener playerListener =
             new Player.Listener() {
 
                 @Override
                 public void onIsPlayingChanged(boolean isPlaying) {
                     // Update Play/Pause button
-                    if (isPlaying) {
-                        setPPButton("ic_media_pause");
-                    } else {
-                        setPPButton("ic_media_play");
+                    if (mediaController != null &&
+                        mediaController.getCurrentMediaItem() != null &&
+                        Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID) {
+
+                        if (isPlaying) {
+                            setPPButton("ic_media_pause");
+                        } else {
+                            setPPButton("ic_media_play");
+                        }
+
                     }
                 }
 
