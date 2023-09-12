@@ -1,14 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="@dimen/mini_player_height"
+    android:orientation="horizontal"
     tools:context=".PlayerFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+    <ImageView
+        android:id="@+id/mini_player_talk_photo"
+        android:layout_width="@dimen/mini_player_height"
+        android:layout_height="@dimen/mini_player_height"
+        android:src="@drawable/dharmaseed_icon" />
 
-</FrameLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="@color/colorPrimaryDark"
+        android:paddingLeft="10dp"
+        android:paddingTop="10dp">
+
+        <TextView
+            android:id="@+id/mini_player_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/lightGray"
+            android:textSize="16dp"
+            android:text="This is some very long text that should not wrap" />
+
+        <TextView
+            android:id="@+id/mini_player_teacher"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/lightGray"
+            android:textSize="16dp"
+            android:text="This is some very long text that should not wrap" />
+    </LinearLayout>
+
+    <ImageButton
+        android:layout_width="@dimen/mini_player_height"
+        android:layout_height="@dimen/mini_player_height"
+        android:contentDescription="Play button"
+        android:src="@android:drawable/ic_media_play"
+        app:tint="@color/white"
+        android:background="@color/colorPrimaryDark"
+        android:id="@+id/mini_player_play_button"
+        android:onClick="miniPlayerPlayButtonClicked"
+        />
+
+</LinearLayout>

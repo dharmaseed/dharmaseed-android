@@ -119,8 +119,6 @@ public class PlaybackService extends MediaSessionService {
             notification.notification.contentIntent = stackBuilder.getPendingIntent(0,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-
-
             return notification;
         }
     }

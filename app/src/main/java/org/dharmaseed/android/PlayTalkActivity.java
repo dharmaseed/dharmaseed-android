@@ -630,6 +630,7 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 
+    // TODO: Delete eventually once PlayerFragment is finished
     private final Player.Listener playerListener =
             new Player.Listener() {
 
