@@ -16,12 +16,12 @@
 
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
         android:background="@color/colorPrimaryDark"
-        android:paddingLeft="10dp"
+        android:paddingStart="10dp"
         android:paddingTop="10dp">
 
         <TextView
@@ -31,7 +31,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:textColor="@color/lightGray"
-            android:textSize="16dp"
+            android:textSize="16sp"
             android:text="This is some very long text that should not wrap" />
 
         <TextView
@@ -41,7 +41,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:textColor="@color/lightGray"
-            android:textSize="16dp"
+            android:textSize="16sp"
             android:text="This is some very long text that should not wrap" />
     </LinearLayout>
 
