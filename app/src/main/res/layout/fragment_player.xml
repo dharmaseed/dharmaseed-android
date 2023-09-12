@@ -52,7 +52,6 @@
         app:tint="@color/white"
         android:background="@color/colorPrimaryDark"
         android:id="@+id/mini_player_play_button"
-        android:onClick="miniPlayerPlayButtonClicked"
         />
 
 </LinearLayout>

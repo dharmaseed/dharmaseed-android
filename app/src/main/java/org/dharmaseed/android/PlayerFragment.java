@@ -113,7 +113,17 @@ public class PlayerFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_player, container, false);
+        View view = inflater.inflate(R.layout.fragment_player, container, false);
+
+        ImageButton playButton = (ImageButton) view.findViewById(R.id.mini_player_play_button);
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playButtonClicked(v);
+            }
+        });
+
+        return view;
     }
 
     public void setPPButton(String drawableName) {
@@ -161,4 +171,14 @@ public class PlayerFragment extends Fragment {
 
                 }
             };
+
+    public void playButtonClicked(View view) {
+        if (mediaController.getPlaybackState() != Player.STATE_IDLE) {
+            if (mediaController.isPlaying()) {
+                mediaController.pause();
+            } else {
+                mediaController.play();
+            }
+        }
+    }
 }
