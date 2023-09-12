@@ -89,6 +89,8 @@ public class PlayerFragment extends Fragment {
                 mediaController = controllerFuture.get();
                 mediaController.addListener(playerListener);
                 playerListener.onMediaMetadataChanged(mediaController.getMediaMetadata());
+                playerListener.onPlaybackStateChanged(mediaController.getPlaybackState());
+                playerListener.onIsPlayingChanged(mediaController.isPlaying());
             } catch (InterruptedException | ExecutionException e) {
                 Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
             }
@@ -144,6 +146,15 @@ public class PlayerFragment extends Fragment {
                         setPPButton("ic_media_pause");
                     } else {
                         setPPButton("ic_media_play");
+                    }
+                }
+
+                @Override
+                public void onPlaybackStateChanged(int playbackState) {
+                    if (playbackState == Player.STATE_IDLE) {
+                        getView().setVisibility(View.GONE);
+                    } else {
+                        getView().setVisibility(View.VISIBLE);
                     }
                 }
 

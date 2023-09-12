@@ -11,6 +11,7 @@
         android:id="@+id/mini_player_talk_photo"
         android:layout_width="@dimen/mini_player_height"
         android:layout_height="@dimen/mini_player_height"
+        android:background="@color/colorPrimaryDark"
         android:src="@drawable/dharmaseed_icon" />
 
 
