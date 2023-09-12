@@ -75,5 +75,14 @@
 
     <include layout="@layout/content_navigation" />
 
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainerView"
+        android:name="org.dharmaseed.android.PlayerFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:layout_gravity="bottom"
+        />
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
