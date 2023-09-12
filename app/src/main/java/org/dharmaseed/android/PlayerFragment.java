@@ -2,11 +2,14 @@ package org.dharmaseed.android;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
 import androidx.media3.session.MediaController;
@@ -71,18 +74,12 @@ public class PlayerFragment extends Fragment {
     public void onResume() {
         super.onResume();
 
+        // Create the media controller
         Context ctx = getContext();
         SessionToken sessionToken =
                 new SessionToken(ctx, new ComponentName(ctx, PlaybackService.class));
         ListenableFuture<MediaController> controllerFuture =
                 new MediaController.Builder(ctx, sessionToken).buildAsync();
-
-//        try {
-//            mediaController = controllerFuture.get();
-//        } catch (Exception e) {}
-//
-//        mediaController.addListener(playerListener);
-//        playerListener.onMediaMetadataChanged(mediaController.getMediaMetadata());
 
         controllerFuture.addListener(() -> {
             try {
@@ -95,6 +92,7 @@ public class PlayerFragment extends Fragment {
                 Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
             }
         }, ContextCompat.getMainExecutor(ctx));
+
     }
 
     @Override
@@ -125,6 +123,19 @@ public class PlayerFragment extends Fragment {
             }
         });
 
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MediaItem item = mediaController.getCurrentMediaItem();
+                if (item != null) {
+                    Intent intent = new Intent(getContext(), PlayTalkActivity.class);
+                    intent.putExtra(NavigationActivity.TALK_DETAIL_EXTRA,
+                            (long) Integer.parseInt(item.mediaId));
+                    getContext().startActivity(intent);
+                }
+            }
+        });
+
         return view;
     }
 
@@ -134,6 +145,14 @@ public class PlayerFragment extends Fragment {
                 getResources().getIdentifier(drawableName, "drawable", "android")));
         playButton.setAlpha(1f);
         playButton.setClickable(true);
+    }
+
+    private boolean viewingCurrentlyPlayingTalk() {
+        FragmentActivity activity = getActivity();
+        MediaItem currentMediaItem = mediaController.getCurrentMediaItem();
+        return activity.getClass() == PlayTalkActivity.class &&
+                currentMediaItem != null &&
+                Integer.parseInt(currentMediaItem.mediaId) == ((PlayTalkActivity)activity).talkID;
     }
 
     private final Player.Listener playerListener =
@@ -151,7 +170,7 @@ public class PlayerFragment extends Fragment {
 
                 @Override
                 public void onPlaybackStateChanged(int playbackState) {
-                    if (playbackState == Player.STATE_IDLE) {
+                    if (playbackState == Player.STATE_IDLE || viewingCurrentlyPlayingTalk()) {
                         getView().setVisibility(View.GONE);
                     } else {
                         getView().setVisibility(View.VISIBLE);
@@ -180,6 +199,10 @@ public class PlayerFragment extends Fragment {
                         photo.setImageDrawable(icon);
                     }
 
+                    // Hide the player fragment if we're viewing the PlayTalkActivity of the currently-playing talk
+                    if (viewingCurrentlyPlayingTalk()) {
+                            getView().setVisibility(View.GONE);
+                    }
                 }
             };
 
