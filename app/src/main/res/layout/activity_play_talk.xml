@@ -145,7 +145,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/play_talk_seek_bar"
-            android:visibility="invisible"
             android:layout_gravity="center_horizontal" />
 
         <TextView
@@ -155,7 +154,6 @@
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="Duration"
             android:id="@+id/play_talk_talk_duration"
-            android:visibility="invisible"
             />
 
         <LinearLayout
@@ -172,7 +170,6 @@
                 app:tint="@color/colorPrimary"
                 android:id="@+id/activity_play_talk_rw_button"
                 android:onClick="rewindButtonClicked"
-                android:visibility="invisible"
                 />
 
             <ImageButton
@@ -191,7 +188,6 @@
                 app:tint="@color/colorPrimary"
                 android:id="@+id/activity_play_talk_ff_button"
                 android:onClick="fastForwardButtonClicked"
-                android:visibility="invisible"
                 />
 
         </LinearLayout>

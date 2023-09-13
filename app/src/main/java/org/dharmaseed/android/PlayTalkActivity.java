@@ -71,6 +71,9 @@ public class PlayTalkActivity extends AppCompatActivity
     DBManager dbManager;
     boolean userDraggingSeekBar;
 
+    boolean shouldSeekToResumePos;
+    int resumePos;
+
     Timer timer;
 
     MediaController mediaController;
@@ -172,6 +175,11 @@ public class PlayTalkActivity extends AppCompatActivity
         final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
         setTalkProgress(pos, false);
 
+        // State data telling us if we should seek to the resume position of a talk when starting playback.
+        // See playTalkButtonClicked comments for why this is needed.
+        shouldSeekToResumePos = false;
+        resumePos = pos;
+
         // initialise timers
         timer = new Timer();
 
@@ -244,25 +252,28 @@ public class PlayTalkActivity extends AppCompatActivity
         if (mediaController != null) {
 
             // Hide UI controls if we're currently playing a different talk
-            MediaItem mediaItem = mediaController.getCurrentMediaItem();
-            int controlVisibility = View.INVISIBLE;
-            if (mediaItem != null && Integer.parseInt(mediaItem.mediaId) == talkID) {
-                controlVisibility = View.VISIBLE;
-            }
-            int[] controlIDs = {
+            final int[] controlIDs = {
                 R.id.play_talk_seek_bar,
                 R.id.play_talk_talk_duration,
                 R.id.activity_play_talk_ff_button,
                 R.id.activity_play_talk_rw_button
             };
             for (int controlID : controlIDs) {
-                findViewById(controlID).setVisibility(controlVisibility);
+                final View view = findViewById(controlID);
+                if (mediaControlsEnabled()) {
+                    view.setClickable(true);
+                    view.setEnabled(true);
+                    view.setAlpha(1.0f);
+                } else {
+                    view.setClickable(false);
+                    view.setEnabled(false);
+                    view.setAlpha(0.5f);
+                }
             }
-
 
             // Update seek bar position
             if (mediaController.getPlaybackState() == Player.STATE_READY
-                && ! userDraggingSeekBar) {
+                && ! userDraggingSeekBar && mediaControlsEnabled()) {
                 try {
                     int pos = (int) mediaController.getCurrentPosition();
                     int mpDuration = (int) mediaController.getDuration();
@@ -325,7 +336,7 @@ public class PlayTalkActivity extends AppCompatActivity
         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
         final int newPos = Math.max(0,Math.min(pos, seekBar.getMax()));
         Log.i(LOG_TAG, "setting progress for talk "+talkID+" to "+newPos+" (originally "+pos+")");
-        if (mediaController != null && mediaController.getPlaybackState() != Player.STATE_IDLE) {
+        if (mediaControlsEnabled() && mediaController != null && mediaController.getPlaybackState() != Player.STATE_IDLE) {
             mediaController.seekTo(pos);
         } else {
             seekBar.setProgress(newPos);
@@ -335,6 +346,12 @@ public class PlayTalkActivity extends AppCompatActivity
         if (logProgress) {
             logTalkProgress();
         }
+    }
+
+    private boolean mediaControlsEnabled() {
+        return mediaController != null &&
+                mediaController.getCurrentMediaItem() != null &&
+                Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID;
     }
 
     public static Cursor getCursor(DBManager dbManager, int talkID) {
@@ -438,7 +455,7 @@ public class PlayTalkActivity extends AppCompatActivity
         playButton.setImageDrawable(ContextCompat.getDrawable(this,
                 getResources().getIdentifier(drawableName, "drawable", "android")));
         playButton.setAlpha(1f);
-        playButton.setClickable(true);
+        playButton.setEnabled(true);
     }
 
     public void playTalkButtonClicked(View view) {
@@ -453,14 +470,19 @@ public class PlayTalkActivity extends AppCompatActivity
 
             ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
             playButton.setAlpha(.5f);
-            playButton.setClickable(false);
+            playButton.setEnabled(false);
             mediaController.prepare();
-
-            // TODO: Set these somewhere else?
-//            playButton.setAlpha(1f);
-//            playButton.setClickable(true);
-
             mediaController.play();
+
+            // Ideally, we'd like to simply call mediaController.seekTo(getTalkProgress()) to resume
+            // playback at the last saved point. Unfortunately, it seems that the seek command does
+            // not become available until the player is fully prepared, which can take a little while,
+            // so if we call seekTo here, it'll simply be ignored. :(
+            //
+            // As a workaround, remember the position to seek to here, and actually seek in
+            // playerListener.onAvailableCommandsChanged, which will fire once seeking becomes possible.
+            shouldSeekToResumePos = true;
+
         } else if (mediaController.isPlaying()) {
             mediaController.pause();
             logTalkProgress();
@@ -648,6 +670,13 @@ public class PlayTalkActivity extends AppCompatActivity
 
     private final Player.Listener playerListener =
             new Player.Listener() {
+                @Override
+                public void onAvailableCommandsChanged(Player.Commands availableCommands) {
+                    if (availableCommands.contains(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) && shouldSeekToResumePos) {
+                        setTalkProgress(resumePos, false);
+                        shouldSeekToResumePos = false;
+                    }
+                }
 
                 @Override
                 public void onIsPlayingChanged(boolean isPlaying) {
