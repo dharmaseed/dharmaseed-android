@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="@dimen/mini_player_height"
     android:orientation="horizontal"
-    tools:context=".PlayerFragment">
+    tools:context=".MiniPlayerFragment">
 
     <ImageView
         android:id="@+id/mini_player_talk_photo"

@@ -30,10 +30,10 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link PlayerFragment#newInstance} factory method to
+ * Use the {@link MiniPlayerFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class PlayerFragment extends Fragment {
+public class MiniPlayerFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -48,7 +48,7 @@ public class PlayerFragment extends Fragment {
 
     private String LOG_TAG = "PlayerFragment";
 
-    public PlayerFragment() {
+    public MiniPlayerFragment() {
         // Required empty public constructor
     }
 
@@ -61,8 +61,8 @@ public class PlayerFragment extends Fragment {
      * @return A new instance of fragment PlayerFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static PlayerFragment newInstance(String param1, String param2) {
-        PlayerFragment fragment = new PlayerFragment();
+    public static MiniPlayerFragment newInstance(String param1, String param2) {
+        MiniPlayerFragment fragment = new MiniPlayerFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
