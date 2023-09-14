@@ -104,8 +104,8 @@ public class MiniPlayerFragment extends Fragment {
         }
     }
 
-    public void onStop() {
-        super.onStop();
+    public void onDestroy() {
+        super.onDestroy();
         mediaController.release();
     }
 
