@@ -43,7 +43,6 @@ public class MiniPlayerFragment extends Fragment {
         // Required empty public constructor
     }
 
-
     public static MiniPlayerFragment newInstance() {
         MiniPlayerFragment fragment = new MiniPlayerFragment();
         return fragment;
@@ -118,8 +117,6 @@ public class MiniPlayerFragment extends Fragment {
         ImageButton playButton = (ImageButton) getView().findViewById(R.id.mini_player_play_button);
         playButton.setImageDrawable(ContextCompat.getDrawable(getContext(),
                 getResources().getIdentifier(drawableName, "drawable", "android")));
-        playButton.setAlpha(1f);
-        playButton.setClickable(true);
     }
 
     private boolean viewingCurrentlyPlayingTalk() {
