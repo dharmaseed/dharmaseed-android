@@ -222,13 +222,6 @@ public class PlayTalkActivity extends AppCompatActivity
 
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.i(LOG_TAG, "stopping timers");
-        timer.cancel();
-    }
-
     public void updatePlayerUI()
     {
         if (mediaController != null) {
@@ -301,6 +294,8 @@ public class PlayTalkActivity extends AppCompatActivity
     public void onStop() {
         super.onStop();
         mediaController.release();
+        Log.i(LOG_TAG, "stopping timers");
+        timer.cancel();
     }
 
 
