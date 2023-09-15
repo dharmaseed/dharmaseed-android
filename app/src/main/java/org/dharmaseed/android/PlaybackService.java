@@ -113,11 +113,8 @@ public class PlaybackService extends MediaSessionService {
             Intent playTalkIntent = new Intent(getApplicationContext(), PlayTalkActivity.class);
             playTalkIntent.putExtra(NavigationActivity.TALK_DETAIL_EXTRA,
                     (long) Integer.parseInt(mediaSession.getPlayer().getCurrentMediaItem().mediaId));
-            TaskStackBuilder stackBuilder = TaskStackBuilder.create(getApplicationContext());
-            stackBuilder.addNextIntentWithParentStack(playTalkIntent);
-            stackBuilder.addNextIntent(playTalkIntent);
-            notification.notification.contentIntent = stackBuilder.getPendingIntent(0,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            notification.notification.contentIntent = PendingIntent.getActivity(getApplicationContext(),
+                    0, playTalkIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             return notification;
         }
