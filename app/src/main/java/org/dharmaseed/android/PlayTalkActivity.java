@@ -196,19 +196,6 @@ public class PlayTalkActivity extends AppCompatActivity
             }
         }, 0, 1000);
 
-        // - periodically update play progress information
-        timer.schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        logTalkProgress();
-                    }
-                });
-            }
-        }, 0, 10000);
-
         Log.i(LOG_TAG,"started timers");
     }
 

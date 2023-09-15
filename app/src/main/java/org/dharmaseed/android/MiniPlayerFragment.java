@@ -29,24 +29,13 @@ import java.io.ByteArrayInputStream;
 import java.util.concurrent.ExecutionException;
 
 /**
- * A simple {@link Fragment} subclass.
- * Use the {@link MiniPlayerFragment#newInstance} factory method to
- * create an instance of this fragment.
+ * A mini talk player fragment that can be embedded into other activities.
  */
 public class MiniPlayerFragment extends Fragment {
 
     private MediaController mediaController;
 
-    private String LOG_TAG = "PlayerFragment";
-
-    public MiniPlayerFragment() {
-        // Required empty public constructor
-    }
-
-    public static MiniPlayerFragment newInstance() {
-        MiniPlayerFragment fragment = new MiniPlayerFragment();
-        return fragment;
-    }
+    private String LOG_TAG = "MiniPlayerFragment";
 
     @Override
     public void onResume() {
@@ -76,11 +65,19 @@ public class MiniPlayerFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(LOG_TAG, "CREATED " + this);
     }
 
+    public void onStop() {
+        super.onStop();
+        Log.i(LOG_TAG, "onStop " + this);
+        mediaController.release();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
-        mediaController.release();
+        Log.i(LOG_TAG, "onDestroy " + this);
     }
 
     @Override
@@ -114,6 +111,7 @@ public class MiniPlayerFragment extends Fragment {
     }
 
     public void setPPButton(String drawableName) {
+        Log.i(LOG_TAG, "setPPButton " + this);
         ImageButton playButton = (ImageButton) getView().findViewById(R.id.mini_player_play_button);
         playButton.setImageDrawable(ContextCompat.getDrawable(getContext(),
                 getResources().getIdentifier(drawableName, "drawable", "android")));

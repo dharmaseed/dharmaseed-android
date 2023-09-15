@@ -11,6 +11,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -18,6 +19,7 @@ import androidx.annotation.OptIn;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
+import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
@@ -35,13 +37,18 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Timer;
 import java.util.Vector;
 
 public class PlaybackService extends MediaSessionService {
 
     private static final String LOG_TAG = "PlaybackService";
     private MediaSession mediaSession;
+    private Runnable updateTalkProgressTask;
+    private Handler handler;
 
     @Override
     @OptIn(markerClass = UnstableApi.class)
@@ -73,14 +80,41 @@ public class PlaybackService extends MediaSessionService {
         // Set a custom media notification
         setMediaNotificationProvider(new NotificationProvider(this));
 
+        // Set a timer to periodically update the talk progress in the database
+        handler = new Handler();
+        updateTalkProgressTask = new Runnable() {
+            @Override
+            public void run() {
+                updateTalkProgress();
+            }
+        };
+        handler.postDelayed(updateTalkProgressTask, 10000);
+    }
+
+    private void updateTalkProgress() {
+        if (mediaSession != null) {
+            final Player player = mediaSession.getPlayer();
+            final MediaItem item = player.getCurrentMediaItem();
+            if (item != null && player.isPlaying()) {
+                final int talkID = Integer.parseInt(item.mediaId);
+                final double progress = player.getCurrentPosition() / (1000 * 60.0);
+                SimpleDateFormat parser = new SimpleDateFormat(PlayTalkActivity.DATE_FORMAT);
+                final String now = parser.format(GregorianCalendar.getInstance().getTime());
+                DBManager.getInstance(this).setTalkProgress(talkID, now, progress);
+            }
+
+            // Only run this task again if the mediaSession is not null. If the service has been destroyed,
+            // we'll set mediaSession = null, so we should stop running the task in that case.
+            handler.postDelayed(updateTalkProgressTask, 10000);
+        }
     }
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         mediaSession.getPlayer().release();
         mediaSession.release();
         mediaSession = null;
-        super.onDestroy();
     }
 
     @Nullable
