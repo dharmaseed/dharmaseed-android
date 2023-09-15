@@ -665,14 +665,11 @@ public class PlayTalkActivity extends AppCompatActivity
                     // Update Play/Pause button
                     if (mediaController != null &&
                         mediaController.getCurrentMediaItem() != null &&
-                        Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID) {
-
-                        if (isPlaying) {
+                        Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID &&
+                        isPlaying) {
                             setPPButton("ic_media_pause");
-                        } else {
-                            setPPButton("ic_media_play");
-                        }
-
+                    } else {
+                        setPPButton("ic_media_play");
                     }
                 }
 
