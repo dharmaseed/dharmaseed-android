@@ -66,7 +66,7 @@ import java.util.Timer;
 
 public class PlayTalkActivity extends AppCompatActivity
         implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
-    
+
     int talkID;
     DBManager dbManager;
     boolean userDraggingSeekBar;
@@ -88,8 +88,9 @@ public class PlayTalkActivity extends AppCompatActivity
     static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onResume() {
+        super.onResume();
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_play_talk);
 
         // Turn on action bar up/home button
@@ -197,11 +198,6 @@ public class PlayTalkActivity extends AppCompatActivity
         }, 0, 1000);
 
         Log.i(LOG_TAG,"started timers");
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
 
         SessionToken sessionToken =
                 new SessionToken(this, new ComponentName(this, PlaybackService.class));
@@ -219,12 +215,6 @@ public class PlayTalkActivity extends AppCompatActivity
                 }
             }, ContextCompat.getMainExecutor(this));
 
-        }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     @Override
