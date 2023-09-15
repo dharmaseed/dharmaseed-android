@@ -88,10 +88,15 @@ public class PlayTalkActivity extends AppCompatActivity
     static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_play_talk);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        setContentView(R.layout.activity_play_talk);
 
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
