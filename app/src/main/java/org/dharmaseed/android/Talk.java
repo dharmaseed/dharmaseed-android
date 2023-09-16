@@ -45,7 +45,7 @@ public class Talk {
         setDescription(cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DESCRIPTION)).trim());
 
         String url = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.AUDIO_URL));
-        setAudioUrl("http://www.dharmaseed.org" + url);
+        setAudioUrl("https://www.dharmaseed.org" + url);
 
         String recDate = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.RECORDING_DATE));
         if(recDate == null) {

@@ -76,7 +76,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
             builder.addFormDataPart("edition", edition);
         }
         Request request = new Request.Builder()
-                .url("http://www.dharmaseed.org/api/1/"+apiUrl)
+                .url("https://www.dharmaseed.org/api/1/"+apiUrl)
                 .post(builder.build())
                 .build();
 
@@ -219,7 +219,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                     .addFormDataPart("detail", "1")
                     .build();
             Request request = new Request.Builder()
-                    .url("http://www.dharmaseed.org/api/1/"+apiUrl)
+                    .url("https://www.dharmaseed.org/api/1/"+apiUrl)
                     .post(body)
                     .build();
 
