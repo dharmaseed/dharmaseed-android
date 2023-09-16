@@ -97,6 +97,7 @@ public class PlaybackService extends MediaSessionService {
         handler.postDelayed(updateTalkProgressTask, 10000);
     }
 
+    // Periodic task that saves talk progress in the database
     private void updateTalkProgress() {
         if (mediaSession != null) {
             final Player player = mediaSession.getPlayer();
@@ -110,7 +111,7 @@ public class PlaybackService extends MediaSessionService {
             }
 
             // Only run this task again if the mediaSession is not null. If the service has been destroyed,
-            // we'll set mediaSession = null, so we should stop running the task in that case.
+            // we'll set mediaSession = null, so we'll stop running the task in that case.
             handler.postDelayed(updateTalkProgressTask, 10000);
         }
     }
