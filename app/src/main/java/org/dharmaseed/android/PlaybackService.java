@@ -16,6 +16,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
+import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
@@ -62,6 +63,11 @@ public class PlaybackService extends MediaSessionService {
         DefaultDataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(
                 context, httpFactory
         );
+
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(C.USAGE_MEDIA)
+                .build();
+
         ExoPlayer mediaPlayer = new ExoPlayer.Builder(context)
                 .setMediaSourceFactory(
                         new DefaultMediaSourceFactory(context)
@@ -69,7 +75,7 @@ public class PlaybackService extends MediaSessionService {
                 .setWakeMode(WAKE_MODE_NETWORK)
                 .setHandleAudioBecomingNoisy(true)
                 .setUseLazyPreparation(true)
-                .setHandleAudioBecomingNoisy(true)
+                .setAudioAttributes(audioAttributes, true)
                 .build();
 
         // Create a media session
