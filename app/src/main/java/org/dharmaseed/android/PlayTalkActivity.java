@@ -179,7 +179,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // retrieve progress from TalkHistory DB table
         final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
-        setTalkProgress(pos, false);
+        setTalkProgress(pos);
 
         // State data telling us if we should seek to the resume position of a talk when starting playback.
         // See playTalkButtonClicked comments for why this is needed.
@@ -283,15 +283,6 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 
-    public void logTalkProgress()
-    {
-        SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
-        final String now = parser.format(GregorianCalendar.getInstance().getTime());
-        final int pos = getTalkProgress();
-        Log.d(LOG_TAG, "talk "+talkID+": progress POS="+pos+" on DATE="+now);
-        dbManager.setTalkProgress(talkID, now, pos/(1000*60.0));
-    }
-
     public void onStop() {
         super.onStop();
         mediaController.release();
@@ -309,7 +300,7 @@ public class PlayTalkActivity extends AppCompatActivity
         durationView.setText(posStr + "/" + mpDurStr);
     }
 
-    public void setTalkProgress(int pos, boolean logProgress)
+    public void setTalkProgress(int pos)
     {
         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
         final int newPos = Math.max(0,Math.min(pos, seekBar.getMax()));
@@ -319,10 +310,6 @@ public class PlayTalkActivity extends AppCompatActivity
         } else {
             seekBar.setProgress(newPos);
             updateDurationText(seekBar.getProgress());
-        }
-
-        if (logProgress) {
-            logTalkProgress();
         }
     }
 
@@ -463,7 +450,6 @@ public class PlayTalkActivity extends AppCompatActivity
 
         } else if (mediaController.isPlaying()) {
             mediaController.pause();
-            logTalkProgress();
         } else {
             mediaController.play();
         }
@@ -471,11 +457,11 @@ public class PlayTalkActivity extends AppCompatActivity
     }
 
     public void fastForwardButtonClicked(View view) {
-        setTalkProgress(getTalkProgress() + 15000, true);
+        setTalkProgress(getTalkProgress() + 15000);
     }
 
     public void rewindButtonClicked(View view) {
-        setTalkProgress(getTalkProgress() - 15000, true);
+        setTalkProgress(getTalkProgress() - 15000);
     }
 
     @Override
@@ -492,7 +478,7 @@ public class PlayTalkActivity extends AppCompatActivity
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         userDraggingSeekBar = false;
-        setTalkProgress(getSeekBarProgress(), true);
+        setTalkProgress(getSeekBarProgress());
     }
 
     /**
@@ -651,7 +637,7 @@ public class PlayTalkActivity extends AppCompatActivity
                 @Override
                 public void onAvailableCommandsChanged(Player.Commands availableCommands) {
                     if (availableCommands.contains(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) && shouldSeekToResumePos) {
-                        setTalkProgress(resumePos, false);
+                        setTalkProgress(resumePos);
                         shouldSeekToResumePos = false;
                     }
                 }
