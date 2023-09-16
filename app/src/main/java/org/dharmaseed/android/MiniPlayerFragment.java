@@ -63,21 +63,12 @@ public class MiniPlayerFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.i(LOG_TAG, "CREATED " + this);
-    }
-
-    public void onStop() {
-        super.onStop();
-        Log.i(LOG_TAG, "onStop " + this);
+    public void onPause() {
+        super.onPause();
+        Log.i(LOG_TAG, "onPause " + this);
+        mediaController.removeListener(playerListener);
         mediaController.release();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.i(LOG_TAG, "onDestroy " + this);
+        mediaController = null;
     }
 
     @Override
@@ -110,23 +101,33 @@ public class MiniPlayerFragment extends Fragment {
         return view;
     }
 
-    public void setPPButton(String drawableName) {
-        Log.i(LOG_TAG, "setPPButton " + this);
-        ImageButton playButton = (ImageButton) getView().findViewById(R.id.mini_player_play_button);
-        playButton.setImageDrawable(ContextCompat.getDrawable(getContext(),
-                getResources().getIdentifier(drawableName, "drawable", "android")));
-    }
-
-    private boolean viewingCurrentlyPlayingTalk() {
-        FragmentActivity activity = getActivity();
-        MediaItem currentMediaItem = mediaController.getCurrentMediaItem();
-        return activity.getClass() == PlayTalkActivity.class &&
-                currentMediaItem != null &&
-                Integer.parseInt(currentMediaItem.mediaId) == ((PlayTalkActivity)activity).talkID;
+    public void playButtonClicked(View view) {
+        if (mediaController != null && mediaController.getPlaybackState() != Player.STATE_IDLE) {
+            if (mediaController.isPlaying()) {
+                mediaController.pause();
+            } else {
+                mediaController.play();
+            }
+        }
     }
 
     private final Player.Listener playerListener =
             new Player.Listener() {
+
+                private void setPPButton(String drawableName) {
+                    Log.i(LOG_TAG, "setPPButton " + this);
+                    ImageButton playButton = (ImageButton) getView().findViewById(R.id.mini_player_play_button);
+                    playButton.setImageDrawable(ContextCompat.getDrawable(getContext(),
+                            getResources().getIdentifier(drawableName, "drawable", "android")));
+                }
+
+                private boolean viewingCurrentlyPlayingTalk() {
+                    FragmentActivity activity = getActivity();
+                    MediaItem currentMediaItem = mediaController.getCurrentMediaItem();
+                    return activity.getClass() == PlayTalkActivity.class &&
+                            currentMediaItem != null &&
+                            Integer.parseInt(currentMediaItem.mediaId) == ((PlayTalkActivity)activity).talkID;
+                }
 
                 @Override
                 public void onIsPlayingChanged(boolean isPlaying) {
@@ -176,13 +177,4 @@ public class MiniPlayerFragment extends Fragment {
                 }
             };
 
-    public void playButtonClicked(View view) {
-        if (mediaController.getPlaybackState() != Player.STATE_IDLE) {
-            if (mediaController.isPlaying()) {
-                mediaController.pause();
-            } else {
-                mediaController.play();
-            }
-        }
-    }
 }
