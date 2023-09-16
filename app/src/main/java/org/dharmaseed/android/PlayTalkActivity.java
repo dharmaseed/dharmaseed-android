@@ -204,6 +204,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         Log.i(LOG_TAG,"started timers");
 
+        // Create a MediaController to interact with the PlaybackService
         SessionToken sessionToken =
                 new SessionToken(this, new ComponentName(this, PlaybackService.class));
         ListenableFuture<MediaController> controllerFuture =
@@ -226,7 +227,7 @@ public class PlayTalkActivity extends AppCompatActivity
     {
         if (mediaController != null) {
 
-            // Hide UI controls if we're currently playing a different talk
+            // Disable UI controls if we're currently playing a different talk
             final int[] controlIDs = {
                 R.id.play_talk_seek_bar,
                 R.id.play_talk_talk_duration,
