@@ -19,24 +19,19 @@
 
 package org.dharmaseed.android;
 
+import static androidx.media3.common.C.TIME_UNSET;
+
 import android.app.DialogFragment;
+import android.content.ComponentName;
 import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
-import android.os.Handler;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.FragmentManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.media.MediaPlayer;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -49,59 +44,58 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionToken;
+
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
+import java.util.concurrent.ExecutionException;
 import java.util.Timer;
 
 public class PlayTalkActivity extends AppCompatActivity
         implements SeekBar.OnSeekBarChangeListener, DeleteTalkFragment.DeleteTalkListener {
 
-    TalkPlayerFragment talkPlayerFragment;
     int talkID;
     DBManager dbManager;
     boolean userDraggingSeekBar;
 
+    boolean shouldSeekToResumePos;
+    int resumePos;
+
     Timer timer;
 
-    private static Talk talk;
+    MediaController mediaController;
 
-    private static final String LOG_TAG = "PlayTalkActivity";
+    Talk talk;
+
+    static final String LOG_TAG = "PlayTalkActivity";
 
     protected static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     // request code for writing external storage (the number is arbitrary)
-    private static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
+    static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 
-    protected void prepareTalkPlayerFragment()
-    {
-        if (talkPlayerFragment == null)
-            Log.e(LOG_TAG, "talkPlayerFragment must be non-null!");
-
-        final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        try {
-            mediaPlayer.reset();
-            if (talk.isDownloaded()) {
-                Log.d(LOG_TAG, "Playing from " + talk.getPath());
-                mediaPlayer.setDataSource("file://" + talk.getPath());
-            } else {
-                mediaPlayer.setDataSource(talk.getAudioUrl());
-            }
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-            Log.e(LOG_TAG, e.toString());
-        }
-        Log.i(LOG_TAG,"preparing media player for "+talkID);
-        mediaPlayer.prepareAsync();
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_play_talk);
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_play_talk);
+    protected void onResume() {
+        super.onResume();
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
@@ -120,7 +114,7 @@ public class PlayTalkActivity extends AppCompatActivity
         // for example, if the user selects a talk, exits, and re-opens it, no need
         // to hit the DB again, since we already have that talk saved
         if (talk == null || talk.getId() != talkID) {
-            Cursor cursor = getCursor();
+            Cursor cursor = getCursor(dbManager, talkID);
             if (cursor.moveToFirst()) {
                 // convert DB result to an object
                 talk = new Talk(cursor, getApplicationContext());
@@ -161,10 +155,6 @@ public class PlayTalkActivity extends AppCompatActivity
             photoView.setImageDrawable(icon);
         }
 
-        // set the image of the download button based on whether the talk is
-        // downloaded or not
-        toggleDownloadImage();
-
         // Set date
         TextView dateView = (TextView) findViewById(R.id.play_talk_date);
         String recDate = talk.getDate();
@@ -176,28 +166,24 @@ public class PlayTalkActivity extends AppCompatActivity
             Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
         }
 
+        // set the image of the download button based on whether the talk is
+        // downloaded or not
+        toggleDownloadImage();
+
         // Initialise seek bar
         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
         seekBar.setMax((int)(60*1000*talk.getDurationInMinutes()));
         userDraggingSeekBar = false;
         seekBar.setOnSeekBarChangeListener(this);
 
-        // Get/create a persistent fragment to manage the MediaPlayer instance
-        FragmentManager fm = getSupportFragmentManager();
-        talkPlayerFragment = (TalkPlayerFragment) fm.findFragmentByTag("talkPlayerFragment");
-        if (talkPlayerFragment == null) {
-            // add the fragment
-            talkPlayerFragment = new TalkPlayerFragment();
-            fm.beginTransaction().add(talkPlayerFragment, "talkPlayerFragment").commit();
+        // retrieve progress from TalkHistory DB table
+        final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
+        setTalkProgress(pos);
 
-            // retrieve progress from TalkHistory DB table
-            final int pos = (int) (dbManager.getTalkProgress(talkID)*60*1000);
-            setTalkProgress(pos, false);
-        } else if(talkPlayerFragment.getMediaPlayer().isPlaying()) {
-            setPPButton("ic_media_pause");
-            updateSeekBar();
-            Log.i(LOG_TAG,"talk "+talkID+" already playing!");
-        }
+        // State data telling us if we should seek to the resume position of a talk when starting playback.
+        // See playTalkButtonClicked comments for why this is needed.
+        shouldSeekToResumePos = false;
+        resumePos = pos;
 
         // initialise timers
         timer = new Timer();
@@ -209,48 +195,72 @@ public class PlayTalkActivity extends AppCompatActivity
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSeekBar();
+                        updatePlayerUI();
                     }
                 });
             }
-        }, 1000, 1000);
-
-        // - periodically update play progress information
-        timer.schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        logTalkProgress();
-                    }
-                });
-            }
-        }, 10000, 10000);
+        }, 0, 1000);
 
         Log.i(LOG_TAG,"started timers");
+
+        // Create a MediaController to interact with the PlaybackService
+        SessionToken sessionToken =
+                new SessionToken(this, new ComponentName(this, PlaybackService.class));
+        ListenableFuture<MediaController> controllerFuture =
+                new MediaController.Builder(this, sessionToken).buildAsync();
+
+        controllerFuture.addListener(() -> {
+                try {
+                    mediaController = controllerFuture.get();
+                    mediaController.addListener(playerListener);
+                    playerListener.onIsPlayingChanged(mediaController.isPlaying());
+                    updatePlayerUI();
+                } catch (InterruptedException | ExecutionException e) {
+                    Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
+                }
+            }, ContextCompat.getMainExecutor(this));
+
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.i(LOG_TAG, "stopping timers");
-        timer.cancel();
-    }
-
-    public void updateSeekBar()
+    public void updatePlayerUI()
     {
-        if (talkPlayerFragment.getMediaPrepared() && ! userDraggingSeekBar) {
-            Log.d(LOG_TAG,"talk "+talkID+": updating seekBar");
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
-            try {
-                int pos = mediaPlayer.getCurrentPosition();
-                int mpDuration = mediaPlayer.getDuration();
-                seekBar.setMax(mpDuration);
-                seekBar.setProgress(pos);
-                updateDurationText(pos);
-            } catch(IllegalStateException e) {}
+        if (mediaController != null) {
+
+            // Disable UI controls if we're currently playing a different talk
+            final int[] controlIDs = {
+                R.id.play_talk_seek_bar,
+                R.id.play_talk_talk_duration,
+                R.id.activity_play_talk_ff_button,
+                R.id.activity_play_talk_rw_button
+            };
+            for (int controlID : controlIDs) {
+                final View view = findViewById(controlID);
+                if (mediaControlsEnabled()) {
+                    view.setClickable(true);
+                    view.setEnabled(true);
+                    view.setAlpha(1.0f);
+                } else {
+                    view.setClickable(false);
+                    view.setEnabled(false);
+                    view.setAlpha(0.5f);
+                }
+            }
+
+            // Update seek bar position
+            if (mediaController.getPlaybackState() == Player.STATE_READY
+                && ! userDraggingSeekBar && mediaControlsEnabled()) {
+                try {
+                    int pos = (int) mediaController.getCurrentPosition();
+                    long mpDuration = mediaController.getDuration();
+                    if (mpDuration != TIME_UNSET) {
+                        final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
+                        seekBar.setMax((int) mpDuration);
+                        seekBar.setProgress(pos);
+                        updateDurationText(pos);
+                    }
+                } catch (IllegalStateException e) {
+                }
+            }
         }
     }
 
@@ -262,24 +272,21 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public int getTalkProgress()
     {
-        int pos = getSeekBarProgress();
-        if (talkPlayerFragment.getMediaPrepared()) {
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            try {
-                pos = mediaPlayer.getCurrentPosition();
-            } catch (IllegalStateException e) {}
+        if (mediaController == null || mediaController.getPlaybackState() == Player.STATE_IDLE) {
+            return getSeekBarProgress();
+        } else {
+            return (int) mediaController.getCurrentPosition();
+
         }
-        return pos;
     }
 
-    public void logTalkProgress()
-    {
-        SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
-        final String now = parser.format(GregorianCalendar.getInstance().getTime());
-        final int pos = getTalkProgress();
-        Log.d(LOG_TAG, "talk "+talkID+": progress POS="+pos+" on DATE="+now);
-        dbManager.setTalkProgress(talkID, now, pos/(1000*60.0));
+    public void onStop() {
+        super.onStop();
+        mediaController.release();
+        Log.i(LOG_TAG, "stopping timers");
+        timer.cancel();
     }
+
 
     public void updateDurationText(int pos)
     {
@@ -290,27 +297,27 @@ public class PlayTalkActivity extends AppCompatActivity
         durationView.setText(posStr + "/" + mpDurStr);
     }
 
-    public void setTalkProgress(int pos, boolean logProgress)
+    public void setTalkProgress(int pos)
     {
         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
         final int newPos = Math.max(0,Math.min(pos, seekBar.getMax()));
         Log.i(LOG_TAG, "setting progress for talk "+talkID+" to "+newPos+" (originally "+pos+")");
-        if (talkPlayerFragment.getMediaPrepared()) {
-            final MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-            try {
-                mediaPlayer.seekTo(newPos);
-            } catch (IllegalStateException e) {}
+        if (mediaControlsEnabled() && mediaController != null && mediaController.getPlaybackState() != Player.STATE_IDLE) {
+            mediaController.seekTo(pos);
         } else {
             seekBar.setProgress(newPos);
             updateDurationText(seekBar.getProgress());
         }
-
-        if (logProgress)
-            logTalkProgress();
     }
 
+    private boolean mediaControlsEnabled() {
+        return mediaController != null &&
+                mediaController.getCurrentMediaItem() != null &&
+                Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID;
+    }
 
-    private Cursor getCursor() {
+    public static Cursor getCursor(DBManager dbManager, int talkID) {
+
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
                 "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
@@ -410,33 +417,48 @@ public class PlayTalkActivity extends AppCompatActivity
         playButton.setImageDrawable(ContextCompat.getDrawable(this,
                 getResources().getIdentifier(drawableName, "drawable", "android")));
         playButton.setAlpha(1f);
-        playButton.setClickable(true);
+        playButton.setEnabled(true);
     }
 
     public void playTalkButtonClicked(View view) {
         Log.d(LOG_TAG, "button pressed");
-        MediaPlayer mediaPlayer = talkPlayerFragment.getMediaPlayer();
-        if(mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            setPPButton("ic_media_play");
-            logTalkProgress();
-        } else if(talkPlayerFragment.getMediaPrepared()) {
-            mediaPlayer.start();
-            setPPButton("ic_media_pause");
-        } else {
+
+        String talkIDString = Integer.toString(talkID);
+        MediaItem currentItem = mediaController.getCurrentMediaItem();
+        if (currentItem == null ||
+                ! currentItem.mediaId.equals(talkIDString)) {
+            MediaItem item = new MediaItem.Builder().setMediaId(talkIDString).build();
+            mediaController.setMediaItem(item);
+
             ImageButton playButton = (ImageButton) findViewById(R.id.activity_play_talk_play_button);
             playButton.setAlpha(.5f);
-            playButton.setClickable(false);
-            prepareTalkPlayerFragment();
+            playButton.setEnabled(false);
+            mediaController.prepare();
+            mediaController.play();
+
+            // Ideally, we'd like to simply call mediaController.seekTo(getTalkProgress()) to resume
+            // playback at the last saved point. Unfortunately, it seems that the seek command does
+            // not become available until the player is fully prepared, which can take a little while,
+            // so if we call seekTo here, it'll simply be ignored. :(
+            //
+            // As a workaround, remember the position to seek to here, and actually seek in
+            // playerListener.onAvailableCommandsChanged, which will fire once seeking becomes possible.
+            shouldSeekToResumePos = true;
+
+        } else if (mediaController.isPlaying()) {
+            mediaController.pause();
+        } else {
+            mediaController.play();
         }
+
     }
 
     public void fastForwardButtonClicked(View view) {
-        setTalkProgress(getTalkProgress() + 15000, true);
+        setTalkProgress(getTalkProgress() + 15000);
     }
 
     public void rewindButtonClicked(View view) {
-        setTalkProgress(getTalkProgress() - 15000, true);
+        setTalkProgress(getTalkProgress() - 15000);
     }
 
     @Override
@@ -453,7 +475,7 @@ public class PlayTalkActivity extends AppCompatActivity
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         userDraggingSeekBar = false;
-        setTalkProgress(getSeekBarProgress(), true);
+        setTalkProgress(getSeekBarProgress());
     }
 
     /**
@@ -606,4 +628,30 @@ public class PlayTalkActivity extends AppCompatActivity
             toggleDownloadImage();
         }
     }
+
+    private final Player.Listener playerListener =
+            new Player.Listener() {
+                @Override
+                public void onAvailableCommandsChanged(Player.Commands availableCommands) {
+                    if (availableCommands.contains(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) && shouldSeekToResumePos) {
+                        setTalkProgress(resumePos);
+                        shouldSeekToResumePos = false;
+                    }
+                }
+
+                @Override
+                public void onIsPlayingChanged(boolean isPlaying) {
+                    // Update Play/Pause button
+                    if (mediaController != null &&
+                        mediaController.getCurrentMediaItem() != null &&
+                        Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID &&
+                        isPlaying) {
+                            setPPButton("ic_media_pause");
+                    } else {
+                        setPPButton("ic_media_play");
+                    }
+                }
+
+            };
+
 }

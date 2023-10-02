@@ -37,6 +37,13 @@
     <string name="delete_talk_confirm">Delete Talk?</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="pause">Pause</string>
+    <string name="fast_forward">Fast forward</string>
+    <string name="rewind">Rewind</string>
     <string name="download_only">Download Only</string>
     <string name="download_only_title">Downloaded only</string>
+
+    <string name="notification_channel_playing">Currently playing</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

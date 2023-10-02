@@ -24,180 +24,197 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingBottom="0dp"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="org.dharmaseed.android.PlayTalkActivity">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="horizontal"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/play_talk_header"
-        >
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingBottom="0dp"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin">
 
-        <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:id="@+id/play_talk_teacher_photo"
-            android:adjustViewBounds="false"
-            android:scaleType="fitCenter"
-            />
-
-        <LinearLayout
-            android:orientation="vertical"
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="5dp"
-            android:paddingRight="0dp"
+            android:id="@+id/play_talk_header"
             >
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="Talk Title"
-                android:id="@+id/play_talk_talk_title"
-                android:textColor="@color/colorPrimaryDark"
-                android:textStyle="bold"
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:id="@+id/play_talk_teacher_photo"
+                android:adjustViewBounds="false"
+                android:scaleType="fitCenter"
                 />
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="Teacher"
-                android:id="@+id/play_talk_teacher"
-                android:textColor="@color/colorPrimary"
-                />
+                android:paddingLeft="5dp"
+                android:paddingRight="0dp"
+                >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Talk Title"
+                    android:id="@+id/play_talk_talk_title"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:textStyle="bold"
+                    />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Teacher"
+                    android:id="@+id/play_talk_teacher"
+                    android:textColor="@color/colorPrimary"
+                    />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </LinearLayout>
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:orientation="horizontal">
-
-        <LinearLayout
-            android:layout_width="277dp"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/play_talk_center"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Center"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:textColor="@color/colorPrimary"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/play_talk_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Date"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:textColor="@color/colorPrimary" />
-
-        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="60dp"
             android:orientation="horizontal">
 
-            <ImageButton
-                android:id="@+id/download_button"
-                android:layout_width="0dp"
-                android:layout_height="34dp"
-                android:layout_weight="1"
-                android:background="#0000"
-                android:contentDescription="@string/download_content_desc"
-                android:onClick="onDownloadButtonClicked"
-                app:srcCompat="@drawable/ic_file_download_green_24dp" />
+            <LinearLayout
+                android:layout_width="277dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
-            <ImageButton
-                android:id="@+id/share_button"
-                android:layout_width="0dp"
-                android:layout_height="34dp"
-                android:layout_weight="1"
-                android:background="#0000"
-                android:contentDescription="Share Talk"
-                android:onClick="onShareButtonClicked"
-                app:tint="@color/colorPrimary"
-                app:srcCompat="@drawable/ic_share_button_green" />
+                <TextView
+                    android:id="@+id/play_talk_center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Center"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:textColor="@color/colorPrimary"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/play_talk_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Date"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:textColor="@color/colorPrimary" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/download_button"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:background="#0000"
+                    android:contentDescription="@string/download_content_desc"
+                    android:onClick="onDownloadButtonClicked"
+                    app:srcCompat="@drawable/ic_file_download_green_24dp" />
+
+                <ImageButton
+                    android:id="@+id/share_button"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:background="#0000"
+                    android:contentDescription="Share Talk"
+                    android:onClick="onShareButtonClicked"
+                    app:tint="@color/colorPrimary"
+                    app:srcCompat="@drawable/ic_share_button_green" />
+            </LinearLayout>
+
         </LinearLayout>
 
-    </LinearLayout>
-
-    <ScrollView
-        android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingTop="10dp">
+        <SeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/play_talk_seek_bar"
+            android:layout_gravity="center_horizontal" />
 
         <TextView
-            android:id="@+id/play_talk_talk_description"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Talk Description"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
-    </ScrollView>
-
-    <SeekBar
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/play_talk_seek_bar"
-        android:layout_gravity="center_horizontal" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Duration"
-        android:id="@+id/play_talk_talk_duration"
-        />
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        >
-
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_rew"
-            app:tint="@color/colorPrimary"
-            android:id="@+id/activity_play_talk_rw_button"
-            android:onClick="rewindButtonClicked"
+            android:layout_gravity="right"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Duration"
+            android:id="@+id/play_talk_talk_duration"
             />
 
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_play"
-            app:tint="@color/colorPrimary"
-            android:id="@+id/activity_play_talk_play_button"
-            android:onClick="playTalkButtonClicked"
-            />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            >
 
-        <ImageButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_ff"
-            app:tint="@color/colorPrimary"
-            android:id="@+id/activity_play_talk_ff_button"
-            android:onClick="fastForwardButtonClicked"
-            />
+            <ImageButton
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@android:drawable/ic_media_rew"
+                app:tint="@color/colorPrimary"
+                android:id="@+id/activity_play_talk_rw_button"
+                android:onClick="rewindButtonClicked"
+                />
+
+            <ImageButton
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@android:drawable/ic_media_play"
+                app:tint="@color/colorPrimary"
+                android:id="@+id/activity_play_talk_play_button"
+                android:onClick="playTalkButtonClicked"
+                />
+
+            <ImageButton
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@android:drawable/ic_media_ff"
+                app:tint="@color/colorPrimary"
+                android:id="@+id/activity_play_talk_ff_button"
+                android:onClick="fastForwardButtonClicked"
+                />
+
+        </LinearLayout>
+
+
+        <ScrollView
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="10dp">
+
+            <TextView
+                android:id="@+id/play_talk_talk_description"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Talk Description" />
+        </ScrollView>
 
     </LinearLayout>
 
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainerView"
+        android:name="org.dharmaseed.android.MiniPlayerFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
 </LinearLayout>
+
+

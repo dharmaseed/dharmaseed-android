@@ -80,7 +80,7 @@ public class TeacherFetcherTask extends DataFetcherTask {
                 } catch (IOException e1) {
                     // Only need to fetch the photo if we don't already have it
                     Log.i("teacherFetcherTask", "Fetching teacher photo " + id);
-                    Request request = requestBuilder.url("http://www.dharmaseed.org/api/1/teachers/" + id + "/" + photo + "/?maxW=120&maxH=180").build();
+                    Request request = requestBuilder.url("https://www.dharmaseed.org/api/1/teachers/" + id + "/" + photo + "/?maxW=120&maxH=180").build();
                     try {
                         Response response = httpClient.newCall(request).execute();
                         if (response.isSuccessful()) {
