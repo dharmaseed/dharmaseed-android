@@ -61,7 +61,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ExecutionException;
-import java.util.GregorianCalendar;
 import java.util.Timer;
 
 public class PlayTalkActivity extends AppCompatActivity
@@ -252,13 +251,11 @@ public class PlayTalkActivity extends AppCompatActivity
                 && ! userDraggingSeekBar && mediaControlsEnabled()) {
                 try {
                     int pos = (int) mediaController.getCurrentPosition();
-                    int mpDuration = (int) mediaController.getDuration();
+                    long mpDuration = mediaController.getDuration();
                     if (mpDuration != TIME_UNSET) {
                         final SeekBar seekBar = (SeekBar) findViewById(R.id.play_talk_seek_bar);
-                        seekBar.setMax(mpDuration);
+                        seekBar.setMax((int) mpDuration);
                         seekBar.setProgress(pos);
-                        String posStr = DateUtils.formatElapsedTime(pos / 1000);
-                        String mpDurStr = DateUtils.formatElapsedTime(mpDuration / 1000);
                         updateDurationText(pos);
                     }
                 } catch (IllegalStateException e) {
