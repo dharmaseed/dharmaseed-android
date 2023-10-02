@@ -54,7 +54,7 @@
                 android:value="org.dharmaseed.android.NavigationActivity" />
         </activity>
 
-        <receiver android:name="androidx.media.session.MediaButtonReceiver"
+        <receiver android:name="androidx.media3.session.MediaButtonReceiver"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
