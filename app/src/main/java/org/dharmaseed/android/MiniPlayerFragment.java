@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class MiniPlayerFragment extends Fragment {
 
+    private ListenableFuture<MediaController> controllerFuture;
     private MediaController mediaController;
 
     private String LOG_TAG = "MiniPlayerFragment";
@@ -45,9 +46,7 @@ public class MiniPlayerFragment extends Fragment {
         Context ctx = getContext();
         SessionToken sessionToken =
                 new SessionToken(ctx, new ComponentName(ctx, PlaybackService.class));
-        ListenableFuture<MediaController> controllerFuture =
-                new MediaController.Builder(ctx, sessionToken).buildAsync();
-
+        controllerFuture = new MediaController.Builder(ctx, sessionToken).buildAsync();
         controllerFuture.addListener(() -> {
             try {
                 mediaController = controllerFuture.get();
@@ -65,10 +64,7 @@ public class MiniPlayerFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        Log.i(LOG_TAG, "onPause " + this);
-        mediaController.removeListener(playerListener);
-        mediaController.release();
-        mediaController = null;
+        MediaController.releaseFuture(controllerFuture);
     }
 
     @Override
