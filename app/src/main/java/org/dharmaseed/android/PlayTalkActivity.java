@@ -57,6 +57,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -151,7 +152,8 @@ public class PlayTalkActivity extends AppCompatActivity
         try {
             FileInputStream photo = openFileInput(photoFilename);
             photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch (FileNotFoundException e) {
+            photo.close();
+        } catch (IOException e) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
             photoView.setImageDrawable(icon);
         }

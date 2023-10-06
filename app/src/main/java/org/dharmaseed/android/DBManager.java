@@ -230,7 +230,9 @@ public class DBManager extends AbstractDBManager {
                 starTableName,
                 id);
         Cursor cursor = db.rawQuery(query, null);
-        return (cursor.getCount() != 0);
+        boolean starred = (cursor.getCount() != 0);
+        cursor.close();
+        return starred;
     }
 
     public void addStar(String starTableName, int id) {
@@ -254,10 +256,14 @@ public class DBManager extends AbstractDBManager {
                 C.TalkHistory.ID,
                 id);
         Cursor cursor = db.rawQuery(query, null);
-        if (cursor.getCount() <= 0)
+        if (cursor.getCount() <= 0) {
+            cursor.close();
             return 0.0;
+        }
         cursor.moveToFirst();
-        return cursor.getDouble(0);
+        double progress = cursor.getDouble(0);
+        cursor.close();
+        return progress;
     }
 
     public void setTalkProgress(int id, String date_time, double progress) {
@@ -270,7 +276,8 @@ public class DBManager extends AbstractDBManager {
         v.put(C.TalkHistory.ID, id);
         v.put(C.TalkHistory.DATE_TIME, date_time);
         v.put(C.TalkHistory.PROGRESS_IN_MINUTES, progress);
-        if (db.rawQuery(query, null).getCount() <= 0) {
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.getCount() <= 0) {
             db.insert(C.TalkHistory.TABLE_NAME, null, v);
             Log.i(LOG_TAG, "Created new talk history item for talk "+id+"("+progress+" min)");
         } else {
@@ -278,6 +285,7 @@ public class DBManager extends AbstractDBManager {
                     new String[]{Integer.toString(id)});
             Log.i(LOG_TAG, "Updated talk history item for talk "+id+"("+progress+" min)");
         }
+        cursor.close();
         db.close();
     }
 

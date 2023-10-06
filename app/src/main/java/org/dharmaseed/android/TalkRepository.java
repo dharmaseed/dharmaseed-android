@@ -231,6 +231,8 @@ public class TalkRepository extends Repository {
                 }
             }
         }
+
+        downloaded.close();
     }
 
     /**
