@@ -75,6 +75,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     Timer timer;
 
+    ListenableFuture<MediaController> controllerFuture;
     MediaController mediaController;
 
     Talk talk;
@@ -206,9 +207,7 @@ public class PlayTalkActivity extends AppCompatActivity
         // Create a MediaController to interact with the PlaybackService
         SessionToken sessionToken =
                 new SessionToken(this, new ComponentName(this, PlaybackService.class));
-        ListenableFuture<MediaController> controllerFuture =
-                new MediaController.Builder(this, sessionToken).buildAsync();
-
+        controllerFuture = new MediaController.Builder(this, sessionToken).buildAsync();
         controllerFuture.addListener(() -> {
                 try {
                     mediaController = controllerFuture.get();
@@ -280,9 +279,9 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 
-    public void onStop() {
-        super.onStop();
-        mediaController.release();
+    public void onPause() {
+        super.onPause();
+        MediaController.releaseFuture(controllerFuture);
         Log.i(LOG_TAG, "stopping timers");
         timer.cancel();
     }
