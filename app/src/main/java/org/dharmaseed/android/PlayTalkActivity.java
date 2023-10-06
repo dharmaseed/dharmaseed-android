@@ -61,6 +61,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.Timer;
 
@@ -216,7 +217,7 @@ public class PlayTalkActivity extends AppCompatActivity
                     mediaController.addListener(playerListener);
                     playerListener.onIsPlayingChanged(mediaController.isPlaying());
                     updatePlayerUI();
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException | CancellationException e) {
                     Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
                 }
             }, ContextCompat.getMainExecutor(this));

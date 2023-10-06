@@ -26,6 +26,7 @@ import android.widget.TextView;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayInputStream;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -54,7 +55,7 @@ public class MiniPlayerFragment extends Fragment {
                 playerListener.onMediaMetadataChanged(mediaController.getMediaMetadata());
                 playerListener.onPlaybackStateChanged(mediaController.getPlaybackState());
                 playerListener.onIsPlayingChanged(mediaController.isPlaying());
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException | ExecutionException | CancellationException e) {
                 Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
             }
         }, ContextCompat.getMainExecutor(ctx));
