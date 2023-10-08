@@ -54,6 +54,12 @@
                 android:value="org.dharmaseed.android.NavigationActivity" />
         </activity>
 
+        <!-- Use media instead of media3 here to test the theory that some
+             bugs we've seen in production on Samsung devices may have something to do
+             with a buggy media3 implementation on those devices. This is really not much
+             more than a wild guess, though, so eventually we may want to go back to
+             using media3.
+         -->
         <receiver android:name="androidx.media.session.MediaButtonReceiver"
             android:exported="true" >
             <intent-filter>
