@@ -33,6 +33,7 @@ import android.widget.ProgressBar;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -90,7 +91,8 @@ public class TalkCursorAdapter extends StarCursorAdapter {
         try {
             FileInputStream photo = context.openFileInput(photoFilename);
             photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch(FileNotFoundException e) {
+            photo.close();
+        } catch(IOException e) {
             Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
             photoView.setImageDrawable(icon);
         }

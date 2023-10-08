@@ -38,6 +38,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -192,7 +193,8 @@ public class PlaybackService extends MediaSessionService {
                 try {
                     FileInputStream photoStream = openFileInput(photoFilename);
                     photo = BitmapFactory.decodeStream(photoStream);
-                } catch (FileNotFoundException e) {
+                    photoStream.close();
+                } catch (IOException e) {
                     photo = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
                 }
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();

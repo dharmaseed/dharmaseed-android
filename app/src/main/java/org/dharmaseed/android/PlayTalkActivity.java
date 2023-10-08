@@ -57,9 +57,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.Timer;
 
@@ -75,6 +77,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     Timer timer;
 
+    ListenableFuture<MediaController> controllerFuture;
     MediaController mediaController;
 
     Talk talk;
@@ -150,7 +153,8 @@ public class PlayTalkActivity extends AppCompatActivity
         try {
             FileInputStream photo = openFileInput(photoFilename);
             photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch (FileNotFoundException e) {
+            photo.close();
+        } catch (IOException e) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
             photoView.setImageDrawable(icon);
         }
@@ -206,16 +210,14 @@ public class PlayTalkActivity extends AppCompatActivity
         // Create a MediaController to interact with the PlaybackService
         SessionToken sessionToken =
                 new SessionToken(this, new ComponentName(this, PlaybackService.class));
-        ListenableFuture<MediaController> controllerFuture =
-                new MediaController.Builder(this, sessionToken).buildAsync();
-
+        controllerFuture = new MediaController.Builder(this, sessionToken).buildAsync();
         controllerFuture.addListener(() -> {
                 try {
                     mediaController = controllerFuture.get();
                     mediaController.addListener(playerListener);
                     playerListener.onIsPlayingChanged(mediaController.isPlaying());
                     updatePlayerUI();
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException | CancellationException e) {
                     Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
                 }
             }, ContextCompat.getMainExecutor(this));
@@ -280,9 +282,9 @@ public class PlayTalkActivity extends AppCompatActivity
         }
     }
 
-    public void onStop() {
-        super.onStop();
-        mediaController.release();
+    public void onPause() {
+        super.onPause();
+        MediaController.releaseFuture(controllerFuture);
         Log.i(LOG_TAG, "stopping timers");
         timer.cancel();
     }
