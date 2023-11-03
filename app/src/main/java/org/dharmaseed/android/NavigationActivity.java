@@ -40,6 +40,8 @@ import android.widget.EditText;
 import android.util.Log;
 import android.view.View;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -108,6 +110,8 @@ public class NavigationActivity extends AppCompatActivity
     private TeacherRepository teacherRepository;
     private CenterRepository centerRepository;
 
+    private FirebaseAnalytics mFirebaseAnalytics;
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -167,6 +171,8 @@ public class NavigationActivity extends AppCompatActivity
 //            StrictMode.setVmPolicy(policy);
 //        }
 
+        // Initialize firebase crash reporting
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);

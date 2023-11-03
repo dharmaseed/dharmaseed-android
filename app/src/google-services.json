@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "180270825004",
+    "project_id": "dharmaseed-6fc56",
+    "storage_bucket": "dharmaseed-6fc56.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180270825004:android:0f0e206cd0d7db2aad5b89",
+        "android_client_info": {
+          "package_name": "org.dharmaseed.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNExaUp1tolZI5I9erdnQ3-ELEfsriZh8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
