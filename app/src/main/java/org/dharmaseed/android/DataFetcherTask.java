@@ -60,7 +60,6 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     protected void updateTable(String tableName, String tableID, String apiUrl, String[] itemKeys) {
 
         String edition = dbManager.getEdition(tableName);
-//        String edition = "2012-11-04 20:23:59"; //cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
         Log.d(LOG_TAG, "We have "+tableName+" edition: "+edition);
 
         // Get the IDs (but no details) of the items we don't yet have
