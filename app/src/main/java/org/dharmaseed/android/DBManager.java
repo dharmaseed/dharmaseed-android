@@ -157,10 +157,11 @@ public class DBManager extends AbstractDBManager {
                         C.Edition.TABLE_NAME
                 };
                 for (String table: tables) {
-                    db.execSQL("DROP TABLE IF EXISTS main." + table);
-                    db.execSQL("CREATE TABLE main." + table + " AS SELECT * FROM upgradeDb." + table);
+                    db.execSQL("DROP TABLE IF EXISTS " + table);
+                    db.execSQL("CREATE TABLE " + table + " AS SELECT * FROM upgradeDb." + table);
                     Log.i(LOG_TAG, "Copied table " + table + " from asset DB.");
                 }
+                db.setTransactionSuccessful();
                 db.endTransaction();
                 db.execSQL("DETACH upgradeDb");
                 db.beginTransaction();
