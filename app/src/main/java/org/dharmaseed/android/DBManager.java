@@ -23,7 +23,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteException;
 import androidx.annotation.NonNull;
 import android.util.Log;
 
@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class DBManager extends AbstractDBManager {
 
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3;
     private static final String DB_NAME = "Dharmaseed.db";
     private static final String LOG_TAG = "DBManager";
 
@@ -62,24 +62,28 @@ public class DBManager extends AbstractDBManager {
                 Log.i(LOG_TAG, "Trying to populate with pre-seeded database");
                 try {
                     // Copy the pre-seeded database if it exists
-                    InputStream dbIn = context.getAssets().open(DB_NAME);
-                    dbFile.getParentFile().mkdirs();
-                    OutputStream dbOut = new FileOutputStream(dbFile);
-
-                    byte[] buf = new byte[1024];
-                    int len;
-                    while ((len = dbIn.read(buf)) > 0) {
-                        dbOut.write(buf, 0, len);
-                    }
-
-                    dbOut.flush();
-                    dbOut.close();
-                    dbIn.close();
+                    copyAssetDB(dbFile);
                 } catch (IOException ioe) {
                     Log.e("dbManager", ioe.toString());
                 }
             }
         }
+    }
+
+    protected void copyAssetDB(File destFile) throws IOException {
+        InputStream dbIn = context.getAssets().open(DB_NAME);
+        destFile.getParentFile().mkdirs();
+        OutputStream dbOut = new FileOutputStream(destFile);
+
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = dbIn.read(buf)) > 0) {
+            dbOut.write(buf, 0, len);
+        }
+
+        dbOut.flush();
+        dbOut.close();
+        dbIn.close();
     }
 
     public static synchronized DBManager getInstance(Context context) {
@@ -134,6 +138,42 @@ public class DBManager extends AbstractDBManager {
             db.execSQL(C.TalkHistory.CREATE_TABLE);
             Log.i(LOG_TAG,"Upgrade: Created talk history table");
         }
+
+        File dbUpgradeFile = context.getDatabasePath(DB_NAME+".upgrade");
+        try {
+            copyAssetDB(dbUpgradeFile);
+            String dbUpgradePath = dbUpgradeFile.getAbsolutePath();
+            SQLiteDatabase assetDb = SQLiteDatabase.openDatabase(dbUpgradePath, null, SQLiteDatabase.OPEN_READONLY);
+            int assetVersion = assetDb.getVersion();
+            assetDb.close();
+            Log.d(LOG_TAG, "Asset DB has version " + assetVersion);
+            if (assetVersion == newVersion) {
+                Log.i(LOG_TAG, "Asset DB version matches upgrade version. Copying updated tables!");
+                db.execSQL("ATTACH DATABASE '" + dbUpgradePath + "' AS upgradeDb");
+                String[] tables = {
+                        C.Talk.TABLE_NAME,
+                        C.Teacher.TABLE_NAME,
+                        C.Center.TABLE_NAME,
+                        C.Edition.TABLE_NAME
+                };
+                for (String table: tables) {
+                    db.execSQL("DROP TABLE IF EXISTS main." + table);
+                    db.execSQL("CREATE TABLE main." + table + " AS SELECT * FROM upgradeDb." + table);
+                    Log.i(LOG_TAG, "Copied table " + table + " from asset DB.");
+                }
+                db.endTransaction();
+                db.execSQL("DETACH upgradeDb");
+                Log.i(LOG_TAG, "Successfully transferred all tables from asset DB");
+            }
+        } catch (IOException e) {
+            Log.w(LOG_TAG, "Aborting DB upgrade due to IO error: " + e.getMessage());
+        } catch (SQLiteException e) {
+            Log.w(LOG_TAG, "Aborting DB upgrade due to SQLite error: " + e.getMessage());
+        }
+
+        dbUpgradeFile.delete();
+
+        throw new RuntimeException("Refuse to update!");
     }
 
     @Override
