@@ -160,31 +160,22 @@ public class DBManager extends AbstractDBManager {
     // Insert an item into the database, given the JSON object for an item returned by dharamaseed.org's API
     public void insertItem(String itemID, JSONObject item, String tableName, String[] itemKeys) {
         SQLiteDatabase db = getWritableDatabase();
-        try {
-            ContentValues values = new ContentValues();
-            values.put(C.Talk.ID, itemID);
-            for(String itemKey : itemKeys) {
-                insertValue(values, item, itemKey);
-            }
-
-            db.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-
-        } catch (Exception e) {
-            Log.e("DBInsert", e.toString());
+        ContentValues values = new ContentValues();
+        values.put(C.Talk.ID, itemID);
+        for(String itemKey : itemKeys) {
+            insertValue(values, item, itemKey);
         }
+
+        db.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
-    public void insertItems(JSONObject json, String tableName, String[] itemKeys) {
-        try {
-            JSONObject items = json.getJSONObject("items");
-            Iterator<String> it = items.keys();
-            while (it.hasNext()) {
-                String itemID = it.next();
-                JSONObject item = items.getJSONObject(itemID);
-                insertItem(itemID, item, tableName, itemKeys);
-            }
-        } catch (JSONException e) {
-            Log.d("insertItems", e.toString());
+    public void insertItems(JSONObject json, String tableName, String[] itemKeys) throws JSONException {
+        JSONObject items = json.getJSONObject("items");
+        Iterator<String> it = items.keys();
+        while (it.hasNext()) {
+            String itemID = it.next();
+            JSONObject item = items.getJSONObject(itemID);
+            insertItem(itemID, item, tableName, itemKeys);
         }
     }
 
