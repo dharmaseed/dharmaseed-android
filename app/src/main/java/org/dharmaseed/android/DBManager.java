@@ -163,6 +163,7 @@ public class DBManager extends AbstractDBManager {
                 }
                 db.endTransaction();
                 db.execSQL("DETACH upgradeDb");
+                db.beginTransaction();
                 Log.i(LOG_TAG, "Successfully transferred all tables from asset DB");
             }
         } catch (IOException e) {
@@ -172,8 +173,6 @@ public class DBManager extends AbstractDBManager {
         }
 
         dbUpgradeFile.delete();
-
-        throw new RuntimeException("Refuse to update!");
     }
 
     @Override
