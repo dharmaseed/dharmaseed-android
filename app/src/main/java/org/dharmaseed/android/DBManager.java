@@ -148,19 +148,6 @@ public class DBManager extends AbstractDBManager {
         }
     }
 
-    /**
-     * Removes the edition entry for `tableName`
-     * @param db
-     * @param tableName
-     */
-    private void clearEdition(SQLiteDatabase db, String tableName) {
-        ContentValues v = new ContentValues();
-        v.put(C.Edition.TABLE, tableName);
-        v.putNull(C.Edition.EDITION);
-        db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
-
-    }
-
     private void insertValue(ContentValues values, JSONObject obj, String key) {
         try {
             String value = obj.getString(key);
@@ -218,6 +205,50 @@ public class DBManager extends AbstractDBManager {
             SQLiteDatabase db = getWritableDatabase();
             db.delete(tableName, "_id IN " + idsToDelete, null);
         }
+    }
+
+    /**
+     * Removes the edition entry for `tableName`
+     * @param db
+     * @param tableName
+     */
+    private void clearEdition(SQLiteDatabase db, String tableName) {
+        ContentValues v = new ContentValues();
+        v.put(C.Edition.TABLE, tableName);
+        v.putNull(C.Edition.EDITION);
+        db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
+
+    }
+
+    /**
+     * Retrieves the edition string for a table in the DB
+     * @param tableName: name of the table
+     */
+    public String getEdition(String tableName) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT "+DBManager.C.Edition.EDITION+" FROM "
+                        +DBManager.C.Edition.TABLE_NAME
+                        +" WHERE "+DBManager.C.Edition.TABLE+"=\""+tableName+"\""
+                , null);
+        String edition = "";
+        if (cursor.moveToFirst()) {
+            edition = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
+        }
+        cursor.close();
+        return edition;
+    }
+
+    /**
+     * Sets the edition string for a table in the DB
+     * @param tableName: name of the table
+     * @param newEdition: the new edition of the table
+     */
+    public void setEdition(String tableName, String newEdition) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DBManager.C.Edition.TABLE, tableName);
+        values.put(DBManager.C.Edition.EDITION, newEdition);
+        db.insertWithOnConflict(DBManager.C.Edition.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
     public static String getTeacherPhotoFilename(int teacherID) {
