@@ -46,27 +46,22 @@ import okhttp3.Response;
 abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
 
     DBManager dbManager;
-    SQLiteDatabase db;
     OkHttpClient httpClient;
     NavigationActivity navigationActivity;
 
+    private static final String LOG_TAG = "DBManager";
+
     public DataFetcherTask(DBManager dbManager, NavigationActivity navigationActivity) {
         this.dbManager = dbManager;
-        this.db = dbManager.getWritableDatabase();
         this.httpClient = new OkHttpClient();
         this.navigationActivity = navigationActivity;
     }
 
     protected void updateTable(String tableName, String tableID, String apiUrl, String[] itemKeys) {
 
-        Cursor cursor = db.rawQuery("SELECT "+DBManager.C.Edition.EDITION+" FROM "
-                +DBManager.C.Edition.TABLE_NAME
-                +" WHERE "+DBManager.C.Edition.TABLE+"=\""+tableName+"\""
-                , null);
-        cursor.moveToFirst();
-        String edition = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
-        cursor.close();
-        Log.d("DataFetcherTask", "We have "+tableName+" edition: "+edition);
+        String edition = dbManager.getEdition(tableName);
+//        String edition = "2012-11-04 20:23:59"; //cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
+        Log.d(LOG_TAG, "We have "+tableName+" edition: "+edition);
 
         // Get the IDs (but no details) of the items we don't yet have
         MultipartBody.Builder builder = new MultipartBody.Builder()
@@ -80,7 +75,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 .post(builder.build())
                 .build();
 
-        Log.d("DataFetcherTask", request.toString());
+        Log.d(LOG_TAG, request.toString());
 
         try {
             Response response = httpClient.newCall(request).execute();
@@ -98,7 +93,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
 
                     dbManager.deleteIDs(idsToDelete, tableName);
                 }
-                Log.d("dataFetcher", "Retrieved "+tableName+" edition "+newEdition+". New items: "+items.length());
+                Log.d(LOG_TAG, "Retrieved "+tableName+" edition "+newEdition+". New items: "+items.length());
 
                 // Fetch new items, starting with the latest ones
                 ArrayList<Integer> itemIDs = new ArrayList<>();
@@ -125,17 +120,14 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 }
 
                 // Mark that we've successfully cached the new edition
-                ContentValues values = new ContentValues();
-                values.put(DBManager.C.Edition.TABLE, tableName);
-                values.put(DBManager.C.Edition.EDITION, newEdition);
-                db.insertWithOnConflict(DBManager.C.Edition.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-                Log.i("dataFetcher", "Saved "+tableName+" edition "+newEdition);
+                dbManager.setEdition(tableName, newEdition);
+                Log.i(LOG_TAG, "Saved "+tableName+" edition "+newEdition);
 
             } else {
-                Log.e("dataFetcher", "HTTP response unsuccessful, code " + response.code());
+                Log.e(LOG_TAG, "HTTP response unsuccessful, code " + response.code());
             }
         } catch (Exception e) {
-            Log.e("dataFetcher", e.toString());
+            Log.e(LOG_TAG, e.toString());
         }
     }
 
@@ -157,12 +149,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
 
             // Mark the successful data sync in the database
             Date now = new Date();
-            ContentValues v = new ContentValues();
-            v.put(DBManager.C.Edition.TABLE, DBManager.C.Edition.LAST_SYNC);
-            v.put(DBManager.C.Edition.EDITION, now.getTime());
-            dbManager.getWritableDatabase().insertWithOnConflict(
-                    DBManager.C.Edition.TABLE_NAME, null, v,
-                    SQLiteDatabase.CONFLICT_REPLACE);
+            dbManager.setEdition(DBManager.C.Edition.LAST_SYNC, String.valueOf(now.getTime()));
         }
     }
 
@@ -183,19 +170,15 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
             this.apiUrl = apiUrl;
         }
 
-        // Add a new ID to the request if it's not already present in the database.
-        // Fire off the request if we've reached the size limit.
+        // Add a new ID to the request and
+        // fire off the request if we've reached the size limit.
         // Returns the Response if the request was fired or null if the request was not fired.
         public JSONObject addID(int ID) {
-            if(keyExists(ID)) {
-                return null;
+            IDStrings.add(Integer.toString(ID));
+            if(IDStrings.size() == size) {
+                return fireRequest();
             } else {
-                IDStrings.add(Integer.toString(ID));
-                if(IDStrings.size() == size) {
-                    return fireRequest();
-                } else {
-                    return null;
-                }
+                return null;
             }
         }
 
@@ -261,13 +244,6 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 idsToAdd.clear();
             }
             return IDStrings;
-        }
-
-        public boolean keyExists(int ID) {
-            Cursor cursor = db.rawQuery("SELECT 1 FROM "+table+" WHERE "+ tableID +"="+ID, null);
-            boolean result = cursor.getCount() == 1;
-            cursor.close();
-            return result;
         }
     }
 
