@@ -23,7 +23,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteException;
 import androidx.annotation.NonNull;
 import android.util.Log;
 
@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class DBManager extends AbstractDBManager {
 
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3;
     private static final String DB_NAME = "Dharmaseed.db";
     private static final String LOG_TAG = "DBManager";
 
@@ -62,24 +62,28 @@ public class DBManager extends AbstractDBManager {
                 Log.i(LOG_TAG, "Trying to populate with pre-seeded database");
                 try {
                     // Copy the pre-seeded database if it exists
-                    InputStream dbIn = context.getAssets().open(DB_NAME);
-                    dbFile.getParentFile().mkdirs();
-                    OutputStream dbOut = new FileOutputStream(dbFile);
-
-                    byte[] buf = new byte[1024];
-                    int len;
-                    while ((len = dbIn.read(buf)) > 0) {
-                        dbOut.write(buf, 0, len);
-                    }
-
-                    dbOut.flush();
-                    dbOut.close();
-                    dbIn.close();
+                    copyAssetDB(dbFile);
                 } catch (IOException ioe) {
                     Log.e("dbManager", ioe.toString());
                 }
             }
         }
+    }
+
+    protected void copyAssetDB(File destFile) throws IOException {
+        InputStream dbIn = context.getAssets().open(DB_NAME);
+        destFile.getParentFile().mkdirs();
+        OutputStream dbOut = new FileOutputStream(destFile);
+
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = dbIn.read(buf)) > 0) {
+            dbOut.write(buf, 0, len);
+        }
+
+        dbOut.flush();
+        dbOut.close();
+        dbIn.close();
     }
 
     public static synchronized DBManager getInstance(Context context) {
@@ -134,6 +138,49 @@ public class DBManager extends AbstractDBManager {
             db.execSQL(C.TalkHistory.CREATE_TABLE);
             Log.i(LOG_TAG,"Upgrade: Created talk history table");
         }
+
+        // Optionally import updated tables from the assets DB.
+        // This should be the last step in onUpgrade, to ensure that we don't encounter any problem
+        // _after_ setTransactionSuccessful is called below.
+        File dbUpgradeFile = context.getDatabasePath(DB_NAME+".upgrade");
+        try {
+            copyAssetDB(dbUpgradeFile);
+            String dbUpgradePath = dbUpgradeFile.getAbsolutePath();
+            SQLiteDatabase assetDb = SQLiteDatabase.openDatabase(dbUpgradePath, null, SQLiteDatabase.OPEN_READONLY);
+            int assetVersion = assetDb.getVersion();
+            assetDb.close();
+            Log.d(LOG_TAG, "Asset DB has version " + assetVersion);
+            if (assetVersion == newVersion) {
+                Log.i(LOG_TAG, "Asset DB version matches upgrade version. Copying updated tables!");
+                db.execSQL("ATTACH DATABASE '" + dbUpgradePath + "' AS upgradeDb");
+                String[] tables = {
+                        C.Talk.TABLE_NAME,
+                        C.Teacher.TABLE_NAME,
+                        C.Center.TABLE_NAME,
+                        C.Edition.TABLE_NAME
+                };
+                for (String table: tables) {
+                    db.execSQL("DROP TABLE IF EXISTS " + table);
+                    db.execSQL("CREATE TABLE " + table + " AS SELECT * FROM upgradeDb." + table);
+                    Log.i(LOG_TAG, "Copied table " + table + " from asset DB.");
+                }
+                /* note on transactions:
+                onUpgrade is called with an open transaction such that the upgrade can be rolled
+                back in case something goes wrong.
+                 */
+                db.setTransactionSuccessful();
+                db.endTransaction(); // successfully end upgrade transaction
+                db.execSQL("DETACH upgradeDb"); // DETACH can't be performed within a transaction
+                db.beginTransaction(); // open new transaction, which is ended by caller
+                Log.i(LOG_TAG, "Successfully transferred all tables from asset DB");
+            }
+        } catch (IOException e) {
+            Log.w(LOG_TAG, "Aborting DB upgrade due to IO error: " + e.getMessage());
+        } catch (SQLiteException e) {
+            Log.w(LOG_TAG, "Aborting DB upgrade due to SQLite error: " + e.getMessage());
+        }
+
+        dbUpgradeFile.delete();
     }
 
     @Override
@@ -148,19 +195,6 @@ public class DBManager extends AbstractDBManager {
         }
     }
 
-    /**
-     * Removes the edition entry for `tableName`
-     * @param db
-     * @param tableName
-     */
-    private void clearEdition(SQLiteDatabase db, String tableName) {
-        ContentValues v = new ContentValues();
-        v.put(C.Edition.TABLE, tableName);
-        v.putNull(C.Edition.EDITION);
-        db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
-
-    }
-
     private void insertValue(ContentValues values, JSONObject obj, String key) {
         try {
             String value = obj.getString(key);
@@ -173,31 +207,22 @@ public class DBManager extends AbstractDBManager {
     // Insert an item into the database, given the JSON object for an item returned by dharamaseed.org's API
     public void insertItem(String itemID, JSONObject item, String tableName, String[] itemKeys) {
         SQLiteDatabase db = getWritableDatabase();
-        try {
-            ContentValues values = new ContentValues();
-            values.put(C.Talk.ID, itemID);
-            for(String itemKey : itemKeys) {
-                insertValue(values, item, itemKey);
-            }
-
-            db.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-
-        } catch (Exception e) {
-            Log.e("DBInsert", e.toString());
+        ContentValues values = new ContentValues();
+        values.put(C.Talk.ID, itemID);
+        for(String itemKey : itemKeys) {
+            insertValue(values, item, itemKey);
         }
+
+        db.insertWithOnConflict(tableName, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
-    public void insertItems(JSONObject json, String tableName, String[] itemKeys) {
-        try {
-            JSONObject items = json.getJSONObject("items");
-            Iterator<String> it = items.keys();
-            while (it.hasNext()) {
-                String itemID = it.next();
-                JSONObject item = items.getJSONObject(itemID);
-                insertItem(itemID, item, tableName, itemKeys);
-            }
-        } catch (JSONException e) {
-            Log.d("insertItems", e.toString());
+    public void insertItems(JSONObject json, String tableName, String[] itemKeys) throws JSONException {
+        JSONObject items = json.getJSONObject("items");
+        Iterator<String> it = items.keys();
+        while (it.hasNext()) {
+            String itemID = it.next();
+            JSONObject item = items.getJSONObject(itemID);
+            insertItem(itemID, item, tableName, itemKeys);
         }
     }
 
@@ -218,6 +243,50 @@ public class DBManager extends AbstractDBManager {
             SQLiteDatabase db = getWritableDatabase();
             db.delete(tableName, "_id IN " + idsToDelete, null);
         }
+    }
+
+    /**
+     * Removes the edition entry for `tableName`
+     * @param db
+     * @param tableName
+     */
+    private void clearEdition(SQLiteDatabase db, String tableName) {
+        ContentValues v = new ContentValues();
+        v.put(C.Edition.TABLE, tableName);
+        v.putNull(C.Edition.EDITION);
+        db.insertWithOnConflict(C.Edition.TABLE_NAME, null, v, SQLiteDatabase.CONFLICT_REPLACE);
+
+    }
+
+    /**
+     * Retrieves the edition string for a table in the DB
+     * @param tableName: name of the table
+     */
+    public String getEdition(String tableName) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT "+DBManager.C.Edition.EDITION+" FROM "
+                        +DBManager.C.Edition.TABLE_NAME
+                        +" WHERE "+DBManager.C.Edition.TABLE+"=\""+tableName+"\""
+                , null);
+        String edition = "";
+        if (cursor.moveToFirst()) {
+            edition = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Edition.EDITION));
+        }
+        cursor.close();
+        return edition;
+    }
+
+    /**
+     * Sets the edition string for a table in the DB
+     * @param tableName: name of the table
+     * @param newEdition: the new edition of the table
+     */
+    public void setEdition(String tableName, String newEdition) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DBManager.C.Edition.TABLE, tableName);
+        values.put(DBManager.C.Edition.EDITION, newEdition);
+        db.insertWithOnConflict(DBManager.C.Edition.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
     public static String getTeacherPhotoFilename(int teacherID) {
