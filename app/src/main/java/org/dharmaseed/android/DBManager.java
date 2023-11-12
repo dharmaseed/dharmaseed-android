@@ -139,6 +139,9 @@ public class DBManager extends AbstractDBManager {
             Log.i(LOG_TAG,"Upgrade: Created talk history table");
         }
 
+        // Optionally import updated tables from the assets DB.
+        // This should be the last step in onUpgrade, to ensure that we don't encounter any problem
+        // _after_ setTransactionSuccessful is called below.
         File dbUpgradeFile = context.getDatabasePath(DB_NAME+".upgrade");
         try {
             copyAssetDB(dbUpgradeFile);
@@ -161,10 +164,14 @@ public class DBManager extends AbstractDBManager {
                     db.execSQL("CREATE TABLE " + table + " AS SELECT * FROM upgradeDb." + table);
                     Log.i(LOG_TAG, "Copied table " + table + " from asset DB.");
                 }
+                /* note on transactions:
+                onUpgrade is called with an open transaction such that the upgrade can be rolled
+                back in case something goes wrong.
+                 */
                 db.setTransactionSuccessful();
-                db.endTransaction();
-                db.execSQL("DETACH upgradeDb");
-                db.beginTransaction();
+                db.endTransaction(); // successfully end upgrade transaction
+                db.execSQL("DETACH upgradeDb"); // DETACH can't be performed within a transaction
+                db.beginTransaction(); // open new transaction, which is ended by caller
                 Log.i(LOG_TAG, "Successfully transferred all tables from asset DB");
             }
         } catch (IOException e) {
