@@ -20,12 +20,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
 
     defaultConfig {
         applicationId "org.dharmaseed.android"
-        minSdkVersion 21
-        targetSdkVersion 33
+        minSdk 21
+        compileSdk 34
+        targetSdk 34
         versionCode 23
         versionName "1.5.2"
         vectorDrawables.useSupportLibrary = true
@@ -48,9 +48,9 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
 
     // Exoplayer stuff
-    implementation 'androidx.media3:media3-exoplayer:1.1.1'
-    implementation 'androidx.media3:media3-ui:1.1.1'
-    implementation "androidx.media3:media3-session:1.1.1"
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
+    implementation "androidx.media3:media3-session:1.2.0"
 
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
