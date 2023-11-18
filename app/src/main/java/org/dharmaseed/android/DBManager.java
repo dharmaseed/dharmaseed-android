@@ -153,16 +153,17 @@ public class DBManager extends AbstractDBManager {
             if (assetVersion == newVersion) {
                 Log.i(LOG_TAG, "Asset DB version matches upgrade version. Copying updated tables!");
                 db.execSQL("ATTACH DATABASE '" + dbUpgradePath + "' AS upgradeDb");
-                String[] tables = {
-                        C.Talk.TABLE_NAME,
-                        C.Teacher.TABLE_NAME,
-                        C.Center.TABLE_NAME,
-                        C.Edition.TABLE_NAME
+                String[][] t_info = {
+                        {C.Talk.TABLE_NAME, C.Talk.CREATE_TABLE},
+                        {C.Teacher.TABLE_NAME, C.Teacher.CREATE_TABLE},
+                        {C.Center.TABLE_NAME, C.Center.CREATE_TABLE},
+                        {C.Edition.TABLE_NAME, C.Edition.CREATE_TABLE}
                 };
-                for (String table: tables) {
-                    db.execSQL("DROP TABLE IF EXISTS " + table);
-                    db.execSQL("CREATE TABLE " + table + " AS SELECT * FROM upgradeDb." + table);
-                    Log.i(LOG_TAG, "Copied table " + table + " from asset DB.");
+                for (String[] t: t_info) {
+                    db.execSQL("DROP TABLE IF EXISTS " + t[0]);
+                    db.execSQL(t[1]);
+                    db.execSQL("INSERT INTO " + t[0] + " SELECT * FROM upgradeDb." + t[0]);
+                    Log.i(LOG_TAG, "Copied table " + t[0] + " from asset DB.");
                 }
                 /* note on transactions:
                 onUpgrade is called with an open transaction such that the upgrade can be rolled
