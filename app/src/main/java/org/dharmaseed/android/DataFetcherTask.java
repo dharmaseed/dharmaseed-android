@@ -27,6 +27,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -106,7 +107,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                 for(Integer id : itemIDs) {
                     itemsWithDetails = agg.addID(id);
                     if(itemsWithDetails != null) {
-                        dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
+                        insertItems(itemsWithDetails, tableName, itemKeys);
                         publishProgress();
                     }
                 }
@@ -114,7 +115,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
                     // Fire any last requests still in the aggregator
                     itemsWithDetails = agg.fireRequest();
                     if(itemsWithDetails != null) {
-                        dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
+                        insertItems(itemsWithDetails, tableName, itemKeys);
                     }
                 }
 
@@ -128,6 +129,18 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
         } catch (Exception e) {
             Log.e(LOG_TAG, e.toString());
         }
+    }
+
+    // Inserts items retrieved from the dharmaseed API into the database,
+    // additionally running any table-specific processing tasks
+    protected void insertItems(JSONObject itemsWithDetails, String tableName, String[] itemKeys) throws JSONException {
+        dbManager.insertItems(itemsWithDetails, tableName, itemKeys);
+        extraTableProcessing(dbManager, itemsWithDetails.getJSONObject("items"));
+    }
+
+    // Overridable method to do any additional processing of items returned by the dharmaseed API.
+    // Does nothing by default.
+    protected void extraTableProcessing(DBManager dbManager, JSONObject items) throws JSONException {
     }
 
     @Override
