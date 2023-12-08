@@ -135,7 +135,16 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Set the talk description
         TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
-        descriptionView.setText(talk.getDescription());
+        String header = "";
+        if (talk.getExtraTeacherNames().size() > 0) {
+            header = "Additional teachers:\n";
+            for (String extraTeacherName : talk.getExtraTeacherNames()) {
+                header += extraTeacherName + "\n";
+
+            }
+            header += "\n";
+        }
+        descriptionView.setText(header + talk.getDescription());
 
         // Set teacher photo
         String photoFilename = talk.getPhotoFileName();
