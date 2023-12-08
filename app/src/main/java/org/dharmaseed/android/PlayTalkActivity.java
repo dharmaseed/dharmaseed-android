@@ -127,7 +127,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Set the teacher name
         TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-        teacherView.setText(talk.getTeacherName());
+        teacherView.setText(talk.getAllTeachers());
 
         // Set the center name
         TextView centerView = (TextView) findViewById(R.id.play_talk_center);
@@ -135,16 +135,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Set the talk description
         TextView descriptionView = (TextView) findViewById(R.id.play_talk_talk_description);
-        String header = "";
-        if (talk.getExtraTeacherNames().size() > 0) {
-            header = "Additional teachers:\n";
-            for (String extraTeacherName : talk.getExtraTeacherNames()) {
-                header += extraTeacherName + "\n";
-
-            }
-            header += "\n";
-        }
-        descriptionView.setText(header + talk.getDescription());
+        descriptionView.setText(talk.getDescription());
 
         // Set teacher photo
         String photoFilename = talk.getPhotoFileName();
@@ -161,14 +152,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Set date
         TextView dateView = (TextView) findViewById(R.id.play_talk_date);
-        String recDate = talk.getDate();
-        SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
-        try {
-            dateView.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
-        } catch (ParseException e) {
-            dateView.setText("");
-            Log.w(LOG_TAG, "Could not parse talk date for talk ID " + talkID);
-        }
+        dateView.setText(talk.getDate());
 
         // set the image of the download button based on whether the talk is
         // downloaded or not

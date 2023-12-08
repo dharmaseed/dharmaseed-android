@@ -3,9 +3,13 @@ package org.dharmaseed.android;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.text.format.DateUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 /**
@@ -41,8 +45,10 @@ public class Talk {
     }
 
     /**
-     * Create the object by setting all model values from the cursor
-     * @param cursor the result from the DB
+     * Create a talk object by setting all model values from the database
+     * @param dbManager The database manager
+     * @param context Application context
+     * @param talkID talk ID
      */
     public static Talk lookup(DBManager dbManager, Context context, int talkID) {
         Talk talk = null;
@@ -177,8 +183,18 @@ public class Talk {
         return durationInMinutes;
     }
 
+    public String getFormattedDuration() {
+        return DateUtils.formatElapsedTime((long)(durationInMinutes*60));
+    }
+
     public String getDate() {
-        return date;
+        try {
+            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return DateFormat.getDateInstance().format(parser.parse(date));
+        } catch (ParseException e) {
+            Log.w(LOG_TAG, "Could not parse talk date for talk ID " + id);
+            return date;
+        }
     }
 
     public String getTeacherName() {
@@ -187,6 +203,15 @@ public class Talk {
 
     public ArrayList<String> getExtraTeacherNames() {
         return extraTeacherNames;
+    }
+
+    // Return a comma-separated list of all teachers for this talk as a single string, with the primary teacher first
+    public String getAllTeachers() {
+        String allTeachers = teacherName;
+        for (String teacher : extraTeacherNames) {
+            allTeachers += ", " + teacher;
+        }
+        return allTeachers;
     }
 
     public String getCenterName() {
