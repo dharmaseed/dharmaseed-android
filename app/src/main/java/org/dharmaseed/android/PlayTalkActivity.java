@@ -117,17 +117,8 @@ public class PlayTalkActivity extends AppCompatActivity
         // for example, if the user selects a talk, exits, and re-opens it, no need
         // to hit the DB again, since we already have that talk saved
         if (talk == null || talk.getId() != talkID) {
-            Cursor cursor = getCursor(dbManager, talkID);
-            if (cursor.moveToFirst()) {
-                // convert DB result to an object
-                talk = new Talk(cursor, getApplicationContext());
-                talk.setId(talkID);
-            } else {
-                Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
-                cursor.close();
-                return;
-            }
-            cursor.close();
+            talk = Talk.lookup(dbManager, getApplicationContext(), talkID);
+
         } // else we already have the talk, just re-draw the page
 
         // Set the talk title
@@ -316,54 +307,6 @@ public class PlayTalkActivity extends AppCompatActivity
         return mediaController != null &&
                 mediaController.getCurrentMediaItem() != null &&
                 Integer.parseInt(mediaController.getCurrentMediaItem().mediaId) == talkID;
-    }
-
-    public static Cursor getCursor(DBManager dbManager, int talkID) {
-
-        SQLiteDatabase db = dbManager.getReadableDatabase();
-        String query = String.format(
-                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
-                        + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
-                DBManager.C.Talk.TITLE,
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.DESCRIPTION,
-                DBManager.C.Talk.AUDIO_URL,
-                DBManager.C.Talk.DURATION_IN_MINUTES,
-                DBManager.C.Talk.RECORDING_DATE,
-                DBManager.C.Talk.UPDATE_DATE,
-                DBManager.C.Talk.RETREAT_ID,
-                DBManager.C.Talk.FILE_PATH,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.NAME,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.NAME,
-
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-
-                // FROM
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Center.TABLE_NAME,
-
-                // WHERE
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TEACHER_ID,
-                DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.Teacher.ID,
-
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.VENUE_ID,
-                DBManager.C.Center.TABLE_NAME,
-                DBManager.C.Center.ID,
-
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.ID,
-                talkID
-        );
-
-        return db.rawQuery(query, null);
     }
 
     @Override

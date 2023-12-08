@@ -174,18 +174,8 @@ public class PlaybackService extends MediaSessionService {
 
                 // Look up talk from its ID
                 int talkID = Integer.parseInt(item.mediaId);
-                Cursor cursor = PlayTalkActivity.getCursor(
-                        DBManager.getInstance(PlaybackService.this), talkID);
-                if (cursor.moveToFirst()) {
-                    // convert DB result to an object
-                    talk = new Talk(cursor, getApplicationContext());
-                    talk.setId(talkID);
-                } else {
-                    Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
-                    cursor.close();
-                    continue;
-                }
-                cursor.close();
+                talk = Talk.lookup(DBManager.getInstance(PlaybackService.this),
+                        getApplicationContext(), talkID);
 
                 // Look up teacher photo
                 String photoFilename = talk.getPhotoFileName();
