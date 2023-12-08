@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Model of the TALK table in the DB
@@ -21,6 +22,7 @@ public class Talk {
     private String audioUrl;
     private String date;
     private String teacherName;
+    private ArrayList<String> extraTeacherNames;
     private String centerName;
     private String photoFileName;
     private String path; // where the talk is downloaded, if it is
@@ -33,6 +35,10 @@ public class Talk {
     private Context context;
 
     private double durationInMinutes;
+
+    public Talk() {
+        extraTeacherNames = new ArrayList<>();
+    }
 
     /**
      * Create the object by setting all model values from the cursor
@@ -65,6 +71,9 @@ public class Talk {
 
             talk.id = talkID;
             talk.context = context;
+
+            setExtraTeachers(dbManager, talk);
+
         } else {
             Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
         }
@@ -74,7 +83,7 @@ public class Talk {
 
     }
 
-    public static Cursor getCursor(DBManager dbManager, int talkID) {
+    private static Cursor getCursor(DBManager dbManager, int talkID) {
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
@@ -122,6 +131,36 @@ public class Talk {
         return db.rawQuery(query, null);
     }
 
+    private static void setExtraTeachers(DBManager dbManager, Talk talk) {
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        String query = String.format(
+                "SELECT %s.%s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.NAME,
+
+                // FROM
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.ExtraTalkTeachers.TABLE_NAME,
+
+                // WHERE
+                DBManager.C.Teacher.TABLE_NAME,
+                DBManager.C.Teacher.ID,
+                DBManager.C.ExtraTalkTeachers.TABLE_NAME,
+                DBManager.C.ExtraTalkTeachers.TEACHER_ID,
+
+                DBManager.C.ExtraTalkTeachers.TABLE_NAME,
+                DBManager.C.ExtraTalkTeachers.TALK_ID,
+                talk.id
+        );
+
+        Cursor cursor = db.rawQuery(query, null);
+        while (cursor.moveToNext()) {
+            talk.getExtraTeacherNames().add(
+                    cursor.getString(cursor.getColumnIndexOrThrow(AbstractDBManager.C.Teacher.NAME)).trim()
+            );
+        }
+    }
+
     public String getTitle() {
         return title;
     }
@@ -144,6 +183,10 @@ public class Talk {
 
     public String getTeacherName() {
         return teacherName;
+    }
+
+    public ArrayList<String> getExtraTeacherNames() {
+        return extraTeacherNames;
     }
 
     public String getCenterName() {
