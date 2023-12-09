@@ -34,10 +34,10 @@ public class TeacherRepository extends Repository
 
     public Cursor getTeachers(List<String> searchTerms, boolean isStarred)
     {
-        String query = "SELECT teachers._id, teachers.name, count(talks._id) AS talk_count FROM teachers ";
+        String query = "SELECT teachers._id, teachers.name, count(talk_teachers._id) AS talk_count FROM teachers ";
         String innerJoin = innerJoin(
-                DBManager.C.Talk.TABLE_NAME,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID,
+                DBManager.C.TalkTeachers.TABLE_NAME,
+                DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID
         );
 
