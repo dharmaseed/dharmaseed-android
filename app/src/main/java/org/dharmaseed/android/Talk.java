@@ -6,7 +6,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.text.format.DateUtils;
 import android.util.Log;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,7 +25,7 @@ public class Talk {
     private String audioUrl;
     private String date;
     private String teacherName;
-    private ArrayList<String> extraTeacherNames;
+    private ArrayList<String> allTeacherNames;
     private String centerName;
     private String photoFileName;
     private String path; // where the talk is downloaded, if it is
@@ -41,7 +40,7 @@ public class Talk {
     private double durationInMinutes;
 
     public Talk() {
-        extraTeacherNames = new ArrayList<>();
+        allTeacherNames = new ArrayList<>();
     }
 
     /**
@@ -146,22 +145,22 @@ public class Talk {
 
                 // FROM
                 DBManager.C.Teacher.TABLE_NAME,
-                DBManager.C.ExtraTalkTeachers.TABLE_NAME,
+                AbstractDBManager.C.TalkTeachers.TABLE_NAME,
 
                 // WHERE
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
-                DBManager.C.ExtraTalkTeachers.TABLE_NAME,
-                DBManager.C.ExtraTalkTeachers.TEACHER_ID,
+                AbstractDBManager.C.TalkTeachers.TABLE_NAME,
+                AbstractDBManager.C.TalkTeachers.TEACHER_ID,
 
-                DBManager.C.ExtraTalkTeachers.TABLE_NAME,
-                DBManager.C.ExtraTalkTeachers.TALK_ID,
+                AbstractDBManager.C.TalkTeachers.TABLE_NAME,
+                AbstractDBManager.C.TalkTeachers.TALK_ID,
                 talk.id
         );
 
         Cursor cursor = db.rawQuery(query, null);
         while (cursor.moveToNext()) {
-            talk.getExtraTeacherNames().add(
+            talk.getAllTeacherNames().add(
                     cursor.getString(cursor.getColumnIndexOrThrow(AbstractDBManager.C.Teacher.NAME)).trim()
             );
         }
@@ -202,15 +201,20 @@ public class Talk {
         return teacherName;
     }
 
-    public ArrayList<String> getExtraTeacherNames() {
-        return extraTeacherNames;
+    public ArrayList<String> getAllTeacherNames() {
+        return allTeacherNames;
     }
 
     // Return a comma-separated list of all teachers for this talk as a single string, with the primary teacher first
-    public String getAllTeachers() {
+    public String getAllTeacherNamesString() {
+        // Make sure to list the primary teacher first
         String allTeachers = teacherName;
-        for (String teacher : extraTeacherNames) {
-            allTeachers += ", " + teacher;
+        for (String teacher : allTeacherNames) {
+            // The primary teacher will also be listed in allTeacherNames, so skip it here
+            // so we don't include it twice
+            if (!teacher.equals(teacherName)) {
+                allTeachers += ", " + teacher;
+            }
         }
         return allTeachers;
     }

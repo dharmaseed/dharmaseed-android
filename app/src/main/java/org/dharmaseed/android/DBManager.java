@@ -103,7 +103,7 @@ public class DBManager extends AbstractDBManager {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(C.Talk.CREATE_TABLE);
-        db.execSQL(C.ExtraTalkTeachers.CREATE_TABLE);
+        db.execSQL(C.TalkTeachers.CREATE_TABLE);
         db.execSQL(C.Teacher.CREATE_TABLE);
         db.execSQL(C.Center.CREATE_TABLE);
         db.execSQL(C.Retreat.CREATE_TABLE);
@@ -141,8 +141,8 @@ public class DBManager extends AbstractDBManager {
             Log.i(LOG_TAG,"Upgrade: Created talk history table");
         }
         if (oldVersion == 3 && newVersion > 3) {
-            db.execSQL(C.ExtraTalkTeachers.CREATE_TABLE);
-            Log.i(LOG_TAG,"Upgrade: Created extra talk teachers table");
+            db.execSQL(C.TalkTeachers.CREATE_TABLE);
+            Log.i(LOG_TAG,"Upgrade: Created talk teachers table");
         }
 
         // Optionally import updated tables from the assets DB.
@@ -161,7 +161,7 @@ public class DBManager extends AbstractDBManager {
                 db.execSQL("ATTACH DATABASE '" + dbUpgradePath + "' AS upgradeDb");
                 String[][] t_info = {
                         {C.Talk.TABLE_NAME, C.Talk.CREATE_TABLE},
-                        {C.ExtraTalkTeachers.TABLE_NAME, C.ExtraTalkTeachers.CREATE_TABLE},
+                        {C.TalkTeachers.TABLE_NAME, C.TalkTeachers.CREATE_TABLE},
                         {C.Teacher.TABLE_NAME, C.Teacher.CREATE_TABLE},
                         {C.Center.TABLE_NAME, C.Center.CREATE_TABLE},
                         {C.Edition.TABLE_NAME, C.Edition.CREATE_TABLE}

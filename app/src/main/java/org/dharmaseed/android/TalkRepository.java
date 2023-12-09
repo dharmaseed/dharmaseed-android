@@ -173,7 +173,7 @@ public class TalkRepository extends Repository {
             boolean isDownloaded
     ) {
         return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
-                DBManager.C.ExtraTalkTeachers.TABLE_NAME + "." + DBManager.C.ExtraTalkTeachers.TEACHER_ID + "=" + teacherId,
+                AbstractDBManager.C.TalkTeachers.TABLE_NAME + "." + AbstractDBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId,
                 joinExtraTalkTeachers());
     }
 
@@ -265,8 +265,8 @@ public class TalkRepository extends Repository {
     }
 
      private String joinExtraTalkTeachers() {
-        return innerJoin(DBManager.C.ExtraTalkTeachers.TABLE_NAME,
-                DBManager.C.ExtraTalkTeachers.TABLE_NAME + "." + DBManager.C.ExtraTalkTeachers.TALK_ID,
+        return innerJoin(AbstractDBManager.C.TalkTeachers.TABLE_NAME,
+                AbstractDBManager.C.TalkTeachers.TABLE_NAME + "." + AbstractDBManager.C.TalkTeachers.TALK_ID,
                 DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
                 );
     }

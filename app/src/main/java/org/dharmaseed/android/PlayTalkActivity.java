@@ -27,8 +27,6 @@ import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -56,11 +54,7 @@ import androidx.media3.session.SessionToken;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.Timer;
@@ -127,7 +121,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Set the teacher name
         TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-        teacherView.setText(talk.getAllTeachers());
+        teacherView.setText(talk.getAllTeacherNamesString());
 
         // Set the center name
         TextView centerView = (TextView) findViewById(R.id.play_talk_center);

@@ -24,7 +24,7 @@ import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import androidx.core.content.ContextCompat;
-import android.text.format.DateUtils;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -32,11 +32,7 @@ import android.widget.TextView;
 import android.widget.ProgressBar;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
 public class TalkCursorAdapter extends StarCursorAdapter {
 
@@ -65,7 +61,7 @@ public class TalkCursorAdapter extends StarCursorAdapter {
         final TextView teacher=(TextView)view.findViewById(R.id.item_view_detail1);
         final TextView center=(TextView)view.findViewById(R.id.item_view_detail2);
         title.setText(talk.getTitle());
-        teacher.setText(talk.getAllTeachers());
+        teacher.setText(talk.getAllTeacherNamesString());
         center.setText(talk.getCenterName());
 
         // Set date

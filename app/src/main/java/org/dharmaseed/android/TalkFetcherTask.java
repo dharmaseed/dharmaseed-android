@@ -21,7 +21,6 @@ package org.dharmaseed.android;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -71,24 +70,18 @@ public class TalkFetcherTask extends DataFetcherTask {
             // First, clear any existing entries for this talk, so that if any teachers are ever
             // removed from a talk after the talk is already added, we'll pick up that change
             // in the database.
-            dbManager.deleteID(talkID, AbstractDBManager.C.ExtraTalkTeachers.TABLE_NAME);
+            dbManager.deleteID(talkID, AbstractDBManager.C.TalkTeachers.TABLE_NAME);
 
             JSONArray teachersForTalk = talk.getJSONArray("teachers");
             for (int i = 0; i < teachersForTalk.length(); i++) {
                 int teacherID = teachersForTalk.getInt(i);
 
-                // Only store IDs for extra teachers (i.e. non-primary ones) in the extra_talk_teachers
-                // table. The primary teacher is already saved in the talk table.
-                if (teacherID != talk.getInt("teacher_id")) {
-                    Log.d(LOG_TAG, "Storing extra teacher ID " + teacherID + " for talk " + talkID);
-
-                    SQLiteDatabase db = dbManager.getWritableDatabase();
-                    ContentValues values = new ContentValues();
-                    values.put(AbstractDBManager.C.ExtraTalkTeachers.TALK_ID, talkID);
-                    values.put(AbstractDBManager.C.ExtraTalkTeachers.TEACHER_ID, teacherID);
-                    db.insertWithOnConflict(AbstractDBManager.C.ExtraTalkTeachers.TABLE_NAME,
-                            null, values, SQLiteDatabase.CONFLICT_REPLACE);
-                }
+                SQLiteDatabase db = dbManager.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put(AbstractDBManager.C.TalkTeachers.TALK_ID, talkID);
+                values.put(AbstractDBManager.C.TalkTeachers.TEACHER_ID, teacherID);
+                db.insertWithOnConflict(AbstractDBManager.C.TalkTeachers.TABLE_NAME,
+                        null, values, SQLiteDatabase.CONFLICT_REPLACE);
 
             }
         }

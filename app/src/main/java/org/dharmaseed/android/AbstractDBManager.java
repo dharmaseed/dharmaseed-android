@@ -98,13 +98,11 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
         }
 
         // Talks can have multiple teachers associated with them.
-        // This table holds IDs for any extra teachers associated with a talk.
-        // We don't include the ID of the primary teacher in this table, since that is already
-        // captured in the Talk table.
-        public abstract class ExtraTalkTeachers {
+        // This table holds IDs for all teachers associated with each talk.
+        public abstract class TalkTeachers {
             public static final String TALK_ID = "_id";
             public static final String TEACHER_ID = "teacher_id";
-            public static final String TABLE_NAME = "extra_talk_teachers";
+            public static final String TABLE_NAME = "talk_teachers";
             public static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" + TALK_ID + " INTEGER,"
                     + TEACHER_ID + " INTEGER)";
         }
