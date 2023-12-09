@@ -44,7 +44,7 @@ public class TalkRepository extends Repository {
             boolean isStarred,
             boolean isDownloaded
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, "");
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, "", "");
     }
 
     /**
@@ -55,14 +55,16 @@ public class TalkRepository extends Repository {
      * @param isStarred    whether the talk is starred
      * @param isDownloaded whether the talk is downloaded
      * @param extraWhere   an extra where clause that can be used to filter on a specific teacher/center id
+     * @param extraInnerJoin an extra inner join clause that can be used to join with an extra table
      * @return every talk in the db filtered by search term, is starred, and is downloaded
      */
-    public Cursor getTalks(
+    private Cursor getTalks(
             List<String> columns,
             List<String> searchTerms,
             boolean isStarred,
             boolean isDownloaded,
-            String extraWhere
+            String extraWhere,
+            String extraInnerJoin
     ) {
         if (columns == null || columns.size() == 0) {
             throw new IllegalArgumentException("No columns were specified; at least one is required");
@@ -81,7 +83,7 @@ public class TalkRepository extends Repository {
 
         String query = "SELECT " + queryColumns + " FROM " + DBManager.C.Talk.TABLE_NAME;
 
-        String innerJoin = "";
+        String innerJoin = extraInnerJoin;
 
         boolean teachers = false, centers = false;
         if (queryColumns.contains(DBManager.C.Teacher.TABLE_NAME)) {
@@ -154,7 +156,7 @@ public class TalkRepository extends Repository {
             boolean isStarred,
             boolean isDownloaded
     ) {
-        return getTalks(columns, searchTerms, isStarred, isDownloaded, "");
+        return getTalks(columns, searchTerms, isStarred, isDownloaded, "", "");
     }
 
     /**
@@ -171,7 +173,8 @@ public class TalkRepository extends Repository {
             boolean isDownloaded
     ) {
         return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
-                DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID + "=" + teacherId);
+                DBManager.C.ExtraTalkTeachers.TABLE_NAME + "." + DBManager.C.ExtraTalkTeachers.TEACHER_ID + "=" + teacherId,
+                joinExtraTalkTeachers());
     }
 
     /**
@@ -188,7 +191,7 @@ public class TalkRepository extends Repository {
             boolean isDownloaded
     ) {
         return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
-                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId);
+                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId, "");
     }
 
     /**
@@ -259,6 +262,13 @@ public class TalkRepository extends Repository {
         } finally {
             in.close();
         }
+    }
+
+     private String joinExtraTalkTeachers() {
+        return innerJoin(DBManager.C.ExtraTalkTeachers.TABLE_NAME,
+                DBManager.C.ExtraTalkTeachers.TABLE_NAME + "." + DBManager.C.ExtraTalkTeachers.TALK_ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
+                );
     }
 
     private String joinStarredTalks() {

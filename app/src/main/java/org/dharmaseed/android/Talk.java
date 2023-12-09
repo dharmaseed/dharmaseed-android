@@ -165,6 +165,7 @@ public class Talk {
                     cursor.getString(cursor.getColumnIndexOrThrow(AbstractDBManager.C.Teacher.NAME)).trim()
             );
         }
+        cursor.close();
     }
 
     public String getTitle() {
