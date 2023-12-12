@@ -82,6 +82,7 @@ public class TalkRepositoryTest
                 " AS talks_duration_in_minutes, talks.retreat_id AS talks_retreat_id FROM talks ORDER BY talks" +
                 ".rec_date DESC", null);
 
+        assertEquals(12, actualCursor.getCount());
         assertCursors(expectedCursor, actualCursor, allTalkColumns);
     }
 
@@ -359,7 +360,15 @@ public class TalkRepositoryTest
                     "ORDER BY rec_date DESC",
                 null);
 
+        assertEquals(3, actual.getCount());
         assertCursors(expected, actual, columns);
+
+        // Make sure that talks with more than one teacher are correctly returned by getTalksByTeacher
+        actual = talkRepository.getTalksByTeacher(null, 278, false, false);
+        assertEquals(1, actual.getCount());
+
+        actual = talkRepository.getTalksByTeacher(null, 553, false, false);
+        assertEquals(2, actual.getCount());
     }
 
     @Test
