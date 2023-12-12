@@ -172,7 +172,7 @@ public class TalkRepository extends Repository {
             boolean isDownloaded
     ) {
         return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
-                AbstractDBManager.C.TalkTeachers.TABLE_NAME + "." + AbstractDBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId);
+                DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId);
     }
 
     /**

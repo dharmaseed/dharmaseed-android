@@ -145,23 +145,23 @@ public class Talk {
 
                 // FROM
                 DBManager.C.Teacher.TABLE_NAME,
-                AbstractDBManager.C.TalkTeachers.TABLE_NAME,
+                DBManager.C.TalkTeachers.TABLE_NAME,
 
                 // WHERE
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.ID,
-                AbstractDBManager.C.TalkTeachers.TABLE_NAME,
-                AbstractDBManager.C.TalkTeachers.TEACHER_ID,
+                DBManager.C.TalkTeachers.TABLE_NAME,
+                DBManager.C.TalkTeachers.TEACHER_ID,
 
-                AbstractDBManager.C.TalkTeachers.TABLE_NAME,
-                AbstractDBManager.C.TalkTeachers.TALK_ID,
+                DBManager.C.TalkTeachers.TABLE_NAME,
+                DBManager.C.TalkTeachers.TALK_ID,
                 talk.id
         );
 
         Cursor cursor = db.rawQuery(query, null);
         while (cursor.moveToNext()) {
             talk.getAllTeacherNames().add(
-                    cursor.getString(cursor.getColumnIndexOrThrow(AbstractDBManager.C.Teacher.NAME)).trim()
+                    cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim()
             );
         }
         cursor.close();

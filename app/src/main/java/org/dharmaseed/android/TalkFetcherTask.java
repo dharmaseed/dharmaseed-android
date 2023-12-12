@@ -70,7 +70,7 @@ public class TalkFetcherTask extends DataFetcherTask {
             // First, clear any existing entries for this talk, so that if any teachers are ever
             // removed from a talk after the talk is already added, we'll pick up that change
             // in the database.
-            dbManager.deleteID(talkID, AbstractDBManager.C.TalkTeachers.TABLE_NAME);
+            dbManager.deleteID(talkID, DBManager.C.TalkTeachers.TABLE_NAME);
 
             JSONArray teachersForTalk = talk.getJSONArray("teachers");
             for (int i = 0; i < teachersForTalk.length(); i++) {
@@ -78,9 +78,9 @@ public class TalkFetcherTask extends DataFetcherTask {
 
                 SQLiteDatabase db = dbManager.getWritableDatabase();
                 ContentValues values = new ContentValues();
-                values.put(AbstractDBManager.C.TalkTeachers.TALK_ID, talkID);
-                values.put(AbstractDBManager.C.TalkTeachers.TEACHER_ID, teacherID);
-                db.insertWithOnConflict(AbstractDBManager.C.TalkTeachers.TABLE_NAME,
+                values.put(DBManager.C.TalkTeachers.TALK_ID, talkID);
+                values.put(DBManager.C.TalkTeachers.TEACHER_ID, teacherID);
+                db.insertWithOnConflict(DBManager.C.TalkTeachers.TABLE_NAME,
                         null, values, SQLiteDatabase.CONFLICT_REPLACE);
 
             }
