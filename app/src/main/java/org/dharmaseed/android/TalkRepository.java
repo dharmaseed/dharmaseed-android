@@ -44,7 +44,7 @@ public class TalkRepository extends Repository {
             boolean isStarred,
             boolean isDownloaded
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, "", "");
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, "");
     }
 
     /**
@@ -55,7 +55,6 @@ public class TalkRepository extends Repository {
      * @param isStarred    whether the talk is starred
      * @param isDownloaded whether the talk is downloaded
      * @param extraWhere   an extra where clause that can be used to filter on a specific teacher/center id
-     * @param extraInnerJoin an extra inner join clause that can be used to join with an extra table
      * @return every talk in the db filtered by search term, is starred, and is downloaded
      */
     private Cursor getTalks(
@@ -63,9 +62,7 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             boolean isStarred,
             boolean isDownloaded,
-            String extraWhere,
-            String extraInnerJoin
-    ) {
+            String extraWhere) {
         if (columns == null || columns.size() == 0) {
             throw new IllegalArgumentException("No columns were specified; at least one is required");
         }
@@ -83,12 +80,12 @@ public class TalkRepository extends Repository {
 
         String query = "SELECT " + queryColumns + " FROM " + DBManager.C.Talk.TABLE_NAME;
 
-        String innerJoin = extraInnerJoin;
+        String innerJoin = "";
 
         boolean teachers = false, centers = false;
         if (queryColumns.contains(DBManager.C.Teacher.TABLE_NAME)) {
             teachers = true;
-            innerJoin += joinTalkIdTeacherId();
+            innerJoin += joinTalkTeachers();
         }
         if (queryColumns.contains(DBManager.C.Center.TABLE_NAME)) {
             centers = true;
@@ -107,7 +104,7 @@ public class TalkRepository extends Repository {
         if (searchTerms != null && searchTerms.size() > 0) {
             // get the teachers table if we haven't already
             if (!teachers) {
-                innerJoin += joinTalkIdTeacherId();
+                innerJoin += joinTalkTeachers();
             }
 
             // get the centers table if we haven't already
@@ -142,7 +139,9 @@ public class TalkRepository extends Repository {
             query += " WHERE " + fullWhere;
         }
 
-        query += " ORDER BY "
+        query += " GROUP BY "
+                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
+                + " ORDER BY "
                 + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE
                 + " DESC"
         ;
@@ -156,7 +155,7 @@ public class TalkRepository extends Repository {
             boolean isStarred,
             boolean isDownloaded
     ) {
-        return getTalks(columns, searchTerms, isStarred, isDownloaded, "", "");
+        return getTalks(columns, searchTerms, isStarred, isDownloaded, "");
     }
 
     /**
@@ -173,8 +172,7 @@ public class TalkRepository extends Repository {
             boolean isDownloaded
     ) {
         return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
-                AbstractDBManager.C.TalkTeachers.TABLE_NAME + "." + AbstractDBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId,
-                joinExtraTalkTeachers());
+                AbstractDBManager.C.TalkTeachers.TABLE_NAME + "." + AbstractDBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId);
     }
 
     /**
@@ -191,7 +189,7 @@ public class TalkRepository extends Repository {
             boolean isDownloaded
     ) {
         return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
-                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId, "");
+                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId);
     }
 
     /**
@@ -264,13 +262,6 @@ public class TalkRepository extends Repository {
         }
     }
 
-     private String joinExtraTalkTeachers() {
-        return innerJoin(AbstractDBManager.C.TalkTeachers.TABLE_NAME,
-                AbstractDBManager.C.TalkTeachers.TABLE_NAME + "." + AbstractDBManager.C.TalkTeachers.TALK_ID,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-                );
-    }
-
     private String joinStarredTalks() {
         return innerJoin(
                 DBManager.C.TalkStars.TABLE_NAME,
@@ -287,11 +278,15 @@ public class TalkRepository extends Repository {
         );
     }
 
-    private String joinTalkIdTeacherId() {
+    private String joinTalkTeachers() {
         return innerJoin(
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID
+                DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID) +
+                innerJoin(
+                        DBManager.C.TalkTeachers.TABLE_NAME,
+                        DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TALK_ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
         );
     }
 
