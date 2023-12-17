@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -40,37 +42,10 @@ public class MiniPlayerFragment extends Fragment {
     private String LOG_TAG = "MiniPlayerFragment";
 
     @Override
-    public void onResume() {
-        super.onResume();
-
-        // Create the media controller
-        Context ctx = getContext();
-        SessionToken sessionToken =
-                new SessionToken(ctx, new ComponentName(ctx, PlaybackService.class));
-        controllerFuture = new MediaController.Builder(ctx, sessionToken).buildAsync();
-        controllerFuture.addListener(() -> {
-            try {
-                mediaController = controllerFuture.get();
-                mediaController.addListener(playerListener);
-                playerListener.onMediaMetadataChanged(mediaController.getMediaMetadata());
-                playerListener.onPlaybackStateChanged(mediaController.getPlaybackState());
-                playerListener.onIsPlayingChanged(mediaController.isPlaying());
-            } catch (InterruptedException | ExecutionException | CancellationException e) {
-                Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
-            }
-        }, ContextCompat.getMainExecutor(ctx));
-
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        MediaController.releaseFuture(controllerFuture);
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d(LOG_TAG, "onCreateView " + this);
+
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_player, container, false);
 
@@ -98,6 +73,38 @@ public class MiniPlayerFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Log.d(LOG_TAG, "onViewCreated " + this);
+
+        // Create the media controller
+        Context ctx = getContext();
+        SessionToken sessionToken =
+                new SessionToken(ctx, new ComponentName(ctx, PlaybackService.class));
+        controllerFuture = new MediaController.Builder(ctx, sessionToken).buildAsync();
+        controllerFuture.addListener(() -> {
+            try {
+                mediaController = controllerFuture.get();
+                mediaController.addListener(playerListener);
+                playerListener.onMediaMetadataChanged(mediaController.getMediaMetadata());
+                playerListener.onPlaybackStateChanged(mediaController.getPlaybackState());
+                playerListener.onIsPlayingChanged(mediaController.isPlaying());
+            } catch (InterruptedException | ExecutionException | CancellationException e) {
+                Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
+            }
+        }, ContextCompat.getMainExecutor(ctx));
+
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        Log.d(LOG_TAG, "onDestroyView " + this);
+
+        MediaController.releaseFuture(controllerFuture);
+    }
+
     public void playButtonClicked(View view) {
         if (mediaController != null && mediaController.getPlaybackState() != Player.STATE_IDLE) {
             if (mediaController.isPlaying()) {
@@ -112,7 +119,6 @@ public class MiniPlayerFragment extends Fragment {
             new Player.Listener() {
 
                 private void setPPButton(String drawableName) {
-                    Log.i(LOG_TAG, "setPPButton " + this);
                     ImageButton playButton = (ImageButton) getView().findViewById(R.id.mini_player_play_button);
                     playButton.setImageDrawable(ContextCompat.getDrawable(getContext(),
                             getResources().getIdentifier(drawableName, "drawable", "android")));
