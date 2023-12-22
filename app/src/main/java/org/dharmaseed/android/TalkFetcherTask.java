@@ -80,9 +80,7 @@ public class TalkFetcherTask extends DataFetcherTask {
                 ContentValues values = new ContentValues();
                 values.put(DBManager.C.TalkTeachers.TALK_ID, talkID);
                 values.put(DBManager.C.TalkTeachers.TEACHER_ID, teacherID);
-                db.insertWithOnConflict(DBManager.C.TalkTeachers.TABLE_NAME,
-                        null, values, SQLiteDatabase.CONFLICT_REPLACE);
-
+                db.insert(DBManager.C.TalkTeachers.TABLE_NAME,null, values);
             }
         }
     }
