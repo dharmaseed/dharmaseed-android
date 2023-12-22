@@ -140,7 +140,7 @@ public class DBManager extends AbstractDBManager {
             db.execSQL(C.TalkHistory.CREATE_TABLE);
             Log.i(LOG_TAG,"Upgrade: Created talk history table");
         }
-        if (oldVersion == 3 && newVersion > 3) {
+        if (oldVersion <= 3 && newVersion > 3) {
             db.execSQL(C.TalkTeachers.CREATE_TABLE);
             Log.i(LOG_TAG,"Upgrade: Created talk teachers table");
         }
