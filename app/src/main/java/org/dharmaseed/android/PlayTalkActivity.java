@@ -78,8 +78,6 @@ public class PlayTalkActivity extends AppCompatActivity
 
     static final String LOG_TAG = "PlayTalkActivity";
 
-    protected static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-
     // request code for writing external storage (the number is arbitrary)
     static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
 

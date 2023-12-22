@@ -19,6 +19,7 @@ import java.util.ArrayList;
 public class Talk {
 
     private static final String LOG_TAG = "Talk";
+    protected static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     private String title;
     private String description;
@@ -190,7 +191,7 @@ public class Talk {
 
     public String getDate() {
         try {
-            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat parser = new SimpleDateFormat(DATE_FORMAT);
             return DateFormat.getDateInstance().format(parser.parse(date));
         } catch (ParseException e) {
             Log.w(LOG_TAG, "Could not parse talk date for talk ID " + id);

@@ -106,7 +106,7 @@ public class PlaybackService extends MediaSessionService {
             if (item != null && player.getPlaybackState() != Player.STATE_IDLE) {
                 final int talkID = Integer.parseInt(item.mediaId);
                 final double progress = player.getCurrentPosition() / (1000 * 60.0);
-                SimpleDateFormat parser = new SimpleDateFormat(PlayTalkActivity.DATE_FORMAT);
+                SimpleDateFormat parser = new SimpleDateFormat(Talk.DATE_FORMAT);
                 final String now = parser.format(GregorianCalendar.getInstance().getTime());
                 DBManager.getInstance(this).setTalkProgress(talkID, now, progress);
             }
