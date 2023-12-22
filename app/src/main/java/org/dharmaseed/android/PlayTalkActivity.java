@@ -121,7 +121,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
         // Set the teacher name
         TextView teacherView = (TextView) findViewById(R.id.play_talk_teacher);
-        teacherView.setText(talk.getAllTeacherNamesString());
+        teacherView.setText(talk.getAllTeacherNames());
 
         // Set the center name
         TextView centerView = (TextView) findViewById(R.id.play_talk_center);

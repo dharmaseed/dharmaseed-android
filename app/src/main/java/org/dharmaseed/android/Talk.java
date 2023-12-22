@@ -77,7 +77,7 @@ public class Talk {
             talk.id = talkID;
             talk.context = context;
 
-            setExtraTeachers(dbManager, talk);
+            talk.setExtraTeachers(dbManager);
 
         } else {
             Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
@@ -136,7 +136,7 @@ public class Talk {
         return db.rawQuery(query, null);
     }
 
-    private static void setExtraTeachers(DBManager dbManager, Talk talk) {
+    public void setExtraTeachers(DBManager dbManager) {
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
                 "SELECT %s.%s FROM %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s",
@@ -155,14 +155,15 @@ public class Talk {
 
                 DBManager.C.TalkTeachers.TABLE_NAME,
                 DBManager.C.TalkTeachers.TALK_ID,
-                talk.id
+                id
         );
 
         Cursor cursor = db.rawQuery(query, null);
         while (cursor.moveToNext()) {
-            talk.getAllTeacherNames().add(
-                    cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim()
-            );
+            String teacherName = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.NAME)).trim();
+            if (!allTeacherNames.contains(teacherName)) {
+                allTeacherNames.add(teacherName);
+            }
         }
         cursor.close();
     }
@@ -201,12 +202,8 @@ public class Talk {
         return teacherName;
     }
 
-    public ArrayList<String> getAllTeacherNames() {
-        return allTeacherNames;
-    }
-
     // Return a comma-separated list of all teachers for this talk as a single string, with the primary teacher first
-    public String getAllTeacherNamesString() {
+    public String getAllTeacherNames() {
         // Make sure to list the primary teacher first
         String allTeachers = teacherName;
         for (String teacher : allTeacherNames) {

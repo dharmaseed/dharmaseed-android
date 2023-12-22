@@ -61,7 +61,7 @@ public class TalkCursorAdapter extends StarCursorAdapter {
         final TextView teacher=(TextView)view.findViewById(R.id.item_view_detail1);
         final TextView center=(TextView)view.findViewById(R.id.item_view_detail2);
         title.setText(talk.getTitle());
-        teacher.setText(talk.getAllTeacherNamesString());
+        teacher.setText(talk.getAllTeacherNames());
         center.setText(talk.getCenterName());
 
         // Set date
