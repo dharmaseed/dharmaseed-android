@@ -280,14 +280,13 @@ public class TalkRepository extends Repository {
 
     private String joinTalkTeachers() {
         return innerJoin(
+                DBManager.C.TalkTeachers.TABLE_NAME,
+                DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TALK_ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID) +
+            innerJoin(
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.ID,
-                DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID) +
-                innerJoin(
-                        DBManager.C.TalkTeachers.TABLE_NAME,
-                        DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TALK_ID,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-        );
+                DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID);
     }
 
     private String joinTalkIdVenueId() {
