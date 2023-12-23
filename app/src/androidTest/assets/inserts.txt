@@ -1,5 +1,6 @@
 CREATE TABLE talks (_id INTEGER PRIMARY KEY,title TEXT,description TEXT,venue_id INTEGER,teacher_id INTEGER,audio_url TEXT,duration_in_minutes REAL,update_date TEXT,rec_date TEXT,retreat_id INTEGER,file_path TEXT NOT NULL DEFAULT '');
 CREATE TABLE teachers (_id INTEGER PRIMARY KEY,website TEXT,bio TEXT,name TEXT,public INTEGER,monastic INTEGER,photo TEXT);
+CREATE TABLE talk_teachers (_id INTEGER,teacher_id INTEGER);
 CREATE TABLE centers (_id INTEGER PRIMARY KEY,website TEXT,description TEXT,name TEXT);
 CREATE TABLE talk_stars (_id INTEGER PRIMARY KEY);
 CREATE TABLE teacher_stars (_id INTEGER PRIMARY KEY);
@@ -12,7 +13,7 @@ when our experience is difficult or unpleasant.',1,153,'/teacher/153/talk/1/1990
 INSERT INTO "talks" VALUES(2,'How This Practice Works','This talk presents the technical, meditative practice of mindfulness
 and LovingKindness in the context of the fullest sense of practice,
 the living of an awakened, purposeful life.  If you are living
-intentionally, you can''t be practicing wrong.',1,174,'/teacher/174/talk/2/19900101-Sylvia_Boorstein-UNK-how_this_practice_works-2.mp3',57.3373333333333,'2018-02-27 00:15:17','1990-01-01 00:00:00',1,'');
+intentionally, you can''t be practicing wrong.',1,174,'/teacher/174/talk/2/19900101-Sylvia_Boorstein-UNK-how_this_practice_works-2.mp3',57.3373333333333,'2018-02-27 00:15:17','1990-01-01 00:00:01',1,'');
 INSERT INTO "talks" VALUES(4,'Seven Factors Of Enlightenment','Developing and balancing the seven factors of awakening [mindfulness,
 investigation, energy, joy, calm, concentration and equanimity] to
 support life and practice.',1,3,'/teacher/3/talk/4/20011011-Adrianne_Ross-UNK-seven_factors_of_enlightenment-4.mp3',53.6806666666667,'2018-02-27 00:17:56','2001-10-11 00:00:00',1,'');
@@ -33,7 +34,9 @@ value and right use of reflective thinking.',1,4,'/teacher/4/talk/9/19980414-Aja
 INSERT INTO "talks" VALUES(11,'The Power Of Metta','Lovingkindness is the quality of friendliness toward oneself and others^M
 developed through the practice of metta.  This talk describes how the^M
 practice works as a protection, a healing, a purification of heart, and a^M
-boundless state of mind.',1,79,'/teacher/79/talk/11/20010706-Guy_Armstrong-UNK-the_power_of_metta-11.mp3',48.1608333333333,'2018-02-27 00:30:56','2001-07-06 00:00:00',1,'');
+boundless state of mind.',1,79,'/teacher/79/talk/11/20010706-Guy_Armstrong-UNK-the_power_of_metta-11.mp3',48.1608333333333,'2018-02-27 00:30:56','2001-07-06 00:00:01',1,'');
+INSERT INTO "talks" VALUES(78560,'Chanting the Fire Sermon','Chanting',242,278,'/talks/78560/20230626-Ayya_Santacitta-BCBS-chanting_the_fire_sermon-78560.mp3',12.718972789115646548,'2023-06-26 01:06:46','2023-06-26 01:05:32',5583,'');
+INSERT INTO "talks" VALUES(78598,'The Highest Blessings Chant','',242,553,'/talks/78598/20230628-Ayya_Santussika-BCBS-the_highest_blessings_chant-78598.mp3',26.192498866213153262,'2023-06-28 19:10:35','2023-06-28 19:08:13',5583,'');
 INSERT INTO "teachers" VALUES(96,'http://www.dharma.org/joseph-goldstein','I have two main aims in teaching. The first is to spread the dharma as widely as possible, offering it to as many different people as I can.  The second is to teach a smaller number of people over sustained periods of time. This in-depth teaching engages my tremendous love for intensive, long-term meditation practice, where people can immerse themselves in the retreat experience and see how it transforms their understanding.
 
 
@@ -69,8 +72,11 @@ Right now I''m most enthusiastic about the first gift, paying attention, because
 
 As a parent, grandparent and a psychotherapist, I teach out of the stories of my life and the lives of those around me.  I am especially touched by personal narrative, accounts of spiritual journeys, and how these become vehicles for connecting with the dharma.  I believe in revealing my own story so that others are more at ease to reveal theirs.  Truth talking is a way out of suffering.  Discovering how our hearts and minds work and creating a dialogue supports right speech practice.  This is an on-going primary practice that we can do all the time.  My hope is that I encourage people how to pay attention and to tell the truth by example.
 ','Sylvia Boorstein','true','false','photo.png');
+INSERT INTO "teachers" VALUES(278,'https://alokavihara.org/aloka-earth-room/','Santacitta Bhikkhuni hails from Austria and trained as a nun in England & Asia from 1993 until 2009, primarily in the lineage of Ajahn Chah. Since 2002, she has also received teachings in the lineage of Dilgo Khyentse Rinpoche. She is committed to our planet as a living being and resides at ''Aloka Earth Room'', currently located in San Rafael, California. Santacitta Bhikkhuni stammt aus Österreich and begann ihre Nonnenausbildung 1993 in England & Asien, vor allem in der Traditionslinie von Ajahn Chah. Seit 2002 empfängt sie auch Unterweisungen in der Traditionslinie von Dilgo Khyentse Rinpoche. Sie ist unserem Planeten als lebendes Wesen verpflichtet und lebt im ''Aloka Earth Room'' in San Rafael, Kalifornien.','Ayya Santacitta','true','true','photo.png');
+INSERT INTO "teachers" VALUES(553,'http://www.karunabv.org/',replace(replace('Ayya Santussika, in residence at Karuna Buddhist Vihara (Compassion Monastery), spent five years as an anagarika (eight-precept nun), then ordained as a samaneri (ten-precept nun) in 2010 and as a bhikkhuni (311 rules) in 2012 at Dharma Vijaya Buddhist Vihara in Los Angeles. \r\n\r\nAyya Santussika was born in Illinos in 1954 and grew up on a farm in Indiana. While being a single mother, she received BS and MS degrees in computer science and moved with her two children to the San Francisco Bay Area. She worked as a software designer and developer for fifteen years. Her search for deeper meaning and ways to be of service led her to train as an interfaith minister in a four-year seminary program that culminated in an Masters of Divinity degree and a brief period of practice as a minister before ordaining as a Buddhist nun. She is currently serving on the Board of Directors for Buddhist Global Relief.','\r',char(13)),'\n',char(10)),'Ayya Santussika','true','true','photo.png');
 INSERT INTO "centers" VALUES(3,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Forest Refuge');
 INSERT INTO "centers" VALUES(6,'http://www.dharma.org','IMS is a spiritual refuge for all who seek freedom from the suffering of mind and heart. We offer meditation retreats rooted in the Theravada Buddhist teachings of ethics, concentration and wisdom. These practices help develop awareness and compassion, giving rise to greater peace and happiness in the world.','Insight Meditation Society - Retreat Center');
+INSERT INTO "centers" VALUES(242,'https://www.buddhistinquiry.org/',replace(replace('The Barre Center for Buddhist Studies is a non-profit educational organization dedicated to exploring Buddhist thought and practice as a living tradition, faithful to its origins, yet adaptable to the current world. The center provides a bridge between study and practice, between scholarly understanding and meditative insight. It encourages engagement with the tradition in a spirit of genuine inquiry.\r\n\r\nThe study center offers a variety of courses, workshops, retreats, and self-study programs to further research, study, and practice. Our programming is rooted in the classical Buddhist tradition of the earliest teachings and practices, but calls for dialogue with other schools of Buddhism and with other academic fields. All courses support both silent meditation practice and conscious investigation of the teachings.','\r',char(13)),'\n',char(10)),'Barre Center for Buddhist Studies');
 INSERT INTO "downloaded_talks" VALUES(6);
 INSERT INTO "downloaded_talks" VALUES(9);
 INSERT INTO "downloaded_talks" VALUES(11);
@@ -82,3 +88,17 @@ INSERT INTO "talks" VALUES(46,'Opening Talk','',6,96,'/teacher/96/talk/46/200602
 INSERT INTO "talks" VALUES(47,'Wisdom & Compassion','',6,96,'/teacher/96/talk/47/20060208-Joseph_Goldstein-IMSRC-wisdom_compassion-47.mp3',59.366667,'2011-07-24 22:28:52','2006-02-08 00:00:00',3813,'');
 INSERT INTO "talk_stars" VALUES(46);
 INSERT INTO "centers" VALUES(1,'','','Unknown');
+
+INSERT INTO "talk_teachers" VALUES(1,153);
+INSERT INTO "talk_teachers" VALUES(2,174);
+INSERT INTO "talk_teachers" VALUES(4,3);
+INSERT INTO "talk_teachers" VALUES(5,46);
+INSERT INTO "talk_teachers" VALUES(6,96);
+INSERT INTO "talk_teachers" VALUES(8,193);
+INSERT INTO "talk_teachers" VALUES(9,4);
+INSERT INTO "talk_teachers" VALUES(11,79);
+INSERT INTO "talk_teachers" VALUES(46,96);
+INSERT INTO "talk_teachers" VALUES(47,96);
+INSERT INTO "talk_teachers" VALUES(78560,278);
+INSERT INTO "talk_teachers" VALUES(78560,553);
+INSERT INTO "talk_teachers" VALUES(78598,553);

@@ -106,7 +106,7 @@ public class PlaybackService extends MediaSessionService {
             if (item != null && player.getPlaybackState() != Player.STATE_IDLE) {
                 final int talkID = Integer.parseInt(item.mediaId);
                 final double progress = player.getCurrentPosition() / (1000 * 60.0);
-                SimpleDateFormat parser = new SimpleDateFormat(PlayTalkActivity.DATE_FORMAT);
+                SimpleDateFormat parser = new SimpleDateFormat(Talk.DATE_FORMAT);
                 final String now = parser.format(GregorianCalendar.getInstance().getTime());
                 DBManager.getInstance(this).setTalkProgress(talkID, now, progress);
             }
@@ -174,18 +174,8 @@ public class PlaybackService extends MediaSessionService {
 
                 // Look up talk from its ID
                 int talkID = Integer.parseInt(item.mediaId);
-                Cursor cursor = PlayTalkActivity.getCursor(
-                        DBManager.getInstance(PlaybackService.this), talkID);
-                if (cursor.moveToFirst()) {
-                    // convert DB result to an object
-                    talk = new Talk(cursor, getApplicationContext());
-                    talk.setId(talkID);
-                } else {
-                    Log.e(LOG_TAG, "Could not look up talk, id=" + talkID);
-                    cursor.close();
-                    continue;
-                }
-                cursor.close();
+                talk = Talk.lookup(DBManager.getInstance(PlaybackService.this),
+                        getApplicationContext(), talkID);
 
                 // Look up teacher photo
                 String photoFilename = talk.getPhotoFileName();

@@ -19,10 +19,21 @@
 
 package org.dharmaseed.android;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Iterator;
+
 /**
  * Created by bbethke on 2/19/16.
  */
 public class TalkFetcherTask extends DataFetcherTask {
+
+    private static final String LOG_TAG = "TalkFetcherTask";
 
     public TalkFetcherTask(DBManager dbManager, NavigationActivity navigationActivity) {
         super(dbManager, navigationActivity);
@@ -47,5 +58,30 @@ public class TalkFetcherTask extends DataFetcherTask {
 
         publishProgress();
         return null;
+    }
+
+    @Override
+    protected void extraTableProcessing(DBManager dbManager, JSONObject talks) throws JSONException {
+        Iterator<String> it = talks.keys();
+        while (it.hasNext()) {
+            JSONObject talk = talks.getJSONObject(it.next());
+            int talkID = talk.getInt("id");
+
+            // First, clear any existing entries for this talk, so that if any teachers are ever
+            // removed from a talk after the talk is already added, we'll pick up that change
+            // in the database.
+            dbManager.deleteID(talkID, DBManager.C.TalkTeachers.TABLE_NAME);
+
+            JSONArray teachersForTalk = talk.getJSONArray("teachers");
+            for (int i = 0; i < teachersForTalk.length(); i++) {
+                int teacherID = teachersForTalk.getInt(i);
+
+                SQLiteDatabase db = dbManager.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                values.put(DBManager.C.TalkTeachers.TALK_ID, talkID);
+                values.put(DBManager.C.TalkTeachers.TEACHER_ID, teacherID);
+                db.insert(DBManager.C.TalkTeachers.TABLE_NAME,null, values);
+            }
+        }
     }
 }

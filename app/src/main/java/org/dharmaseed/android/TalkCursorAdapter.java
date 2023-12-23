@@ -24,7 +24,7 @@ import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import androidx.core.content.ContextCompat;
-import android.text.format.DateUtils;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -32,19 +32,12 @@ import android.widget.TextView;
 import android.widget.ProgressBar;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
 public class TalkCursorAdapter extends StarCursorAdapter {
 
-    private SimpleDateFormat parser;
-
     public TalkCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
         super(dbManager, DBManager.C.TalkStars.TABLE_NAME, context, layout, c);
-        parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     }
 
     @Override
@@ -60,29 +53,24 @@ public class TalkCursorAdapter extends StarCursorAdapter {
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
 
+        final int talkID = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
+        final Talk talk = Talk.lookup(dbManager, context, talkID);
+
         // Set talk title and teacher name
-        TextView title=(TextView)view.findViewById(R.id.item_view_title);
-        TextView teacher=(TextView)view.findViewById(R.id.item_view_detail1);
-        TextView center=(TextView)view.findViewById(R.id.item_view_detail2);
-        title.setText(getString(cursor, DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE));
-        teacher.setText(getString(cursor, DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME));
-        center.setText(getString(cursor, DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Teacher.NAME));
+        final TextView title=(TextView)view.findViewById(R.id.item_view_title);
+        final TextView teacher=(TextView)view.findViewById(R.id.item_view_detail1);
+        final TextView center=(TextView)view.findViewById(R.id.item_view_detail2);
+        title.setText(talk.getTitle());
+        teacher.setText(talk.getAllTeacherNames());
+        center.setText(talk.getCenterName());
 
         // Set date
-        TextView date=(TextView)view.findViewById(R.id.item_view_detail3);
-        String recDate = getString(cursor, DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
-        try {
-            date.setText(DateFormat.getDateInstance().format(parser.parse(recDate)));
-        } catch(ParseException e) {
-            date.setText("");
-        }
+        final TextView date=(TextView)view.findViewById(R.id.item_view_detail3);
+        date.setText(talk.getDate());
 
         // Set the talk duration
         final TextView durationView = (TextView)view.findViewById(R.id.item_view_detail4);
-        double duration = cursor.getDouble(cursor.getColumnIndexOrThrow(
-                DBManager.getAlias(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DURATION_IN_MINUTES)));
-        String durationStr = DateUtils.formatElapsedTime((long)(duration*60));
-        durationView.setText(durationStr);
+        durationView.setText(talk.getFormattedDuration());
 
         // Set teacher photo
         String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(
@@ -97,12 +85,9 @@ public class TalkCursorAdapter extends StarCursorAdapter {
             photoView.setImageDrawable(icon);
         }
 
-        // get talk ID from cursor
-        final int talkID = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
-
         // Show talk progress
         ProgressBar talk_progress = (ProgressBar) view.findViewById(R.id.item_view_progress);
-        int duration_s = (int) (60*duration);
+        int duration_s = (int) (60*talk.getDurationInMinutes());
         int progress_s = (int) (60*dbManager.getTalkProgress(talkID));
         if (progress_s > 0) {
             talk_progress.setMax(duration_s);

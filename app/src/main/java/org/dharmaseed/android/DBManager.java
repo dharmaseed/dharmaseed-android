@@ -35,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -44,7 +45,7 @@ import java.util.List;
  */
 public class DBManager extends AbstractDBManager {
 
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
     private static final String DB_NAME = "Dharmaseed.db";
     private static final String LOG_TAG = "DBManager";
 
@@ -102,6 +103,7 @@ public class DBManager extends AbstractDBManager {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(C.Talk.CREATE_TABLE);
+        db.execSQL(C.TalkTeachers.CREATE_TABLE);
         db.execSQL(C.Teacher.CREATE_TABLE);
         db.execSQL(C.Center.CREATE_TABLE);
         db.execSQL(C.Retreat.CREATE_TABLE);
@@ -138,6 +140,10 @@ public class DBManager extends AbstractDBManager {
             db.execSQL(C.TalkHistory.CREATE_TABLE);
             Log.i(LOG_TAG,"Upgrade: Created talk history table");
         }
+        if (oldVersion <= 3 && newVersion > 3) {
+            db.execSQL(C.TalkTeachers.CREATE_TABLE);
+            Log.i(LOG_TAG,"Upgrade: Created talk teachers table");
+        }
 
         // Optionally import updated tables from the assets DB.
         // This should be the last step in onUpgrade, to ensure that we don't encounter any problem
@@ -155,6 +161,7 @@ public class DBManager extends AbstractDBManager {
                 db.execSQL("ATTACH DATABASE '" + dbUpgradePath + "' AS upgradeDb");
                 String[][] t_info = {
                         {C.Talk.TABLE_NAME, C.Talk.CREATE_TABLE},
+                        {C.TalkTeachers.TABLE_NAME, C.TalkTeachers.CREATE_TABLE},
                         {C.Teacher.TABLE_NAME, C.Teacher.CREATE_TABLE},
                         {C.Center.TABLE_NAME, C.Center.CREATE_TABLE},
                         {C.Edition.TABLE_NAME, C.Edition.CREATE_TABLE}
@@ -244,6 +251,12 @@ public class DBManager extends AbstractDBManager {
             SQLiteDatabase db = getWritableDatabase();
             db.delete(tableName, "_id IN " + idsToDelete, null);
         }
+    }
+
+    public void deleteID(Integer id, String tableName) {
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(id);
+        deleteIDs(ids, tableName);
     }
 
     /**
