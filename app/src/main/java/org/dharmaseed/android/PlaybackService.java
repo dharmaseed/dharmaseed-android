@@ -30,10 +30,14 @@ import androidx.media3.session.CommandButton;
 import androidx.media3.session.DefaultMediaNotificationProvider;
 import androidx.media3.session.MediaNotification;
 import androidx.media3.session.MediaSession;
+import androidx.media3.session.MediaSession.ControllerInfo;
+import androidx.media3.session.MediaSession.MediaItemsWithStartPosition;
 import androidx.media3.session.MediaSessionService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -43,7 +47,7 @@ import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Timer;
-import java.util.Vector;
+import java.util.ArrayList;
 
 public class PlaybackService extends MediaSessionService {
 
@@ -164,60 +168,88 @@ public class PlaybackService extends MediaSessionService {
 
     private class SessionCallback implements MediaSession.Callback {
 
+        protected MediaItem resolveMediaItem(MediaItem item)
+        {
+            // Look up talk from its ID
+            int talkID = Integer.parseInt(item.mediaId);
+            Talk talk = Talk.lookup(DBManager.getInstance(PlaybackService.this),
+                    getApplicationContext(), talkID);
+
+            // Look up teacher photo
+            String photoFilename = talk.getPhotoFileName();
+            Bitmap photo;
+            try {
+                FileInputStream photoStream = openFileInput(photoFilename);
+                photo = BitmapFactory.decodeStream(photoStream);
+                photoStream.close();
+            } catch (IOException e) {
+                photo = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
+            }
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            byte[] byteArray = stream.toByteArray();
+
+            // Set media session metadata
+            MediaMetadata mediaMetadata = new MediaMetadata.Builder()
+                    .setArtist(talk.getTeacherName())
+                    .setTitle(talk.getTitle())
+                    .setAlbumTitle(talk.getCenterName())
+                    .setDisplayTitle(talk.getTitle())
+                    .setSubtitle(talk.getTeacherName())
+                    .setArtworkData(byteArray, MediaMetadata.PICTURE_TYPE_ARTIST_PERFORMER)
+                    .build();
+
+            // Look up the URI of the media to play
+            String mediaUri;
+            if (talk.isDownloaded()) {
+                mediaUri = "file://" + talk.getPath();
+            } else {
+                mediaUri = talk.getAudioUrl();
+            }
+
+            return item.buildUpon()
+                    .setUri(mediaUri)
+                    .setMediaMetadata(mediaMetadata)
+                    .build();
+        }
+
         @Override
         public ListenableFuture<List<MediaItem>> onAddMediaItems(MediaSession mediaSession, MediaSession.ControllerInfo controller, List<MediaItem> mediaItems) {
 
-            Talk talk;
-            Vector<MediaItem> resolvedItems = new Vector<>();
+            ArrayList<MediaItem> resolvedItems = new ArrayList<>();
 
-            for (MediaItem item : mediaItems) {
-
-                // Look up talk from its ID
-                int talkID = Integer.parseInt(item.mediaId);
-                talk = Talk.lookup(DBManager.getInstance(PlaybackService.this),
-                        getApplicationContext(), talkID);
-
-                // Look up teacher photo
-                String photoFilename = talk.getPhotoFileName();
-                Bitmap photo;
-                try {
-                    FileInputStream photoStream = openFileInput(photoFilename);
-                    photo = BitmapFactory.decodeStream(photoStream);
-                    photoStream.close();
-                } catch (IOException e) {
-                    photo = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
-                }
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                byte[] byteArray = stream.toByteArray();
-
-                // Set media session metadata
-                MediaMetadata mediaMetadata = new MediaMetadata.Builder()
-                        .setArtist(talk.getTeacherName())
-                        .setTitle(talk.getTitle())
-                        .setAlbumTitle(talk.getCenterName())
-                        .setDisplayTitle(talk.getTitle())
-                        .setSubtitle(talk.getTeacherName())
-                        .setArtworkData(byteArray, MediaMetadata.PICTURE_TYPE_ARTIST_PERFORMER)
-                        .build();
-
-                // Look up the URI of the media to play
-                String mediaUri;
-                if (talk.isDownloaded()) {
-                    mediaUri = "file://" + talk.getPath();
-                } else {
-                    mediaUri = talk.getAudioUrl();
-                }
-
-                resolvedItems.add(item.buildUpon()
-                        .setUri(mediaUri)
-                        .setMediaMetadata(mediaMetadata)
-                        .build());
-            }
+            for (MediaItem item : mediaItems)
+                resolvedItems.add(resolveMediaItem(item));
 
             return immediateFuture(resolvedItems);
         }
 
+        @OptIn(markerClass = UnstableApi.class)
+        protected MediaItemsWithStartPosition restorePlaylist()
+        {
+            DBManager dbManager = DBManager.getInstance(PlaybackService.this);
+            int talkId = dbManager.getLastTalkId();
+            String talkIDString = Integer.toString(talkId);
+            MediaItem item = new MediaItem.Builder().setMediaId(talkIDString).build();
+            List<MediaItem> items = new ArrayList<>();
+            items.add(resolveMediaItem(item));
+            int startPositionMs = (int)(60*1000*dbManager.getTalkProgress(talkId));
+            return new MediaItemsWithStartPosition(items, 0, startPositionMs);
+        }
+
+        @OptIn(markerClass = UnstableApi.class)
+        @Override
+        public ListenableFuture<MediaItemsWithStartPosition> onPlaybackResumption(
+                MediaSession mediaSession,
+                ControllerInfo controller
+        ) {
+            SettableFuture<MediaItemsWithStartPosition> settableFuture = SettableFuture.create();
+            settableFuture.addListener(() -> {
+                MediaItemsWithStartPosition resumptionPlaylist = restorePlaylist();
+                settableFuture.set(resumptionPlaylist);
+            }, MoreExecutors.directExecutor());
+            return settableFuture;
+        }
     }
 
 
