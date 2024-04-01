@@ -26,6 +26,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.CancellationException;
@@ -83,18 +86,25 @@ public class MiniPlayerFragment extends Fragment {
         SessionToken sessionToken =
                 new SessionToken(ctx, new ComponentName(ctx, PlaybackService.class));
         controllerFuture = new MediaController.Builder(ctx, sessionToken).buildAsync();
-        controllerFuture.addListener(() -> {
-            try {
-                mediaController = controllerFuture.get();
-                mediaController.addListener(playerListener);
-                playerListener.onMediaMetadataChanged(mediaController.getMediaMetadata());
-                playerListener.onPlaybackStateChanged(mediaController.getPlaybackState());
-                playerListener.onIsPlayingChanged(mediaController.isPlaying());
-            } catch (InterruptedException | ExecutionException | CancellationException e) {
-                Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
-            }
-        }, ContextCompat.getMainExecutor(ctx));
-
+        Futures.addCallback(
+                controllerFuture,
+                new FutureCallback<MediaController>() {
+                    public void onSuccess(MediaController controller) {
+                        controller.addListener(playerListener);
+                        int playbackState = controller.getPlaybackState();
+                        mediaController = controller;
+                        playerListener.onPlaybackStateChanged(playbackState);
+                        if (playbackState != Player.STATE_IDLE) {
+                            playerListener.onMediaMetadataChanged(controller.getMediaMetadata());
+                            playerListener.onIsPlayingChanged(controller.isPlaying());
+                        }
+                    }
+                    public void onFailure(Throwable t) {
+                        Log.e(LOG_TAG, "Could not create media controller. " + t);
+                    }
+                },
+                MoreExecutors.directExecutor()
+        );
     }
 
     @Override

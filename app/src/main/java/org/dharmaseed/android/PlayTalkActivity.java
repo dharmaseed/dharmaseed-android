@@ -51,7 +51,10 @@ import androidx.media3.common.Player;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -187,17 +190,21 @@ public class PlayTalkActivity extends AppCompatActivity
         SessionToken sessionToken =
                 new SessionToken(this, new ComponentName(this, PlaybackService.class));
         controllerFuture = new MediaController.Builder(this, sessionToken).buildAsync();
-        controllerFuture.addListener(() -> {
-                try {
-                    mediaController = controllerFuture.get();
-                    mediaController.addListener(playerListener);
-                    playerListener.onIsPlayingChanged(mediaController.isPlaying());
-                    updatePlayerUI();
-                } catch (InterruptedException | ExecutionException | CancellationException e) {
-                    Log.e(LOG_TAG, "Could not create media controller. " + e.toString());
-                }
-            }, ContextCompat.getMainExecutor(this));
-
+        Futures.addCallback(
+                controllerFuture,
+                new FutureCallback<MediaController>() {
+                    public void onSuccess(MediaController controller) {
+                        controller.addListener(playerListener);
+                        mediaController = controller;
+                        playerListener.onIsPlayingChanged(controller.isPlaying());
+                        updatePlayerUI();
+                    }
+                    public void onFailure(Throwable t) {
+                        Log.e(LOG_TAG, "Could not create media controller. " + t);
+                    }
+                },
+                MoreExecutors.directExecutor()
+        );
     }
 
     public void updatePlayerUI()
