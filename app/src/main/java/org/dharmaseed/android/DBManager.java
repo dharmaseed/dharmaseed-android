@@ -35,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.IllegalStateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -347,6 +348,26 @@ public class DBManager extends AbstractDBManager {
         double progress = cursor.getDouble(0);
         cursor.close();
         return progress;
+    }
+
+    public int getLastTalkId() throws IllegalStateException
+    {
+        SQLiteDatabase db = getReadableDatabase();
+        String query = String.format("SELECT %s FROM %s WHERE %s = (SELECT MIN(%s) FROM %s);",
+                C.TalkHistory.ID,
+                C.TalkHistory.TABLE_NAME,
+                C.TalkHistory.PROGRESS_IN_MINUTES,
+                C.TalkHistory.PROGRESS_IN_MINUTES,
+                C.TalkHistory.TABLE_NAME);
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.getCount() <= 0) {
+            cursor.close();
+            throw new IllegalStateException("No talks in TalkHistory DB Table!");
+        }
+        cursor.moveToFirst();
+        int talkId = cursor.getInt(0);
+        cursor.close();
+        return talkId;
     }
 
     public void setTalkProgress(int id, String date_time, double progress) {
