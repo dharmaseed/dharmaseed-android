@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="@dimen/mini_player_height"
     android:orientation="horizontal"
+    android:visibility="gone"
     tools:context=".MiniPlayerFragment">
 
     <ImageView
