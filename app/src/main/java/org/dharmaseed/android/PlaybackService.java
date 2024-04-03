@@ -125,6 +125,16 @@ public class PlaybackService extends MediaSessionService {
         mediaSession = null;
     }
 
+    @Override
+    public void onTaskRemoved(@Nullable Intent rootIntent) {
+        Player player = mediaSession.getPlayer();
+        if (player.getPlayWhenReady()) {
+            // Make sure the service is not in foreground.
+            player.pause();
+        }
+        stopSelf();
+    }
+
     @Nullable
     @Override
     public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
