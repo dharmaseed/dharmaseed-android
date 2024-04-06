@@ -5,6 +5,7 @@ import static com.google.common.util.concurrent.Futures.immediateFuture;
 
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -32,7 +33,7 @@ import androidx.media3.session.MediaNotification;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSession.ControllerInfo;
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition;
-import androidx.media3.session.MediaSessionService;
+import androidx.media3.session.MediaLibraryService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -49,10 +50,10 @@ import java.util.List;
 import java.util.Timer;
 import java.util.ArrayList;
 
-public class PlaybackService extends MediaSessionService {
+public class PlaybackService extends MediaLibraryService {
 
     private static final String LOG_TAG = "PlaybackService";
-    private MediaSession mediaSession;
+    private MediaLibrarySession mediaSession;
     private Runnable updateTalkProgressTask;
     private Handler handler;
 
@@ -84,8 +85,7 @@ public class PlaybackService extends MediaSessionService {
                 .build();
 
         // Create a media session
-        mediaSession = new MediaSession.Builder(this, mediaPlayer)
-                .setCallback(new SessionCallback())
+        mediaSession = new MediaLibrarySession.Builder(this, mediaPlayer, new SessionCallback())
                 .build();
 
         // Set a custom media notification
@@ -129,6 +129,7 @@ public class PlaybackService extends MediaSessionService {
         mediaSession = null;
     }
 
+    /*
     @Override
     public void onTaskRemoved(@Nullable Intent rootIntent) {
         Player player = mediaSession.getPlayer();
@@ -138,10 +139,11 @@ public class PlaybackService extends MediaSessionService {
         }
         stopSelf();
     }
+    */
 
     @Nullable
     @Override
-    public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
+    public MediaLibrarySession onGetSession(MediaSession.ControllerInfo controllerInfo) {
         return mediaSession;
     }
 
@@ -176,7 +178,7 @@ public class PlaybackService extends MediaSessionService {
         }
     }
 
-    private class SessionCallback implements MediaSession.Callback {
+    private class SessionCallback implements MediaLibrarySession.Callback {
 
         protected MediaItem resolveMediaItem(MediaItem item)
         {
@@ -253,8 +255,10 @@ public class PlaybackService extends MediaSessionService {
                 MediaSession mediaSession,
                 ControllerInfo controller
         ) {
+            Log.d(LOG_TAG, "entered onPlaybackResumption");
             SettableFuture<MediaItemsWithStartPosition> settableFuture = SettableFuture.create();
             settableFuture.addListener(() -> {
+                Log.d(LOG_TAG, "creating resumption playlist");
                 MediaItemsWithStartPosition resumptionPlaylist = restorePlaylist();
                 settableFuture.set(resumptionPlaylist);
             }, MoreExecutors.directExecutor());
