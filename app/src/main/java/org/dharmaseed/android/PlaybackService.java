@@ -127,6 +127,8 @@ public class PlaybackService extends MediaSessionService {
 
     @Override
     public void onTaskRemoved(@Nullable Intent rootIntent) {
+        // Stop the MediaSessionService when the app is closed in the background
+        // (work around broken notification issue)
         Player player = mediaSession.getPlayer();
         if (player.getPlayWhenReady()) {
             // Make sure the service is not in foreground.
