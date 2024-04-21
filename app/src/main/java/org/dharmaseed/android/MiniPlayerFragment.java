@@ -77,11 +77,12 @@ public class MiniPlayerFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        Log.d(LOG_TAG, "onViewCreated " + this);
+    public void onResume() {
+        super.onResume();
+        Log.d(LOG_TAG, "onResume " + this);
 
         // Create the media controller
+        mediaController = null;
         Context ctx = getContext();
         SessionToken sessionToken =
                 new SessionToken(ctx, new ComponentName(ctx, PlaybackService.class));
@@ -108,10 +109,10 @@ public class MiniPlayerFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        Log.d(LOG_TAG, "onDestroyView " + this);
-
+    public void onPause() {
+        super.onPause();
+        Log.d(LOG_TAG, "onPause " + this);
+        mediaController = null;
         MediaController.releaseFuture(controllerFuture);
     }
 
