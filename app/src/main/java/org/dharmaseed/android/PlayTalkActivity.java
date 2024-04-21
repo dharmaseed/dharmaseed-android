@@ -189,6 +189,7 @@ public class PlayTalkActivity extends AppCompatActivity
         // Create a MediaController to interact with the PlaybackService
         SessionToken sessionToken =
                 new SessionToken(this, new ComponentName(this, PlaybackService.class));
+        mediaController = null;
         controllerFuture = new MediaController.Builder(this, sessionToken).buildAsync();
         Futures.addCallback(
                 controllerFuture,
@@ -267,6 +268,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void onPause() {
         super.onPause();
+        mediaController = null;
         MediaController.releaseFuture(controllerFuture);
         Log.i(LOG_TAG, "stopping timers");
         timer.cancel();
