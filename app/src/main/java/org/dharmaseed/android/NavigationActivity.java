@@ -102,7 +102,7 @@ public class NavigationActivity extends AppCompatActivity
     private static final String LOG_TAG = "NavigationActivity";
 
     boolean starFilterOn;
-    private boolean downloadFilterOn;
+    private boolean downloadFilterOn, historyFilterOn;
 
     private TalkRepository talkRepository;
     private TeacherRepository teacherRepository;
@@ -200,9 +200,10 @@ public class NavigationActivity extends AppCompatActivity
 
         // Initialize UI state
         starFilterOn = false;
+        downloadFilterOn = false;
+        historyFilterOn = false;
         searchCluster.setVisibility(View.GONE);
         header.setVisibility(View.GONE);
-        downloadFilterOn = false;
         setViewMode(VIEW_MODE_TALKS);
         setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
@@ -331,7 +332,10 @@ public class NavigationActivity extends AppCompatActivity
 
     public void displayTalksByTeacher(long id)
     {
-        Cursor cursor = talkRepository.getTalksByTeacher(getSearchTerms(), id, starFilterOn, downloadFilterOn);
+        Cursor cursor = talkRepository.getTalksByTeacher(
+                getSearchTerms(), id,
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -364,7 +368,10 @@ public class NavigationActivity extends AppCompatActivity
 
     private void displayTalksByCenter(long id)
     {
-        Cursor cursor = talkRepository.getTalksByCenter(getSearchTerms(), id, starFilterOn, downloadFilterOn);
+        Cursor cursor = talkRepository.getTalksByCenter(
+                getSearchTerms(), id,
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -439,6 +446,7 @@ public class NavigationActivity extends AppCompatActivity
         this.menu = menu;
         setStarFilterButton();
         setDownloadFilterButton();
+        setHistoryFilterButton();
         return true;
     }
 
@@ -487,6 +495,13 @@ public class NavigationActivity extends AppCompatActivity
             case R.id.action_toggle_downloaded:
                 downloadFilterOn = ! downloadFilterOn;
                 setDownloadFilterButton();
+                updateDisplayedData();
+                resetListToTop();
+                return true;
+
+            case R.id.action_toggle_history:
+                historyFilterOn = ! historyFilterOn;
+                setHistoryFilterButton();
                 updateDisplayedData();
                 resetListToTop();
                 return true;
@@ -550,6 +565,16 @@ public class NavigationActivity extends AppCompatActivity
             dlButton.setIcon(ContextCompat.getDrawable(this, icon));
         }
     }
+
+    public void setHistoryFilterButton() {
+        int icon  = historyFilterOn ?
+                R.drawable.history_on : R.drawable.history_off;
+        if(menu != null) {
+            MenuItem dlButton = menu.findItem(R.id.action_toggle_history);
+            dlButton.setIcon(ContextCompat.getDrawable(this, icon));
+        }
+    }
+
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -645,7 +670,10 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     void updateDisplayedTeachers() {
-        Cursor cursor = teacherRepository.getTeachers(getSearchTerms(), starFilterOn);
+        Cursor cursor = teacherRepository.getTeachers(
+                getSearchTerms(),
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -660,7 +688,10 @@ public class NavigationActivity extends AppCompatActivity
 
     void updateDisplayedCenters()
     {
-        Cursor cursor = centerRepository.getCenters(getSearchTerms(), starFilterOn);
+        Cursor cursor = centerRepository.getCenters(
+                getSearchTerms(),
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -678,7 +709,10 @@ public class NavigationActivity extends AppCompatActivity
      */
     private void updateDisplayedTalks()
     {
-        Cursor cursor = talkRepository.getTalkAdapterData(getSearchTerms(), starFilterOn, downloadFilterOn);
+        Cursor cursor = talkRepository.getTalkAdapterData(
+                getSearchTerms(),
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
