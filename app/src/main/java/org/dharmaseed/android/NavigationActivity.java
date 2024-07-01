@@ -115,6 +115,8 @@ public class NavigationActivity extends AppCompatActivity
         outState.putString("ExtraSearchTerms", extraSearchTerms);
         outState.putBoolean("HeaderVisible", header.getVisibility() == View.VISIBLE);
         outState.putBoolean("StarFilterOn", starFilterOn);
+        outState.putBoolean("DownloadFilterOn", downloadFilterOn);
+        outState.putBoolean("HistoryFilterOn", historyFilterOn);
         outState.putInt("ViewMode", viewMode);
         outState.putInt("DetailMode", detailMode);
         outState.putLong("DetailId", detailId);
@@ -129,13 +131,19 @@ public class NavigationActivity extends AppCompatActivity
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
         searchCluster.setVisibility(savedInstanceState.getBoolean("SearchClusterVisible") ? View.VISIBLE : View.GONE);
         extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
         header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
         setViewMode(savedInstanceState.getInt("ViewMode"));
         setDetailMode(savedInstanceState.getInt("DetailMode"), savedInstanceState.getLong("DetailId"));
         savedListPosition = savedInstanceState.getInt("ListViewPosition");
+
+        starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
+        setStarFilterButton();
+        downloadFilterOn = savedInstanceState.getBoolean("DownloadFilterOn");
+        setDownloadFilterButton();
+        historyFilterOn = savedInstanceState.getBoolean("HistoryFilterOn");
+        setHistoryFilterButton();
     }
 
     @Override
