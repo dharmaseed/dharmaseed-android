@@ -28,7 +28,6 @@ public class Talk {
     private String teacherName;
     private ArrayList<String> allTeacherNames;
     private String centerName;
-    private String photoFileName;
 
     private int id;
     private int venueId;
@@ -69,7 +68,6 @@ public class Talk {
             talk.teacherId = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID));
             talk.teacherName = cursor.getString(cursor.getColumnIndexOrThrow("teacher_name")).trim();
             talk.centerName = cursor.getString(cursor.getColumnIndexOrThrow("center_name")).trim();
-            talk.photoFileName = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
             talk.retreatId = cursor.getColumnIndexOrThrow(DBManager.C.Talk.RETREAT_ID);
             talk.durationInMinutes = cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES));
 
@@ -218,10 +216,6 @@ public class Talk {
         return centerName;
     }
 
-    public String getPhotoFileName() {
-        return photoFileName;
-    }
-
     public int getId() {
         return id;
     }
@@ -247,7 +241,7 @@ public class Talk {
      * @return whether the talk has been downloaded
      */
     public boolean isDownloaded(DBManager dbManager) {
-        if (!TalkManager.getFile(this).exists())
+        if (!FileManager.getFile(this).exists())
             return false;
 
         if (dbManager == null)
@@ -273,6 +267,6 @@ public class Talk {
     }
 
     public String getPath() {
-        return TalkManager.getFile(this).getPath();
+        return FileManager.getFile(this).getPath();
     }
 }
