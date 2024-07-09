@@ -211,20 +211,19 @@ public class TalkRepository extends Repository {
     public void removeOldDownloads()
     {
         File downloadsDir = TalkManager.getDir(dbManager.getContext());
-        Log.i(LOG_TAG, "HI " + downloadsDir.toString());
 
         ArrayList<String> columns = new ArrayList<String>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
-        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH);
-
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
         Cursor downloaded = getTalks(columns, null, false, true, false);
 
         while (downloaded.moveToNext())
         {
             int id = downloaded.getInt(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID)));
-            File file = new File(downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH))).trim());
+            String title = downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
+                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE)));
+            File file = TalkManager.getTalkFile(dbManager.getContext(), id, title);
 
             String directory = file.getAbsoluteFile().getParent();
             String downloadDirectory = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
@@ -236,7 +235,7 @@ public class TalkRepository extends Repository {
                 try {
                     File copyTarget = new File(downloadsDir.toString() + "/" + file.getName());
                     copy(file, copyTarget);
-                    dbManager.addDownload(id, copyTarget.toString());
+                    dbManager.addDownload(id);
                     Log.i(LOG_TAG, "Successfully moved old talk to " + copyTarget.toString());
                     file.delete();
                 } catch (IOException e) {
