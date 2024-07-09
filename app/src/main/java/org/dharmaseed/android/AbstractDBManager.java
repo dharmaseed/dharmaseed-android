@@ -79,7 +79,7 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
                     + DURATION_IN_MINUTES + " REAL,"
                     + UPDATE_DATE + " TEXT,"
                     + RECORDING_DATE + " TEXT,"
-                    + RETREAT_ID + " INTEGER,"
+                    + RETREAT_ID + " INTEGER"
                     + ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
         }
