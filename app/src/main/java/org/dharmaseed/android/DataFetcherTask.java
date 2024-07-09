@@ -50,7 +50,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     OkHttpClient httpClient;
     NavigationActivity navigationActivity;
 
-    private static final String LOG_TAG = "DBManager";
+    private static final String LOG_TAG = "DataFetcher";
 
     public DataFetcherTask(DBManager dbManager, NavigationActivity navigationActivity) {
         this.dbManager = dbManager;
@@ -59,9 +59,8 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
     }
 
     protected void updateTable(String tableName, String tableID, String apiUrl, String[] itemKeys) {
-
         String edition = dbManager.getEdition(tableName);
-        Log.d(LOG_TAG, "We have "+tableName+" edition: "+edition);
+        Log.d(LOG_TAG, "current "+tableName+" edition: "+edition);
 
         // Get the IDs (but no details) of the items we don't yet have
         MultipartBody.Builder builder = new MultipartBody.Builder()
@@ -93,7 +92,7 @@ abstract class DataFetcherTask extends AsyncTask<Void, Void, Void> {
 
                     dbManager.deleteIDs(idsToDelete, tableName);
                 }
-                Log.d(LOG_TAG, "Retrieved "+tableName+" edition "+newEdition+". New items: "+items.length());
+                Log.d(LOG_TAG, "retrieved "+tableName+" edition "+newEdition+". New items: "+items.length());
 
                 // Fetch new items, starting with the latest ones
                 ArrayList<Integer> itemIDs = new ArrayList<>();
