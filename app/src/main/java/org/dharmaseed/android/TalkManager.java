@@ -28,6 +28,7 @@ public abstract class TalkManager {
 
     public TalkManager() {}
 
+
     /**
      * Writes a talk to external storage
      * @param talk the talk to download
@@ -41,7 +42,7 @@ public abstract class TalkManager {
         if (dir == null)
             return FAILURE;
 
-        String talkName = FILE_PREFIX + talk.getId() + "_" + talk.getTitle() + ".mp3";
+        File talkFile = getFile(talk);
         long size = 0;
 
         try {
@@ -63,10 +64,8 @@ public abstract class TalkManager {
                 return FAILURE;
             }
 
-            String talkPath = dir.getPath() + "/" + talkName;
-
             InputStream inputStream = connection.getInputStream();
-            FileOutputStream fileOutputStream = new FileOutputStream(talkPath);
+            FileOutputStream fileOutputStream = new FileOutputStream(talkFile);
 
             int len;
             byte[] buffer = new byte[4096];
@@ -80,8 +79,7 @@ public abstract class TalkManager {
             fileOutputStream.close();
             inputStream.close();
 
-            talk.setPath(talkPath);
-            Log.i(LOG_TAG, "Downloaded talk to " + talkPath);
+            Log.i(LOG_TAG, "Downloaded talk to " + talkFile.getPath());
 
             return size;
         } catch (MalformedURLException murlex) {
@@ -112,6 +110,24 @@ public abstract class TalkManager {
         return file;
     }
 
+
+    public static File getTalkFile(Context context, int talkId, String talkTitle)
+    {
+        return new File(
+                getDir(context),
+                FILE_PREFIX + talkId + "_" + talkTitle + ".mp3"
+        );
+    }
+
+    /**
+     * @return the directory where we store talks
+     */
+    public static File getFile(Talk talk) {
+        return getTalkFile(talk.getContext(),talk.getId(), talk.getTitle());
+    }
+
+
+
     /**
      * Make sure we can write to external storage
      * @return if external storage is writable
@@ -133,12 +149,10 @@ public abstract class TalkManager {
      */
     public static boolean delete(Talk talk) {
         boolean result = true;
-        File file = new File(talk.getPath());
+        File file = getFile(talk);
 
         if (file.exists())
             result = file.delete();
-
-         talk.setPath("");
 
         // if the file somehow didn't exist then we'll just say it was deleted anyway
         return result;
