@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.Thread;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,13 @@ public class TalkRepository extends Repository {
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DURATION_IN_MINUTES);
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
 
-        removeOldDownloads();
+        Thread cleanup = new Thread() {
+            public void run() {
+                removeOldDownloads();
+            }
+        };
+        cleanup.setPriority(Thread.MIN_PRIORITY);
+        cleanup.start();
     }
 
     /**
@@ -211,6 +218,7 @@ public class TalkRepository extends Repository {
     public void removeOldDownloads()
     {
         File downloadsDir = TalkManager.getDir(dbManager.getContext());
+        Log.d(LOG_TAG, "scanning for talks in the outdated storage locations");
 
         ArrayList<String> columns = new ArrayList<String>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
