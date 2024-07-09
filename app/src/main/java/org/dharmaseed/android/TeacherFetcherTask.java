@@ -22,10 +22,13 @@ package org.dharmaseed.android;
 import android.content.Context;
 import android.database.Cursor;
 import android.util.Log;
+import android.graphics.Bitmap;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
+import java.util.Iterator;
 
 import okhttp3.Request;
 import okhttp3.Response;
@@ -36,11 +39,38 @@ import okhttp3.ResponseBody;
  */
 public class TeacherFetcherTask extends DataFetcherTask {
 
+    private static final String LOG_TAG = "TeacherFetcherTask";
+
     Context context;
 
     public TeacherFetcherTask(DBManager dbManager, NavigationActivity navigationActivity, Context context) {
         super(dbManager, navigationActivity);
         this.context = context;
+    }
+
+    public boolean fetchTeacherPhoto(
+            Context context, int teacherID, String teacherPhoto,
+            Request.Builder requestBuilder
+    ) {
+        boolean success = true;
+        Log.i(LOG_TAG, "Fetching teacher photo " + teacherID);
+        Request request = requestBuilder.url(
+                "https://www.dharmaseed.org/api/1/teachers/" +
+                teacherID + "/" + teacherPhoto + "/?maxW=120&maxH=180"
+        ).build();
+        try {
+            Response response = httpClient.newCall(request).execute();
+            if (response.isSuccessful()) {
+                ResponseBody body = response.body();
+                FileManager.setPhoto(context, teacherID, body.bytes());
+                body.close();
+            } else {
+                Log.e("teacherFetcherTask", "Error retrieving teacher photo: code " + response.code());
+            }
+        } catch (IOException e2) {
+            Log.e("teacherFetcherTask", "Error retrieving or writing teacher photo: " + e2);
+        }
+        return success;
     }
 
     @Override
@@ -68,39 +98,37 @@ public class TeacherFetcherTask extends DataFetcherTask {
         Cursor cursor = dbManager.getReadableDatabase().rawQuery(query, null);
 
         Request.Builder requestBuilder = new Request.Builder();
-
         while(cursor.moveToNext()) {
             String photo = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.PHOTO));
             int id    = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID));
-            String filename = DBManager.getTeacherPhotoFilename(id);
-            if(!photo.equals("")) {
-                try {
-                    FileInputStream file = context.openFileInput(filename);
-                    file.close();
-                } catch (IOException e1) {
-                    // Only need to fetch the photo if we don't already have it
-                    Log.i("teacherFetcherTask", "Fetching teacher photo " + id);
-                    Request request = requestBuilder.url("https://www.dharmaseed.org/api/1/teachers/" + id + "/" + photo + "/?maxW=120&maxH=180").build();
-                    try {
-                        Response response = httpClient.newCall(request).execute();
-                        if (response.isSuccessful()) {
-                            ResponseBody body = response.body();
-                            FileOutputStream outputStream = context.openFileOutput(filename, Context.MODE_PRIVATE);
-                            outputStream.write(body.bytes());
-                            body.close();
-                            outputStream.close();
-                        } else {
-                            Log.e("teacherFetcherTask", "Error retrieving teacher photo: code " + response.code());
-                        }
-                    } catch (IOException e2) {
-                        Log.e("teacherFetcherTask", "Error retrieving or writing teacher photo: " + e2);
-                    }
+            if(!photo.equals("") && FileManager.findPhoto(context, id, false) == null) {
+                // Only need to fetch the photo if we don't already have it
+                fetchTeacherPhoto(context, id, photo, requestBuilder);
+            } else {
+                Bitmap photo1 = FileManager.getPhoto(context, id);
+                if (photo1 != null && photo1.sameAs(FileManager.getAssetPhoto(context, id))) {
+                    FileManager.deletePhoto(context, id);
+                    Log.i(LOG_TAG, "Deleting redundant teacher photo " + id);
                 }
             }
         }
 
-
         publishProgress();
         return null;
+    }
+
+    @Override
+    protected void extraTableProcessing(DBManager dbManager, JSONObject items) throws JSONException {
+        // always update teacher photos for newly added teacher entries just in case the teacher
+        // entry is actually being updated (deleted and then re-added) with a new photo
+        Request.Builder requestBuilder = new Request.Builder();
+        Iterator<String> it = items.keys();
+        Log.i(LOG_TAG, "updating " + items.length() + "teacher photos");
+        while (it.hasNext()) {
+            String itemID = it.next();
+            JSONObject item = items.getJSONObject(itemID);
+            String photo = item.getString(DBManager.C.Teacher.PHOTO);
+            fetchTeacherPhoto(context, Integer.parseInt(itemID), photo, requestBuilder);
+        }
     }
 }
