@@ -3,30 +3,37 @@ package org.dharmaseed.android;
 import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileInputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import okhttp3.ResponseBody;
 
 /**
  * Manages downloaded talks
  * @author jakewilson
  */
-public abstract class TalkManager {
+public abstract class FileManager {
 
     // folder where talks are stored on the device
-    public static final String DIR_NAME = "downloads";
-    public static final String FILE_PREFIX = "ds_";
+    public static final String TALK_DIR_NAME = "downloads";
+    public static final String TALK_FILE_PREFIX = "ds_";
 
-    private static final String LOG_TAG = "TalkManager";
+    public static final String TEACHER_PHOTO_ASSET_DIR = "teacher_photos";
+
+    private static final String LOG_TAG = "FileManager";
 
     public static final Long FAILURE = -1l;
 
-    public TalkManager() {}
+    public FileManager() {}
 
 
     /**
@@ -99,7 +106,7 @@ public abstract class TalkManager {
     public static File getDir(Context context) {
         File file = new File(
                 context.getFilesDir(),
-                DIR_NAME
+                TALK_DIR_NAME
         );
 
         if (!file.exists() && !file.mkdirs()) {
@@ -115,7 +122,7 @@ public abstract class TalkManager {
     {
         return new File(
                 getDir(context),
-                FILE_PREFIX + talkId + "_" + talkTitle + ".mp3"
+                TALK_FILE_PREFIX + talkId + "_" + talkTitle + ".mp3"
         );
     }
 
@@ -125,8 +132,6 @@ public abstract class TalkManager {
     public static File getFile(Talk talk) {
         return getTalkFile(talk.getContext(),talk.getId(), talk.getTitle());
     }
-
-
 
     /**
      * Make sure we can write to external storage
@@ -158,4 +163,70 @@ public abstract class TalkManager {
         return result;
     }
 
+    protected static String getPhotoFileName(int teacherID)
+    {
+        return "teacher-"+teacherID+".png";
+    }
+
+    protected interface StreamFactory {
+        InputStream run() throws IOException;
+    }
+
+    protected static Bitmap getPhoto(StreamFactory f, int teacherID) {
+        Bitmap photo;
+        try {
+            InputStream input = f.run();
+            photo = BitmapFactory.decodeStream(input);
+            input.close();
+        } catch (java.io.IOException e) {
+            photo = null;
+        }
+        return photo;
+    }
+
+    public static Bitmap getPhoto(Context context, int teacherID) {
+        File photoFile = new File(context.getFilesDir(), getPhotoFileName(teacherID));
+        return getPhoto(() -> new FileInputStream(photoFile), teacherID);
+    }
+
+    public static Bitmap getAssetPhoto(Context context, int teacherID)
+    {
+        File teacher_photo = new File(TEACHER_PHOTO_ASSET_DIR, getPhotoFileName(teacherID));
+        return getPhoto(() -> context.getAssets().open(teacher_photo.getPath()), teacherID);
+    }
+
+    public static Bitmap findPhoto(Context context, int teacherID, boolean defaultIcon) {
+        Bitmap photo = getPhoto(context, teacherID);
+
+        // try to get the picture from the assets folder
+        if (photo == null)
+            photo = getAssetPhoto(context, teacherID);
+
+        // default to the DS icon
+        if (photo == null && defaultIcon)
+            photo = BitmapFactory.decodeResource(
+                    context.getResources(),
+                    R.drawable.dharmaseed_icon
+            );
+
+        return photo;
+    }
+
+    public static Bitmap findPhoto(Context context, int teacherID) {
+        return findPhoto(context, teacherID, true);
+    }
+
+    public static boolean deletePhoto(Context context, int teacherID) {
+        File photoFile = new File(context.getFilesDir(), getPhotoFileName(teacherID));
+        return photoFile.delete();
+    }
+
+    public static void setPhoto(Context context, int teacherID, byte[] photo) throws java.io.IOException {
+        FileOutputStream outputStream = context.openFileOutput(
+                getPhotoFileName(teacherID),
+                Context.MODE_PRIVATE
+        );
+        outputStream.write(photo);
+        outputStream.close();
+    }
 }
