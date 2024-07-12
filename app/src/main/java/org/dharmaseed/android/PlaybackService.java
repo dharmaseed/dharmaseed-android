@@ -215,11 +215,14 @@ public class PlaybackService extends MediaSessionService {
 
                 // Look up the URI of the media to play
                 String mediaUri;
-                if (talk.isDownloaded()) {
+                DBManager dbManager = DBManager.getInstance(PlaybackService.this);
+                if (talk.isDownloaded(dbManager)) {
                     mediaUri = "file://" + talk.getPath();
                 } else {
                     mediaUri = talk.getAudioUrl();
                 }
+
+                Log.d(LOG_TAG, "adding media item for URI '" + mediaUri + "'");
 
                 resolvedItems.add(item.buildUpon()
                         .setUri(mediaUri)

@@ -19,22 +19,15 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
      * also add the Talk ID to the downloaded_talks table
      *
      * @param talkId   the talk ID
-     * @param talkPath the path to the talk's downloaded file
      * @return true if all rows were updated successfully, false if at least one was not
      */
-    public boolean addDownload(int talkId, String talkPath) {
+    public boolean addDownload(int talkId) {
+        // add id to downloaded_talks table
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
-        cv.put(C.Talk.FILE_PATH, talkPath);
-        String whereClause = C.Talk.ID + "=" + talkId;
-        if (db.update(C.Talk.TABLE_NAME, cv, whereClause, null) != 1)
-            return false;
-
-        // add id to downloaded_talks table
-        cv.clear();
         cv.put(C.DownloadedTalks.ID, talkId);
         // insert returns a -1 on error
-        if (db.insert(C.DownloadedTalks.TABLE_NAME, null, cv) == -1)
+        if (db.insertWithOnConflict(C.DownloadedTalks.TABLE_NAME, null, cv, SQLiteDatabase.CONFLICT_IGNORE) == -1)
             return false;
 
         return true;
@@ -48,15 +41,9 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
      * @return true if all rows were updated successfully, false if at least one was not
      */
     public boolean removeDownload(int talkId) {
-        SQLiteDatabase db = getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put(C.Talk.FILE_PATH, ""); // a path of "" indicates that the talk is not downloaded
-        String whereClause = C.Talk.ID + "=" + talkId;
-        if (db.update(C.Talk.TABLE_NAME, cv, whereClause, null) != 1)
-            return false;
-
         // remove row from downloaded_talks table
-        whereClause = C.DownloadedTalks.ID + "=" + talkId;
+        SQLiteDatabase db = getWritableDatabase();
+        String whereClause = C.DownloadedTalks.ID + "=" + talkId;
         if (db.delete(C.DownloadedTalks.TABLE_NAME, whereClause, null) != 1)
             return false;
 
@@ -79,7 +66,6 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
             public static final String UPDATE_DATE = "update_date";
             public static final String RECORDING_DATE = "rec_date";
             public static final String RETREAT_ID = "retreat_id";
-            public static final String FILE_PATH = "file_path";
 
             public static final String TABLE_NAME = "talks";
             public static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" + ID + " INTEGER PRIMARY KEY,"
@@ -91,8 +77,7 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
                     + DURATION_IN_MINUTES + " REAL,"
                     + UPDATE_DATE + " TEXT,"
                     + RECORDING_DATE + " TEXT,"
-                    + RETREAT_ID + " INTEGER,"
-                    + FILE_PATH + " TEXT NOT NULL DEFAULT ''" // empty if not downloaded
+                    + RETREAT_ID + " INTEGER"
                     + ")";
             public static final String DROP_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
         }

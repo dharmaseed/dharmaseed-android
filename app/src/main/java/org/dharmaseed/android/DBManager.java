@@ -373,7 +373,7 @@ public class DBManager extends AbstractDBManager {
     }
 
     public boolean addDownload(Talk talk) {
-        return addDownload(talk.getId(), talk.getPath());
+        return addDownload(talk.getId());
     }
 
     public boolean removeDownload(Talk talk) {

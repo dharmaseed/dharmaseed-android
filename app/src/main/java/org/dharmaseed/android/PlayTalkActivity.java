@@ -424,7 +424,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void toggleDownloadImage() {
         ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
-        if (talk.isDownloaded()) {
+        if (talk.isDownloaded(dbManager)) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_check_circle_green_24dp);
             downloadButton.setImageDrawable(icon);
             downloadButton.setOnClickListener(new View.OnClickListener() {
