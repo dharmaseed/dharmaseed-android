@@ -131,7 +131,7 @@ public abstract class FileManager {
         if (!talkFile.exists())
             talkFile = new File(
                     getDir(context),
-                    FILE_PREFIX + talkId + ".mp3"
+                    TALK_FILE_PREFIX + talkId + ".mp3"
             );
         return talkFile;
     }
