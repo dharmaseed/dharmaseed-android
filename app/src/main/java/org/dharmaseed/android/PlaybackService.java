@@ -215,7 +215,8 @@ public class PlaybackService extends MediaSessionService {
 
                 // Look up the URI of the media to play
                 String mediaUri;
-                if (talk.isDownloaded(null)) {
+                DBManager dbManager = DBManager.getInstance(PlaybackService.this);
+                if (talk.isDownloaded(dbManager)) {
                     mediaUri = "file://" + talk.getPath();
                 } else {
                     mediaUri = talk.getAudioUrl();
