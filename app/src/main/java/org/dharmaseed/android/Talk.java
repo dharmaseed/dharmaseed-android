@@ -244,9 +244,6 @@ public class Talk {
         if (!FileManager.getFile(this).exists())
             return false;
 
-        if (dbManager == null)
-            dbManager = DBManager.getInstance(context);
-
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
                 "SELECT %s.%s FROM %s WHERE %s.%s=%s",

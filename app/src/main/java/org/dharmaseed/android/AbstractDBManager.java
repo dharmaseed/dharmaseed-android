@@ -19,7 +19,6 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
      * also add the Talk ID to the downloaded_talks table
      *
      * @param talkId   the talk ID
-     * @param talkPath the path to the talk's downloaded file
      * @return true if all rows were updated successfully, false if at least one was not
      */
     public boolean addDownload(int talkId) {
@@ -67,7 +66,6 @@ public abstract class AbstractDBManager extends SQLiteOpenHelper {
             public static final String UPDATE_DATE = "update_date";
             public static final String RECORDING_DATE = "rec_date";
             public static final String RETREAT_ID = "retreat_id";
-            public static final String FILE_PATH = "file_path";
 
             public static final String TABLE_NAME = "talks";
             public static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" + ID + " INTEGER PRIMARY KEY,"

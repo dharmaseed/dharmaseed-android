@@ -120,14 +120,24 @@ public abstract class FileManager {
 
     public static File getTalkFile(Context context, int talkId, String talkTitle)
     {
-        return new File(
+        // old file convention, which includes the full talk title
+        File talkFile = new File(
                 getDir(context),
                 TALK_FILE_PREFIX + talkId + "_" + talkTitle + ".mp3"
         );
+
+        // new file convention, which is the default for newly downloaded talks, does
+        // not include the title to avoid issues with special characters (e.g. ?, * and whitespace)
+        if (!talkFile.exists())
+            talkFile = new File(
+                    getDir(context),
+                    FILE_PREFIX + talkId + ".mp3"
+            );
+        return talkFile;
     }
 
     /**
-     * @return the directory where we store talks
+     * @return the file object for a downloaded talk
      */
     public static File getFile(Talk talk) {
         return getTalkFile(talk.getContext(),talk.getId(), talk.getTitle());
