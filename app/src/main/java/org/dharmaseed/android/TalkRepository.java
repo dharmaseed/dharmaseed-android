@@ -42,9 +42,10 @@ public class TalkRepository extends Repository {
     public Cursor getTalkAdapterData(
             List<String> searchTerms,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, "");
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, inHistory, "");
     }
 
     /**
@@ -62,6 +63,7 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             boolean isStarred,
             boolean isDownloaded,
+            boolean inHistory,
             String extraWhere) {
         if (columns == null || columns.size() == 0) {
             throw new IllegalArgumentException("No columns were specified; at least one is required");
@@ -98,6 +100,10 @@ public class TalkRepository extends Repository {
 
         if (isDownloaded) {
             innerJoin += joinDownloadedTalks();
+        }
+
+        if (inHistory) {
+            innerJoin += joinTalkHistory();
         }
 
         String where = "";
@@ -140,11 +146,14 @@ public class TalkRepository extends Repository {
         }
 
         query += " GROUP BY "
-                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-                + " ORDER BY "
-                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE
-                + " DESC"
-        ;
+                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID;
+
+        String order = DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE;
+        if (inHistory) {
+            order = DBManager.C.TalkHistory.TABLE_NAME + "." + DBManager.C.TalkHistory.DATE_TIME;
+        }
+        query += " ORDER BY " + order + " DESC";
+
         Log.d(LOG_TAG, query);
         return queryIfNotNull(query, null);
     }
@@ -153,9 +162,10 @@ public class TalkRepository extends Repository {
             List<String> columns,
             List<String> searchTerms,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(columns, searchTerms, isStarred, isDownloaded, "");
+        return getTalks(columns, searchTerms, isStarred, isDownloaded, inHistory,"");
     }
 
     /**
@@ -169,9 +179,10 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             long teacherId,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, inHistory,
                 DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId);
     }
 
@@ -186,9 +197,10 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             long venueId,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, inHistory,
                 DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId);
     }
 
@@ -205,7 +217,7 @@ public class TalkRepository extends Repository {
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH);
 
-        Cursor downloaded = getTalks(columns, null, false, true);
+        Cursor downloaded = getTalks(columns, null, false, true, false);
 
         while (downloaded.moveToNext())
         {
@@ -266,14 +278,6 @@ public class TalkRepository extends Repository {
         return innerJoin(
                 DBManager.C.TalkStars.TABLE_NAME,
                 DBManager.C.TalkStars.TABLE_NAME + "." + DBManager.C.TalkStars.ID,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-        );
-    }
-
-    private String joinDownloadedTalks() {
-        return innerJoin(
-                DBManager.C.DownloadedTalks.TABLE_NAME,
-                DBManager.C.DownloadedTalks.TABLE_NAME + "." + DBManager.C.DownloadedTalks.ID,
                 DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
         );
     }

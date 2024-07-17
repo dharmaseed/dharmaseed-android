@@ -44,13 +44,4 @@
             android:title="@string/drawer_centers" />
     </group>
 
-    <group
-        android:id="@+id/menu_bottom" >
-        <item
-            android:id="@+id/download_only"
-            android:title="@string/download_only_title"
-            app:actionLayout="@layout/switch_item"
-            app:showAsAction="always" />
-    </group>
-
 </menu>

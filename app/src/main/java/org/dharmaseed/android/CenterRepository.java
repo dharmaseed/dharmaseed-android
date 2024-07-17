@@ -27,19 +27,27 @@ public class CenterRepository extends Repository {
      * @param isStarred
      * @return a list of centers filtered by search terms and stars
      */
-    public Cursor getCenters(List<String> searchTerms, boolean isStarred)
+    public Cursor getCenters(
+            List<String> searchTerms,
+            boolean isStarred, boolean isDownloaded, boolean inHistory)
     {
         String query = "SELECT centers._id, centers.name, count(talks._id) AS talk_count FROM centers ";
-        query += innerJoin(
+        String innerJoin = innerJoin(
                 DBManager.C.Talk.TABLE_NAME,
                 DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.VENUE_ID,
                 DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID
         );
 
         if (isStarred)
-        {
-            query += joinStarredCenters();
-        }
+            innerJoin += joinStarredCenters();
+
+        if (isDownloaded)
+            innerJoin += joinDownloadedTalks();
+
+        if (inHistory)
+            innerJoin += joinTalkHistory();
+
+        query += innerJoin;
 
         String where = " WHERE centers.has_venue_view = 'true' ";
         if (searchTerms != null && !searchTerms.isEmpty())
@@ -52,7 +60,14 @@ public class CenterRepository extends Repository {
             where += " AND " + getSearchStatement(searchTerms, selectionColumns);
         }
 
-        query += where + "GROUP BY centers._id ORDER BY centers.name ASC";
+        query += where + "GROUP BY " +
+                DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID +
+                " ORDER BY ";
+        if (inHistory)
+            query += DBManager.C.TalkHistory.TABLE_NAME + "." + DBManager.C.TalkHistory.DATE_TIME + " DESC";
+        else
+            query += DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME + " ASC";
+
 
         return queryIfNotNull(query, null);
     }
