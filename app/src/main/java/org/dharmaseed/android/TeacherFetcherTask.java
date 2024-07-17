@@ -65,10 +65,10 @@ public class TeacherFetcherTask extends DataFetcherTask {
                 FileManager.setPhoto(context, teacherID, body.bytes());
                 body.close();
             } else {
-                Log.e("teacherFetcherTask", "Error retrieving teacher photo: code " + response.code());
+                Log.e(LOG_TAG, "Error retrieving teacher photo: code " + response.code());
             }
         } catch (IOException e2) {
-            Log.e("teacherFetcherTask", "Error retrieving or writing teacher photo: " + e2);
+            Log.e(LOG_TAG, "Error retrieving or writing teacher photo: " + e2);
         }
         return success;
     }
