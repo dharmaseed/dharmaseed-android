@@ -4,12 +4,9 @@ import static androidx.media3.common.C.WAKE_MODE_NETWORK;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -36,13 +33,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Timer;
 import java.util.Vector;
 
 public class PlaybackService extends MediaSessionService {
@@ -190,15 +183,7 @@ public class PlaybackService extends MediaSessionService {
                         getApplicationContext(), talkID);
 
                 // Look up teacher photo
-                String photoFilename = talk.getPhotoFileName();
-                Bitmap photo;
-                try {
-                    FileInputStream photoStream = openFileInput(photoFilename);
-                    photo = BitmapFactory.decodeStream(photoStream);
-                    photoStream.close();
-                } catch (IOException e) {
-                    photo = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
-                }
+                Bitmap photo = FileManager.findPhoto(PlaybackService.this, talk.getTeacherId());
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 byte[] byteArray = stream.toByteArray();

@@ -21,18 +21,13 @@ package org.dharmaseed.android;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import androidx.core.content.ContextCompat;
+import android.graphics.Bitmap;
 
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ProgressBar;
-
-import java.io.FileInputStream;
-import java.io.IOException;
 
 public class TalkCursorAdapter extends StarCursorAdapter {
 
@@ -73,17 +68,9 @@ public class TalkCursorAdapter extends StarCursorAdapter {
         durationView.setText(talk.getFormattedDuration());
 
         // Set teacher photo
-        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(
-                DBManager.getAlias(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID))));
         ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
-        try {
-            FileInputStream photo = context.openFileInput(photoFilename);
-            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-            photo.close();
-        } catch(IOException e) {
-            Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
-            photoView.setImageDrawable(icon);
-        }
+        Bitmap photo = FileManager.findPhoto(dbManager.getContext(), talk.getTeacherId());
+        photoView.setImageBitmap(photo);
 
         // Show talk progress
         ProgressBar talk_progress = (ProgressBar) view.findViewById(R.id.item_view_progress);
