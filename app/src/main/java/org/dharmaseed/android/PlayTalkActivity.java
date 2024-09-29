@@ -27,7 +27,7 @@ import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
 
 import android.content.Intent;
-import android.graphics.BitmapFactory;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -56,10 +56,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 import java.util.Timer;
 
 public class PlayTalkActivity extends AppCompatActivity
@@ -133,17 +129,9 @@ public class PlayTalkActivity extends AppCompatActivity
         descriptionView.setText(talk.getDescription());
 
         // Set teacher photo
-        String photoFilename = talk.getPhotoFileName();
         ImageView photoView = (ImageView) findViewById(R.id.play_talk_teacher_photo);
-        Log.i(LOG_TAG, "photoFilename: " + photoFilename);
-        try {
-            FileInputStream photo = openFileInput(photoFilename);
-            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-            photo.close();
-        } catch (IOException e) {
-            Drawable icon = ContextCompat.getDrawable(this, R.drawable.dharmaseed_icon);
-            photoView.setImageDrawable(icon);
-        }
+        Bitmap photo = FileManager.findPhoto(dbManager.getContext(), talk.getTeacherId());
+        photoView.setImageBitmap(photo);
 
         // Set date
         TextView dateView = (TextView) findViewById(R.id.play_talk_date);
@@ -426,7 +414,7 @@ public class PlayTalkActivity extends AppCompatActivity
 
     public void toggleDownloadImage() {
         ImageButton downloadButton = (ImageButton) findViewById(R.id.download_button);
-        if (talk.isDownloaded()) {
+        if (talk.isDownloaded(dbManager)) {
             Drawable icon = ContextCompat.getDrawable(this, R.drawable.ic_check_circle_green_24dp);
             downloadButton.setImageDrawable(icon);
             downloadButton.setOnClickListener(new View.OnClickListener() {
@@ -480,7 +468,7 @@ public class PlayTalkActivity extends AppCompatActivity
      * Deletes the talk from the FS and removes the path from the DB row
      */
     public void deleteTalk() {
-        if (!TalkManager.delete(talk)) {
+        if (!FileManager.delete(talk)) {
             showToast("Unable to delete '" + talk.getTitle() + "'.", Toast.LENGTH_SHORT);
         } else {
             dbManager.removeDownload(talk);
@@ -545,7 +533,7 @@ public class PlayTalkActivity extends AppCompatActivity
             if (talks.length > 0) {
                 // only download the first one if we get passed multiple
                 this.talk = talks[0];
-                totalSize = TalkManager.download(this.talk);
+                totalSize = FileManager.download(this.talk);
             }
             return totalSize;
         }

@@ -75,4 +75,20 @@ public abstract class Repository
         );
     }
 
+    protected String joinDownloadedTalks() {
+        return innerJoin(
+                DBManager.C.DownloadedTalks.TABLE_NAME,
+                DBManager.C.DownloadedTalks.TABLE_NAME + "." + DBManager.C.DownloadedTalks.ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
+        );
+    }
+
+    protected String joinTalkHistory() {
+        return innerJoin(
+                DBManager.C.TalkHistory.TABLE_NAME,
+                DBManager.C.TalkHistory.TABLE_NAME + "." + DBManager.C.TalkHistory.ID,
+                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
+        );
+    }
+
 }

@@ -5,7 +5,6 @@ import static com.google.common.util.concurrent.Futures.immediateFuture;
 
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -47,8 +46,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Timer;
-import java.util.ArrayList;
+import java.util.Vector;
 
 public class PlaybackService extends MediaLibraryService {
 
@@ -189,19 +187,11 @@ public class PlaybackService extends MediaLibraryService {
             Talk talk = Talk.lookup(DBManager.getInstance(PlaybackService.this),
                     getApplicationContext(), talkID);
 
-            // Look up teacher photo
-            String photoFilename = talk.getPhotoFileName();
-            Bitmap photo;
-            try {
-                FileInputStream photoStream = openFileInput(photoFilename);
-                photo = BitmapFactory.decodeStream(photoStream);
-                photoStream.close();
-            } catch (IOException e) {
-                photo = BitmapFactory.decodeResource(getResources(), R.drawable.dharmaseed_icon);
-            }
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            byte[] byteArray = stream.toByteArray();
+                // Look up teacher photo
+                Bitmap photo = FileManager.findPhoto(PlaybackService.this, talk.getTeacherId());
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                byte[] byteArray = stream.toByteArray();
 
             // Set media session metadata
             MediaMetadata mediaMetadata = new MediaMetadata.Builder()
@@ -213,6 +203,14 @@ public class PlaybackService extends MediaLibraryService {
                     .setArtworkData(byteArray, MediaMetadata.PICTURE_TYPE_ARTIST_PERFORMER)
                     .build();
 
+                // Look up the URI of the media to play
+                String mediaUri;
+                DBManager dbManager = DBManager.getInstance(PlaybackService.this);
+                if (talk.isDownloaded(dbManager)) {
+                    mediaUri = "file://" + talk.getPath();
+                } else {
+                    mediaUri = talk.getAudioUrl();
+                }
             // Look up the URI of the media to play
             String mediaUri;
             if (talk.isDownloaded()) {
@@ -221,6 +219,13 @@ public class PlaybackService extends MediaLibraryService {
                 mediaUri = talk.getAudioUrl();
             }
 
+                Log.d(LOG_TAG, "adding media item for URI '" + mediaUri + "'");
+
+                resolvedItems.add(item.buildUpon()
+                        .setUri(mediaUri)
+                        .setMediaMetadata(mediaMetadata)
+                        .build());
+            }
             return item.buildUpon()
                     .setUri(mediaUri)
                     .setMediaMetadata(mediaMetadata)
