@@ -4,12 +4,9 @@ import static androidx.media3.common.C.WAKE_MODE_NETWORK;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -40,13 +37,10 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Vector;
+import java.util.ArrayList;
 
 public class PlaybackService extends MediaLibraryService {
 
@@ -203,29 +197,17 @@ public class PlaybackService extends MediaLibraryService {
                     .setArtworkData(byteArray, MediaMetadata.PICTURE_TYPE_ARTIST_PERFORMER)
                     .build();
 
-                // Look up the URI of the media to play
-                String mediaUri;
-                DBManager dbManager = DBManager.getInstance(PlaybackService.this);
-                if (talk.isDownloaded(dbManager)) {
-                    mediaUri = "file://" + talk.getPath();
-                } else {
-                    mediaUri = talk.getAudioUrl();
-                }
             // Look up the URI of the media to play
             String mediaUri;
-            if (talk.isDownloaded()) {
+            DBManager dbManager = DBManager.getInstance(PlaybackService.this);
+            if (talk.isDownloaded(dbManager)) {
                 mediaUri = "file://" + talk.getPath();
             } else {
                 mediaUri = talk.getAudioUrl();
             }
 
-                Log.d(LOG_TAG, "adding media item for URI '" + mediaUri + "'");
+            Log.d(LOG_TAG, "adding media item for URI '" + mediaUri + "'");
 
-                resolvedItems.add(item.buildUpon()
-                        .setUri(mediaUri)
-                        .setMediaMetadata(mediaMetadata)
-                        .build());
-            }
             return item.buildUpon()
                     .setUri(mediaUri)
                     .setMediaMetadata(mediaMetadata)
