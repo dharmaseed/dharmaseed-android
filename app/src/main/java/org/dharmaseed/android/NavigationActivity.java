@@ -52,6 +52,8 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
+import android.widget.AbsListView;
+import android.animation.ObjectAnimator;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -74,13 +76,14 @@ public class NavigationActivity extends AppCompatActivity
     EditText searchBox;
     String extraSearchTerms;
     LinearLayout searchCluster, header;
-    TextView headerPrimary, headerDescription, websiteLink, donationLink;
+    TextView headerPrimary, headerDescription, websiteLink, donationLink, scrollLabel;
     Menu menu;
     DBManager dbManager;
     CursorAdapter cursorAdapter;
     SwipeRefreshLayout refreshLayout;
 
     private int viewMode;
+    private boolean isScrolling = false;
 
     private static final int VIEW_MODE_TALKS          = 0;
     private static final int VIEW_MODE_TEACHERS       = 1;
@@ -154,7 +157,7 @@ public class NavigationActivity extends AppCompatActivity
         if (dbManager.shouldSync()) {
             fetchNewDataFromServer();
         } else {
-            Log.i("onResume", "Don't need to fetch new data from server");
+            Log.i(LOG_TAG, "onResume: don't need to fetch new data from server");
         }
         updateDisplayedData();
 
@@ -202,9 +205,10 @@ public class NavigationActivity extends AppCompatActivity
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        // Configure list view
+        // Configure list view and scroll label
         listView = (ListView) findViewById(R.id.talks_list_view);
         listView.setOnItemClickListener(this);
+        scrollLabel = findViewById(R.id.fadeLabel);
 
         // Initialize UI state
         starFilterOn = false;
@@ -224,7 +228,7 @@ public class NavigationActivity extends AppCompatActivity
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                Log.i("refresh", "onrefresh");
+                Log.i(LOG_TAG, "onrefresh");
                 fetchNewDataFromServer();
             }
         });
@@ -238,11 +242,62 @@ public class NavigationActivity extends AppCompatActivity
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.i("navigationActivity", "Received update broadcast");
+                Log.i(LOG_TAG, "Received update broadcast");
                 updateDisplayedData();
             }
         }, new IntentFilter("updateDisplayedData"));
 
+        listView.setOnScrollListener(new ListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState > 0 && !isScrolling)
+                    showScrollLabel();
+                if (scrollState == SCROLL_STATE_IDLE)
+                    hideScrollLabel();
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                View item = listView.getChildAt(0);
+                if (item != null)
+                    updateScrollLabel(item);
+            }
+        });
+    }
+
+    private void showScrollLabel() {
+        isScrolling = true;
+        scrollLabel.setVisibility(View.VISIBLE);
+        ObjectAnimator.ofFloat(scrollLabel, "alpha", 0f, 1f).setDuration(300).start();
+    }
+
+    private void updateScrollLabel(View item) {
+        int scrollId = -1;
+        switch(viewMode) {
+            case VIEW_MODE_TALKS:
+            case VIEW_MODE_TEACHER_TALKS:
+            case VIEW_MODE_CENTER_TALKS:
+                scrollId = R.id.item_view_detail3;
+                break;
+
+            case VIEW_MODE_CENTERS:
+            case VIEW_MODE_TEACHERS:
+                scrollId = R.id.item_view_title;
+                break;
+        }
+        if (scrollId > 0) {
+            TextView scrollText = item.findViewById(scrollId);
+            if (scrollText != null) {
+                scrollLabel.setText(scrollText.getText());
+            }
+        }
+    }
+
+    private void hideScrollLabel() {
+        isScrolling = false;
+        ObjectAnimator animator = ObjectAnimator.ofFloat(scrollLabel, "alpha", 1f, 0f);
+        animator.setDuration(500);
+        animator.start();
     }
 
     void setViewMode(int viewMode) {
@@ -394,7 +449,7 @@ public class NavigationActivity extends AppCompatActivity
     public void fetchNewDataFromServer() {
 
         // Fetch new data from the server
-        Log.i("navigationActivity", "fetchNewDataFromServer()");
+        Log.i(LOG_TAG, "fetchNewDataFromServer()");
         if(teacherFetcherTask == null || teacherFetcherTask.getStatus() == AsyncTask.Status.FINISHED) {
             refreshLayout.setRefreshing(true);
             teacherFetcherTask = new TeacherFetcherTask(dbManager, this, this);
@@ -479,7 +534,7 @@ public class NavigationActivity extends AppCompatActivity
 //                return true;
 
             case R.id.action_search:
-                Log.i("nav", "Search!");
+                Log.i(LOG_TAG, "Search!");
                 EditText searchBox = (EditText) findViewById(R.id.nav_search_text);
                 if (searchCluster.getVisibility() == View.GONE) {
                     searchCluster.setVisibility(View.VISIBLE);
@@ -521,7 +576,7 @@ public class NavigationActivity extends AppCompatActivity
     // Called when an item in the main list view is clicked
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Log.d("onItemClick", "selected " + position + ", " + id);
+        Log.d(LOG_TAG, "onItemClick: selected " + position + ", " + id);
         Context ctx = parent.getContext();
 
         switch(viewMode) {
@@ -626,7 +681,7 @@ public class NavigationActivity extends AppCompatActivity
 
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        Log.i("onEditorAction", v.getText().toString());
+        Log.i(LOG_TAG, "onEditorAction: " + v.getText().toString());
 
         // Close keyboard
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -647,7 +702,7 @@ public class NavigationActivity extends AppCompatActivity
     // Search box edit text focus listener
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
-        Log.i("focusChange", hasFocus+"");
+        Log.i(LOG_TAG, "focusChange: " + hasFocus);
         if (hasFocus) {
             ((EditText)v).setCursorVisible(true);
         } else {
