@@ -31,7 +31,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import android.os.StrictMode;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.view.KeyEvent;
@@ -53,14 +52,13 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.AbsListView;
-import android.animation.ObjectAnimator;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -76,11 +74,12 @@ public class NavigationActivity extends AppCompatActivity
     EditText searchBox;
     String extraSearchTerms;
     LinearLayout searchCluster, header;
-    TextView headerPrimary, headerDescription, websiteLink, donationLink, scrollLabel;
+    TextView headerPrimary, headerDescription, websiteLink, donationLink;
     Menu menu;
     DBManager dbManager;
     CursorAdapter cursorAdapter;
     SwipeRefreshLayout refreshLayout;
+    TextViewFader scrollFader;
 
     private int viewMode;
 
@@ -207,7 +206,7 @@ public class NavigationActivity extends AppCompatActivity
         // Configure list view and scroll label
         listView = (ListView) findViewById(R.id.talks_list_view);
         listView.setOnItemClickListener(this);
-        scrollLabel = findViewById(R.id.fadeLabel);
+        scrollFader = new TextViewFader(findViewById(R.id.fadeLabel));
 
         // Initialize UI state
         starFilterOn = false;
@@ -249,11 +248,11 @@ public class NavigationActivity extends AppCompatActivity
         listView.setOnScrollListener(new ListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                Log.d(LOG_TAG, "scroll state changed: " + scrollState);
-                if (scrollState > 0)
-                    showScrollLabel();
-                if (scrollState == SCROLL_STATE_IDLE)
-                    hideScrollLabel();
+//                Log.d(LOG_TAG, "scroll state changed: " + scrollState);
+//                if (scrollState > 0)
+//                    showScrollLabel();
+//                if (scrollState == SCROLL_STATE_IDLE)
+//                    hideScrollLabel();
             }
 
             @Override
@@ -264,16 +263,6 @@ public class NavigationActivity extends AppCompatActivity
                     updateScrollLabel(item);
             }
         });
-    }
-
-    private void showScrollLabel() {
-        scrollLabel.setVisibility(View.VISIBLE);
-        ObjectAnimator fadeIn  = ObjectAnimator.ofFloat(
-                scrollLabel, "alpha", scrollLabel.getAlpha(), 1f
-        );
-        fadeIn.setDuration(300);
-        fadeIn.setAutoCancel(true);
-        fadeIn.start();
     }
 
     private void updateScrollLabel(View item) {
@@ -293,19 +282,9 @@ public class NavigationActivity extends AppCompatActivity
         if (scrollId > 0) {
             TextView scrollText = item.findViewById(scrollId);
             if (scrollText != null) {
-                scrollLabel.setText(scrollText.getText());
+                scrollFader.setText(scrollText.getText());
             }
         }
-    }
-
-    private void hideScrollLabel() {
-        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(
-                scrollLabel, "alpha", scrollLabel.getAlpha(), 0f
-        );
-        fadeOut.setDuration(600);
-        fadeOut.setStartDelay(100);
-        fadeOut.setAutoCancel(true);
-        fadeOut.start();
     }
 
     void setViewMode(int viewMode) {
@@ -317,6 +296,7 @@ public class NavigationActivity extends AppCompatActivity
         header.setVisibility(View.GONE);
         extraSearchTerms = "";
         clearSearch(false);
+        scrollFader.reset();
 
         switch(viewMode) {
 
@@ -362,6 +342,7 @@ public class NavigationActivity extends AppCompatActivity
             starFilterOn = false;
             setStarFilterButton();
             clearSearch();
+            scrollFader.reset();
 
             switch (detailMode)
             {
