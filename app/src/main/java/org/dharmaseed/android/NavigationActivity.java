@@ -83,7 +83,6 @@ public class NavigationActivity extends AppCompatActivity
     SwipeRefreshLayout refreshLayout;
 
     private int viewMode;
-    private boolean isScrolling = false;
 
     private static final int VIEW_MODE_TALKS          = 0;
     private static final int VIEW_MODE_TEACHERS       = 1;
@@ -250,7 +249,8 @@ public class NavigationActivity extends AppCompatActivity
         listView.setOnScrollListener(new ListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                if (scrollState > 0 && !isScrolling)
+                Log.d(LOG_TAG, "scroll state changed: " + scrollState);
+                if (scrollState > 0)
                     showScrollLabel();
                 if (scrollState == SCROLL_STATE_IDLE)
                     hideScrollLabel();
@@ -258,6 +258,7 @@ public class NavigationActivity extends AppCompatActivity
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                Log.d(LOG_TAG, "scroll position changed: " + firstVisibleItem);
                 View item = listView.getChildAt(0);
                 if (item != null)
                     updateScrollLabel(item);
@@ -266,9 +267,13 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     private void showScrollLabel() {
-        isScrolling = true;
         scrollLabel.setVisibility(View.VISIBLE);
-        ObjectAnimator.ofFloat(scrollLabel, "alpha", 0f, 1f).setDuration(300).start();
+        ObjectAnimator fadeIn  = ObjectAnimator.ofFloat(
+                scrollLabel, "alpha", scrollLabel.getAlpha(), 1f
+        );
+        fadeIn.setDuration(300);
+        fadeIn.setAutoCancel(true);
+        fadeIn.start();
     }
 
     private void updateScrollLabel(View item) {
@@ -294,10 +299,13 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     private void hideScrollLabel() {
-        isScrolling = false;
-        ObjectAnimator animator = ObjectAnimator.ofFloat(scrollLabel, "alpha", 1f, 0f);
-        animator.setDuration(500);
-        animator.start();
+        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(
+                scrollLabel, "alpha", scrollLabel.getAlpha(), 0f
+        );
+        fadeOut.setDuration(600);
+        fadeOut.setStartDelay(100);
+        fadeOut.setAutoCancel(true);
+        fadeOut.start();
     }
 
     void setViewMode(int viewMode) {
