@@ -17,13 +17,13 @@ public class TextViewFader {
     public TextViewFader(TextView view) {
         handler = new Handler();
         this.view = view;
-        hidden = true;
-        initialised = false;
-        view.setAlpha(0);
+        reset();
     }
 
     public void reset() {
+        view.setAlpha(0);
         initialised = false;
+        hidden = true;
     }
 
     public void setText(CharSequence text) {

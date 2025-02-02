@@ -247,13 +247,7 @@ public class NavigationActivity extends AppCompatActivity
 
         listView.setOnScrollListener(new ListView.OnScrollListener() {
             @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {
-//                Log.d(LOG_TAG, "scroll state changed: " + scrollState);
-//                if (scrollState > 0)
-//                    showScrollLabel();
-//                if (scrollState == SCROLL_STATE_IDLE)
-//                    hideScrollLabel();
-            }
+            public void onScrollStateChanged(AbsListView view, int scrollState) {}
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
