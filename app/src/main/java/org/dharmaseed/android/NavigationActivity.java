@@ -308,6 +308,8 @@ public class NavigationActivity extends AppCompatActivity
         this.viewMode = viewMode;
         header.setVisibility(View.GONE);
         extraSearchTerms = "";
+        clearSearch(false);
+
         switch(viewMode) {
 
             case VIEW_MODE_TALKS:
@@ -351,7 +353,7 @@ public class NavigationActivity extends AppCompatActivity
             // Clear search and filters
             starFilterOn = false;
             setStarFilterButton();
-            clearSearch(searchCluster);
+            clearSearch();
 
             switch (detailMode)
             {
@@ -513,11 +515,17 @@ public class NavigationActivity extends AppCompatActivity
         return true;
     }
 
-    public void clearSearch(View v) {
+    public void clearSearch(boolean updateData) {
         searchCluster.setVisibility(View.GONE);
         searchBox.setText("");
-        updateDisplayedData();
-        resetListToTop();
+        if (updateData) {
+            updateDisplayedData();
+            resetListToTop();
+        }
+    }
+
+    public void clearSearch() {
+        clearSearch(true);
     }
 
     @Override
@@ -544,7 +552,7 @@ public class NavigationActivity extends AppCompatActivity
                             getSystemService(Context.INPUT_METHOD_SERVICE);
                     keyboard.showSoftInput(searchBox, 0);
                 } else {
-                    clearSearch(searchCluster);
+                    clearSearch();
                 }
                 return true;
 
