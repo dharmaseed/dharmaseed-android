@@ -21,16 +21,11 @@ package org.dharmaseed.android;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import androidx.core.content.ContextCompat;
+import android.graphics.Bitmap;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 
 public class TeacherCursorAdapter extends StarCursorAdapter {
 
@@ -57,19 +52,15 @@ public class TeacherCursorAdapter extends StarCursorAdapter {
         numTalks.setText(cursor.getString(cursor.getColumnIndexOrThrow("talk_count")) + " talks");
 
         // Set teacher photo
-        String photoFilename = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
-        ImageView photoView = (ImageView) view.findViewById(R.id.item_view_photo);
-        try {
-            FileInputStream photo = context.openFileInput(photoFilename);
-            photoView.setImageBitmap(BitmapFactory.decodeStream(photo));
-        } catch(FileNotFoundException e) {
-            Drawable icon = ContextCompat.getDrawable(context, R.drawable.dharmaseed_icon);
-            photoView.setImageDrawable(icon);
-        }
+        Bitmap photo = FileManager.findPhoto(
+                dbManager.getContext(),
+                cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID))
+        );
+        ImageView photoView = view.findViewById(R.id.item_view_photo);
+        photoView.setImageBitmap(photo);
 
         // Set stars
         handleStars(view, cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
-
     }
 
 

@@ -217,7 +217,7 @@ public class TalkRepository extends Repository {
      */
     public void removeOldDownloads()
     {
-        File downloadsDir = TalkManager.getDir(dbManager.getContext());
+        File downloadsDir = FileManager.getDir(dbManager.getContext());
         Log.d(LOG_TAG, "scanning for talks in the outdated storage locations");
 
         ArrayList<String> columns = new ArrayList<String>();
@@ -231,10 +231,10 @@ public class TalkRepository extends Repository {
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID)));
             String title = downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE)));
-            File file = TalkManager.getTalkFile(dbManager.getContext(), id, title);
+            File file = FileManager.getTalkFile(dbManager.getContext(), id, title);
 
             String directory = file.getAbsoluteFile().getParent();
-            String downloadDirectory = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
+            String downloadDirectory = FileManager.getDir(dbManager.getContext()).getAbsolutePath();
 
             if (directory != null && ! directory.equals(downloadDirectory)) {
                 Log.w(LOG_TAG, "Detected old style download for talk " + file.toString());
