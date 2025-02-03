@@ -28,8 +28,6 @@ public class Talk {
     private String teacherName;
     private ArrayList<String> allTeacherNames;
     private String centerName;
-    private String photoFileName;
-    private String path; // where the talk is downloaded, if it is
 
     private int id;
     private int venueId;
@@ -70,10 +68,8 @@ public class Talk {
             talk.teacherId = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.TEACHER_ID));
             talk.teacherName = cursor.getString(cursor.getColumnIndexOrThrow("teacher_name")).trim();
             talk.centerName = cursor.getString(cursor.getColumnIndexOrThrow("center_name")).trim();
-            talk.photoFileName = DBManager.getTeacherPhotoFilename(cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Teacher.ID)));
             talk.retreatId = cursor.getColumnIndexOrThrow(DBManager.C.Talk.RETREAT_ID);
             talk.durationInMinutes = cursor.getDouble(cursor.getColumnIndexOrThrow(DBManager.C.Talk.DURATION_IN_MINUTES));
-            talk.path = cursor.getString(cursor.getColumnIndexOrThrow(DBManager.C.Talk.FILE_PATH));
 
             talk.id = talkID;
             talk.context = context;
@@ -93,7 +89,7 @@ public class Talk {
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         String query = String.format(
-                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
+                "SELECT %s, %s.%s, %s, %s, %s, %s, %s, %s, %s.%s AS teacher_name, %s.%s AS center_name, "
                         + "%s.%s FROM %s, %s, %s WHERE %s.%s=%s.%s AND %s.%s=%s.%s AND %s.%s=%s",
                 DBManager.C.Talk.TITLE,
                 DBManager.C.Talk.TABLE_NAME,
@@ -103,7 +99,6 @@ public class Talk {
                 DBManager.C.Talk.RECORDING_DATE,
                 DBManager.C.Talk.UPDATE_DATE,
                 DBManager.C.Talk.RETREAT_ID,
-                DBManager.C.Talk.FILE_PATH,
                 DBManager.C.Talk.TEACHER_ID,
                 DBManager.C.Teacher.TABLE_NAME,
                 DBManager.C.Teacher.NAME,
@@ -221,10 +216,6 @@ public class Talk {
         return centerName;
     }
 
-    public String getPhotoFileName() {
-        return photoFileName;
-    }
-
     public int getId() {
         return id;
     }
@@ -249,15 +240,30 @@ public class Talk {
      * The talk has been downloaded if the path field is populated
      * @return whether the talk has been downloaded
      */
-    public boolean isDownloaded() {
-        return this.getPath().length() > 0;
+    public boolean isDownloaded(DBManager dbManager) {
+        if (!FileManager.getFile(this).exists())
+            return false;
+
+        SQLiteDatabase db = dbManager.getReadableDatabase();
+        String query = String.format(
+                "SELECT %s.%s FROM %s WHERE %s.%s=%s",
+                DBManager.C.DownloadedTalks.TABLE_NAME,
+                DBManager.C.DownloadedTalks.ID,
+
+                // FROM
+                DBManager.C.DownloadedTalks.TABLE_NAME,
+
+                // WHERE
+                DBManager.C.DownloadedTalks.TABLE_NAME,
+                DBManager.C.DownloadedTalks.ID,
+                id
+        );
+
+        Cursor cursor = db.rawQuery(query, null);
+        return cursor.getCount() == 1;
     }
 
     public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
+        return FileManager.getFile(this).getPath();
     }
 }

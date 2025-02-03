@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.Thread;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,13 @@ public class TalkRepository extends Repository {
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DURATION_IN_MINUTES);
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
 
-        removeOldDownloads();
+        Thread cleanup = new Thread() {
+            public void run() {
+                removeOldDownloads();
+            }
+        };
+        cleanup.setPriority(Thread.MIN_PRIORITY);
+        cleanup.start();
     }
 
     /**
@@ -42,9 +49,10 @@ public class TalkRepository extends Repository {
     public Cursor getTalkAdapterData(
             List<String> searchTerms,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, "");
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, inHistory, "");
     }
 
     /**
@@ -62,6 +70,7 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             boolean isStarred,
             boolean isDownloaded,
+            boolean inHistory,
             String extraWhere) {
         if (columns == null || columns.size() == 0) {
             throw new IllegalArgumentException("No columns were specified; at least one is required");
@@ -98,6 +107,10 @@ public class TalkRepository extends Repository {
 
         if (isDownloaded) {
             innerJoin += joinDownloadedTalks();
+        }
+
+        if (inHistory) {
+            innerJoin += joinTalkHistory();
         }
 
         String where = "";
@@ -140,11 +153,14 @@ public class TalkRepository extends Repository {
         }
 
         query += " GROUP BY "
-                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-                + " ORDER BY "
-                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE
-                + " DESC"
-        ;
+                + DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID;
+
+        String order = DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE;
+        if (inHistory) {
+            order = DBManager.C.TalkHistory.TABLE_NAME + "." + DBManager.C.TalkHistory.DATE_TIME;
+        }
+        query += " ORDER BY " + order + " DESC";
+
         Log.d(LOG_TAG, query);
         return queryIfNotNull(query, null);
     }
@@ -153,9 +169,10 @@ public class TalkRepository extends Repository {
             List<String> columns,
             List<String> searchTerms,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(columns, searchTerms, isStarred, isDownloaded, "");
+        return getTalks(columns, searchTerms, isStarred, isDownloaded, inHistory,"");
     }
 
     /**
@@ -169,9 +186,10 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             long teacherId,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, inHistory,
                 DBManager.C.TalkTeachers.TABLE_NAME + "." + DBManager.C.TalkTeachers.TEACHER_ID + "=" + teacherId);
     }
 
@@ -186,9 +204,10 @@ public class TalkRepository extends Repository {
             List<String> searchTerms,
             long venueId,
             boolean isStarred,
-            boolean isDownloaded
+            boolean isDownloaded,
+            boolean inHistory
     ) {
-        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded,
+        return getTalks(talkAdapterColumns, searchTerms, isStarred, isDownloaded, inHistory,
                 DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.ID + "=" + venueId);
     }
 
@@ -198,24 +217,24 @@ public class TalkRepository extends Repository {
      */
     public void removeOldDownloads()
     {
-        File downloadsDir = TalkManager.getDir(dbManager.getContext());
-        Log.i(LOG_TAG, "HI " + downloadsDir.toString());
+        File downloadsDir = FileManager.getDir(dbManager.getContext());
+        Log.d(LOG_TAG, "scanning for talks in the outdated storage locations");
 
         ArrayList<String> columns = new ArrayList<String>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
-        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH);
-
-        Cursor downloaded = getTalks(columns, null, false, true);
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
+        Cursor downloaded = getTalks(columns, null, false, true, false);
 
         while (downloaded.moveToNext())
         {
             int id = downloaded.getInt(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID)));
-            File file = new File(downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH))).trim());
+            String title = downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
+                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE)));
+            File file = FileManager.getTalkFile(dbManager.getContext(), id, title);
 
             String directory = file.getAbsoluteFile().getParent();
-            String downloadDirectory = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
+            String downloadDirectory = FileManager.getDir(dbManager.getContext()).getAbsolutePath();
 
             if (directory != null && ! directory.equals(downloadDirectory)) {
                 Log.w(LOG_TAG, "Detected old style download for talk " + file.toString());
@@ -224,7 +243,7 @@ public class TalkRepository extends Repository {
                 try {
                     File copyTarget = new File(downloadsDir.toString() + "/" + file.getName());
                     copy(file, copyTarget);
-                    dbManager.addDownload(id, copyTarget.toString());
+                    dbManager.addDownload(id);
                     Log.i(LOG_TAG, "Successfully moved old talk to " + copyTarget.toString());
                     file.delete();
                 } catch (IOException e) {
@@ -266,14 +285,6 @@ public class TalkRepository extends Repository {
         return innerJoin(
                 DBManager.C.TalkStars.TABLE_NAME,
                 DBManager.C.TalkStars.TABLE_NAME + "." + DBManager.C.TalkStars.ID,
-                DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
-        );
-    }
-
-    private String joinDownloadedTalks() {
-        return innerJoin(
-                DBManager.C.DownloadedTalks.TABLE_NAME,
-                DBManager.C.DownloadedTalks.TABLE_NAME + "." + DBManager.C.DownloadedTalks.ID,
                 DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID
         );
     }

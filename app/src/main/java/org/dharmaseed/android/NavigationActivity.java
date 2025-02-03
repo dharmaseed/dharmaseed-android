@@ -75,7 +75,6 @@ public class NavigationActivity extends AppCompatActivity
     String extraSearchTerms;
     LinearLayout searchCluster, header;
     TextView headerPrimary, headerDescription, websiteLink, donationLink;
-    boolean starFilterOn;
     Menu menu;
     DBManager dbManager;
     CursorAdapter cursorAdapter;
@@ -102,7 +101,8 @@ public class NavigationActivity extends AppCompatActivity
 
     private static final String LOG_TAG = "NavigationActivity";
 
-    private boolean downloadedOnly;
+    boolean starFilterOn;
+    private boolean downloadFilterOn, historyFilterOn;
 
     private TalkRepository talkRepository;
     private TeacherRepository teacherRepository;
@@ -115,6 +115,8 @@ public class NavigationActivity extends AppCompatActivity
         outState.putString("ExtraSearchTerms", extraSearchTerms);
         outState.putBoolean("HeaderVisible", header.getVisibility() == View.VISIBLE);
         outState.putBoolean("StarFilterOn", starFilterOn);
+        outState.putBoolean("DownloadFilterOn", downloadFilterOn);
+        outState.putBoolean("HistoryFilterOn", historyFilterOn);
         outState.putInt("ViewMode", viewMode);
         outState.putInt("DetailMode", detailMode);
         outState.putLong("DetailId", detailId);
@@ -129,13 +131,19 @@ public class NavigationActivity extends AppCompatActivity
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
         searchCluster.setVisibility(savedInstanceState.getBoolean("SearchClusterVisible") ? View.VISIBLE : View.GONE);
         extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
         header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
         setViewMode(savedInstanceState.getInt("ViewMode"));
         setDetailMode(savedInstanceState.getInt("DetailMode"), savedInstanceState.getLong("DetailId"));
         savedListPosition = savedInstanceState.getInt("ListViewPosition");
+
+        starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
+        setStarFilterButton();
+        downloadFilterOn = savedInstanceState.getBoolean("DownloadFilterOn");
+        setDownloadFilterButton();
+        historyFilterOn = savedInstanceState.getBoolean("HistoryFilterOn");
+        setHistoryFilterButton();
     }
 
     @Override
@@ -200,9 +208,10 @@ public class NavigationActivity extends AppCompatActivity
 
         // Initialize UI state
         starFilterOn = false;
+        downloadFilterOn = false;
+        historyFilterOn = false;
         searchCluster.setVisibility(View.GONE);
         header.setVisibility(View.GONE);
-        downloadedOnly = false;
         setViewMode(VIEW_MODE_TALKS);
         setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
@@ -284,9 +293,9 @@ public class NavigationActivity extends AppCompatActivity
         }
         else
         {
-            // Clear search and star filters
+            // Clear search and filters
             starFilterOn = false;
-            setStarButton();
+            setStarFilterButton();
             clearSearch(searchCluster);
 
             switch (detailMode)
@@ -331,7 +340,10 @@ public class NavigationActivity extends AppCompatActivity
 
     public void displayTalksByTeacher(long id)
     {
-        Cursor cursor = talkRepository.getTalksByTeacher(getSearchTerms(), id, starFilterOn, downloadedOnly);
+        Cursor cursor = talkRepository.getTalksByTeacher(
+                getSearchTerms(), id,
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -364,7 +376,10 @@ public class NavigationActivity extends AppCompatActivity
 
     private void displayTalksByCenter(long id)
     {
-        Cursor cursor = talkRepository.getTalksByCenter(getSearchTerms(), id, starFilterOn, downloadedOnly);
+        Cursor cursor = talkRepository.getTalksByCenter(
+                getSearchTerms(), id,
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -437,7 +452,9 @@ public class NavigationActivity extends AppCompatActivity
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.navigation, menu);
         this.menu = menu;
-        setStarButton();
+        setStarFilterButton();
+        setDownloadFilterButton();
+        setHistoryFilterButton();
         return true;
     }
 
@@ -457,9 +474,9 @@ public class NavigationActivity extends AppCompatActivity
 
         switch(id) {
 
-            case R.id.action_refresh_server_data:
-                fetchNewDataFromServer();
-                return true;
+//            case R.id.action_refresh_server_data:
+//                fetchNewDataFromServer();
+//                return true;
 
             case R.id.action_search:
                 Log.i("nav", "Search!");
@@ -478,7 +495,21 @@ public class NavigationActivity extends AppCompatActivity
 
             case R.id.action_toggle_starred:
                 starFilterOn = ! starFilterOn;
-                setStarButton();
+                setStarFilterButton();
+                updateDisplayedData();
+                resetListToTop();
+                return true;
+
+            case R.id.action_toggle_downloaded:
+                downloadFilterOn = ! downloadFilterOn;
+                setDownloadFilterButton();
+                updateDisplayedData();
+                resetListToTop();
+                return true;
+
+            case R.id.action_toggle_history:
+                historyFilterOn = ! historyFilterOn;
+                setHistoryFilterButton();
                 updateDisplayedData();
                 resetListToTop();
                 return true;
@@ -525,18 +556,33 @@ public class NavigationActivity extends AppCompatActivity
         });
     }
 
-    public void setStarButton() {
-        int icon;
-        if(starFilterOn) {
-            icon  = getResources().getIdentifier("btn_star_big_on", "drawable", "android");
-        } else {
-            icon = getResources().getIdentifier("btn_star_big_off", "drawable", "android");
-        }
+    public void setStarFilterButton() {
+        int icon  = starFilterOn ?
+                R.drawable.star_circle_outline_on : R.drawable.star_circle_outline_off;
         if(menu != null) {
             MenuItem starButton = menu.findItem(R.id.action_toggle_starred);
             starButton.setIcon(ContextCompat.getDrawable(this, icon));
         }
     }
+
+    public void setDownloadFilterButton() {
+        int icon  = downloadFilterOn ?
+                R.drawable.download_circle_outline_on : R.drawable.download_circle_outline_off;
+        if(menu != null) {
+            MenuItem dlButton = menu.findItem(R.id.action_toggle_downloaded);
+            dlButton.setIcon(ContextCompat.getDrawable(this, icon));
+        }
+    }
+
+    public void setHistoryFilterButton() {
+        int icon  = historyFilterOn ?
+                R.drawable.history_on : R.drawable.history_off;
+        if(menu != null) {
+            MenuItem dlButton = menu.findItem(R.id.action_toggle_history);
+            dlButton.setIcon(ContextCompat.getDrawable(this, icon));
+        }
+    }
+
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -562,17 +608,6 @@ public class NavigationActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    /**
-     * Called when the "Downloaded only" switch in the nav drawer is pressed
-     * @param view
-     */
-    public void downloadOnlySwitchClicked(View view)
-    {
-        Switch downloadSwitch = (Switch) view;
-        downloadedOnly = downloadSwitch.isChecked();
-        updateDisplayedData();
     }
 
     public void headingDetailCollapseExpandButtonClicked(View view) {
@@ -643,7 +678,10 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     void updateDisplayedTeachers() {
-        Cursor cursor = teacherRepository.getTeachers(getSearchTerms(), starFilterOn);
+        Cursor cursor = teacherRepository.getTeachers(
+                getSearchTerms(),
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -658,7 +696,10 @@ public class NavigationActivity extends AppCompatActivity
 
     void updateDisplayedCenters()
     {
-        Cursor cursor = centerRepository.getCenters(getSearchTerms(), starFilterOn);
+        Cursor cursor = centerRepository.getCenters(
+                getSearchTerms(),
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
@@ -676,7 +717,10 @@ public class NavigationActivity extends AppCompatActivity
      */
     private void updateDisplayedTalks()
     {
-        Cursor cursor = talkRepository.getTalkAdapterData(getSearchTerms(), starFilterOn, downloadedOnly);
+        Cursor cursor = talkRepository.getTalkAdapterData(
+                getSearchTerms(),
+                starFilterOn, downloadFilterOn, historyFilterOn
+        );
         if (cursor != null)
         {
             cursorAdapter.changeCursor(cursor);
