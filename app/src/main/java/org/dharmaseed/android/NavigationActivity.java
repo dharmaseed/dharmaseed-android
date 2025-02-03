@@ -507,6 +507,10 @@ public class NavigationActivity extends AppCompatActivity
         }
     }
 
+    public void clearSearch(View view) {
+        clearSearch();
+    }
+
     public void clearSearch() {
         clearSearch(true);
     }
