@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.Thread;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,13 @@ public class TalkRepository extends Repository {
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DURATION_IN_MINUTES);
         talkAdapterColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
 
-        removeOldDownloads();
+        Thread cleanup = new Thread() {
+            public void run() {
+                removeOldDownloads();
+            }
+        };
+        cleanup.setPriority(Thread.MIN_PRIORITY);
+        cleanup.start();
     }
 
     /**
@@ -210,24 +217,24 @@ public class TalkRepository extends Repository {
      */
     public void removeOldDownloads()
     {
-        File downloadsDir = TalkManager.getDir(dbManager.getContext());
-        Log.i(LOG_TAG, "HI " + downloadsDir.toString());
+        File downloadsDir = FileManager.getDir(dbManager.getContext());
+        Log.d(LOG_TAG, "scanning for talks in the outdated storage locations");
 
         ArrayList<String> columns = new ArrayList<String>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
-        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH);
-
+        columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
         Cursor downloaded = getTalks(columns, null, false, true, false);
 
         while (downloaded.moveToNext())
         {
             int id = downloaded.getInt(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
                     DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID)));
-            File file = new File(downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
-                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH))).trim());
+            String title = downloaded.getString(downloaded.getColumnIndexOrThrow(DBManager.getAlias(
+                    DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE)));
+            File file = FileManager.getTalkFile(dbManager.getContext(), id, title);
 
             String directory = file.getAbsoluteFile().getParent();
-            String downloadDirectory = TalkManager.getDir(dbManager.getContext()).getAbsolutePath();
+            String downloadDirectory = FileManager.getDir(dbManager.getContext()).getAbsolutePath();
 
             if (directory != null && ! directory.equals(downloadDirectory)) {
                 Log.w(LOG_TAG, "Detected old style download for talk " + file.toString());
@@ -236,7 +243,7 @@ public class TalkRepository extends Repository {
                 try {
                     File copyTarget = new File(downloadsDir.toString() + "/" + file.getName());
                     copy(file, copyTarget);
-                    dbManager.addDownload(id, copyTarget.toString());
+                    dbManager.addDownload(id);
                     Log.i(LOG_TAG, "Successfully moved old talk to " + copyTarget.toString());
                     file.delete();
                 } catch (IOException e) {

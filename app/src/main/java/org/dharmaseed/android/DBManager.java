@@ -45,7 +45,7 @@ import java.util.List;
  */
 public class DBManager extends AbstractDBManager {
 
-    private static final int DB_VERSION = 4;
+    private static final int DB_VERSION = 5;
     private static final String DB_NAME = "Dharmaseed.db";
     private static final String LOG_TAG = "DBManager";
 
@@ -68,6 +68,19 @@ public class DBManager extends AbstractDBManager {
                     Log.e("dbManager", ioe.toString());
                 }
             }
+            /**
+             * to completely reset the databases and re-download all the tables/photos etc from
+             * the web, follow these steps:
+             * 1. remove all files from assets/teacher_photos
+             * 2. uncomment the line below
+             * 3. increment DB_VERSION (if you intend to get a new .db file to be rolled out to all users)
+             * 4. start the app on a completely fresh VM
+             * 5. after the refresh is done, copy
+             *    - Dharmaseed.db (/data/user/0/org.dharmaseed.android/databases/Dharmaseed.db)
+             *    - teacher photos (/data/user/0/org.dharmaseed.android/files/teacher-*.png)
+             *    to the assets folder
+             */
+            // dbFile.delete();
         }
     }
 
@@ -127,7 +140,6 @@ public class DBManager extends AbstractDBManager {
         v.put(C.Edition.TABLE, C.Edition.LAST_SYNC);
         v.put(C.Edition.EDITION, 0);
         db.insert(C.Edition.TABLE_NAME, null, v);
-
     }
 
     @Override
@@ -303,10 +315,6 @@ public class DBManager extends AbstractDBManager {
         db.insertWithOnConflict(DBManager.C.Edition.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
-    public static String getTeacherPhotoFilename(int teacherID) {
-        return "teacher-"+teacherID+".png";
-    }
-
     public boolean isStarred(String starTableName, int id) {
         SQLiteDatabase db = getReadableDatabase();
         String query = String.format("SELECT _id FROM %s WHERE _id=%s",
@@ -373,7 +381,7 @@ public class DBManager extends AbstractDBManager {
     }
 
     public boolean addDownload(Talk talk) {
-        return addDownload(talk.getId(), talk.getPath());
+        return addDownload(talk.getId());
     }
 
     public boolean removeDownload(Talk talk) {

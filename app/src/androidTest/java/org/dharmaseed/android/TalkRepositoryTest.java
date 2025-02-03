@@ -32,7 +32,6 @@ public class TalkRepositoryTest
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.VENUE_ID);
-        allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.FILE_PATH);
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.AUDIO_URL);
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.UPDATE_DATE);
         allTalkColumns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.DESCRIPTION);
@@ -54,7 +53,7 @@ public class TalkRepositoryTest
 
         List<String> columns = new ArrayList<>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
-        Cursor actualCursor = talkRepository.getTalks(columns, null, false, false);
+        Cursor actualCursor = talkRepository.getTalks(columns, null, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         // the getTalks() method should perform an equivalent query
@@ -71,7 +70,7 @@ public class TalkRepositoryTest
     {
         talkRepository = new TalkRepository(dbManager);
 
-        Cursor actualCursor = talkRepository.getTalks(allTalkColumns, null, false, false);
+        Cursor actualCursor = talkRepository.getTalks(allTalkColumns, null, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         // the getTalks() method should perform an equivalent query
@@ -94,7 +93,7 @@ public class TalkRepositoryTest
         List<String> columns = new ArrayList<>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
-        Cursor actual = talkRepository.getTalks(columns, null, false, false);
+        Cursor actual = talkRepository.getTalks(columns, null, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery("SELECT _id AS talks__id, teacher_id AS talks_teacher_id FROM talks ORDER BY rec_date DESC", null);
@@ -115,7 +114,7 @@ public class TalkRepositoryTest
         searchTerms.add("Joseph");
         searchTerms.add("Compassion");
 
-        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, false);
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -146,7 +145,7 @@ public class TalkRepositoryTest
         List<String> searchTerms = new ArrayList<>();
         searchTerms.add("Sally");
 
-        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, false);
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -169,7 +168,7 @@ public class TalkRepositoryTest
         List<String> columns = new ArrayList<>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
-        Cursor actual = talkRepository.getTalks(columns, null, true, false);
+        Cursor actual = talkRepository.getTalks(columns, null, true, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -190,7 +189,7 @@ public class TalkRepositoryTest
         List<String> columns = new ArrayList<>();
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
-        Cursor actual = talkRepository.getTalks(columns, null, false, true);
+        Cursor actual = talkRepository.getTalks(columns, null, false, true, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -208,7 +207,7 @@ public class TalkRepositoryTest
     {
         talkRepository = new TalkRepository(dbManager);
 
-        Cursor actual = talkRepository.getTalks(allTalkColumns, null, true, true);
+        Cursor actual = talkRepository.getTalks(allTalkColumns, null, true, true, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -239,7 +238,7 @@ public class TalkRepositoryTest
         List<String> searchTerms = new ArrayList<>();
         searchTerms.add("Joseph");
 
-        Cursor actual = talkRepository.getTalks(columns, searchTerms, true, false);
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, true, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -268,7 +267,7 @@ public class TalkRepositoryTest
         List<String> searchTerms = new ArrayList<>();
         searchTerms.add("Metta");
 
-        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, true);
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, false, true, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -297,7 +296,7 @@ public class TalkRepositoryTest
         List<String> searchTerms = new ArrayList<>();
         searchTerms.add("Mind");
 
-        Cursor actual = talkRepository.getTalks(columns, searchTerms, true, true);
+        Cursor actual = talkRepository.getTalks(columns, searchTerms, true, true, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -324,7 +323,7 @@ public class TalkRepositoryTest
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TEACHER_ID);
         columns.add(DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME);
-        Cursor actual = talkRepository.getTalks(columns, null, false, false);
+        Cursor actual = talkRepository.getTalks(columns, null, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -349,7 +348,7 @@ public class TalkRepositoryTest
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
         columns.add(DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME);
-        Cursor actual = talkRepository.getTalksByTeacher(null, teacherId, false, false);
+        Cursor actual = talkRepository.getTalksByTeacher(null, teacherId, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -364,10 +363,10 @@ public class TalkRepositoryTest
         assertCursors(expected, actual, columns);
 
         // Make sure that talks with more than one teacher are correctly returned by getTalksByTeacher
-        actual = talkRepository.getTalksByTeacher(null, 278, false, false);
+        actual = talkRepository.getTalksByTeacher(null, 278, false, false, false);
         assertEquals(1, actual.getCount());
 
-        actual = talkRepository.getTalksByTeacher(null, 553, false, false);
+        actual = talkRepository.getTalksByTeacher(null, 553, false, false, false);
         assertEquals(2, actual.getCount());
     }
 
@@ -383,7 +382,7 @@ public class TalkRepositoryTest
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.RECORDING_DATE);
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.TITLE);
         columns.add(DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME);
-        Cursor actual = talkRepository.getTalksByCenter(null, centerId, false, false);
+        Cursor actual = talkRepository.getTalksByCenter(null, centerId, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -407,7 +406,7 @@ public class TalkRepositoryTest
         columns.add(DBManager.C.Talk.TABLE_NAME + "." + DBManager.C.Talk.ID);
         columns.add(DBManager.C.Teacher.TABLE_NAME + "." + DBManager.C.Teacher.NAME);
         columns.add(DBManager.C.Center.TABLE_NAME + "." + DBManager.C.Center.NAME);
-        Cursor actual = talkRepository.getTalks(columns, null, false, false);
+        Cursor actual = talkRepository.getTalks(columns, null, false, false, false);
 
         SQLiteDatabase db = dbManager.getReadableDatabase();
         Cursor expected = db.rawQuery(
@@ -422,7 +421,7 @@ public class TalkRepositoryTest
     @Test(expected = IllegalArgumentException.class)
     public void getTalksWithNoColumns_raisesException() {
         talkRepository = new TalkRepository(dbManager);
-        talkRepository.getTalks(null, null, false, false);
+        talkRepository.getTalks(null, null, false, false, false);
     }
 
     /**
