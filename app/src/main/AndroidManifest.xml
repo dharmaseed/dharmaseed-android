@@ -57,7 +57,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
                 <data android:host="dharmaseed.org" />
-                <data android:pathAdvancedPattern="/talks/[0-9]+" />
+                <data android:pathAdvancedPattern="/talks/[0-9]+[?/]*.*" />
             </intent-filter>
         </activity>
         <activity
