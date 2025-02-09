@@ -24,10 +24,11 @@
             android:foregroundServiceType="mediaPlayback"
             android:exported="true">
             <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService"/>
+                <action android:name="androidx.media3.session.MediaSessionService" />
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+
         <activity
             android:name=".NavigationActivity"
             android:exported="true"
@@ -42,10 +43,22 @@
         <activity
             android:name=".PlayTalkActivity"
             android:label="@string/play_talk_label"
+            android:exported="true"
             android:parentActivityName="org.dharmaseed.android.NavigationActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.dharmaseed.android.NavigationActivity" />
+
+            <intent-filter android:autoVerify="true">
+                <!-- ADB command for testing this: -->
+                <!-- adb shell am start -W -a android.intent.action.VIEW -d https://dharmaseed.org/talks/76647 -->
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="dharmaseed.org" />
+                <data android:pathAdvancedPattern="/talks/[0-9]+" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".RetreatSearchActivity"
@@ -56,8 +69,6 @@
         </activity>
 
     </application>
-
-
 
 
 </manifest>
