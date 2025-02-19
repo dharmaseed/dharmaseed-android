@@ -391,6 +391,14 @@ public class NavigationActivity extends AppCompatActivity
         Teacher teacher = Teacher.create(cursor);
         cursor.close();
 
+        if (teacher.getId() != id) {
+            final String teacherError = "Sorry - unknown teacher #" + id + "!";
+            Log.d(LOG_TAG, teacherError);
+            showToast(teacherError);
+            finish();
+            return;
+        }
+
         headerPrimary.setText(teacher.getName());
 
         if (!teacher.getWebsite().isEmpty()) {
