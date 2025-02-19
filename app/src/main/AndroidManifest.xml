@@ -39,6 +39,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <!-- ADB command for testing this: -->
+                <!-- adb shell am start -W -a android.intent.action.VIEW -d https://dharmaseed.org/teacher/4 -->
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="dharmaseed.org" />
+                <data android:pathAdvancedPattern="/teacher/[0-9]+[?/]*.*" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".PlayTalkActivity"

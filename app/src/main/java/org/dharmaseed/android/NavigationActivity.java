@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.core.content.ContextCompat;
@@ -212,14 +213,11 @@ public class NavigationActivity extends AppCompatActivity
         starFilterOn = false;
         downloadFilterOn = false;
         historyFilterOn = false;
-        searchCluster.setVisibility(View.GONE);
-        header.setVisibility(View.GONE);
-        setViewMode(VIEW_MODE_TALKS);
-        setDetailMode(DETAIL_MODE_NONE);
         extraSearchTerms = "";
         talkRepository = new TalkRepository(dbManager);
         teacherRepository = new TeacherRepository(dbManager);
         centerRepository = new CenterRepository(dbManager);
+        setIntendedView();
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -280,6 +278,35 @@ public class NavigationActivity extends AppCompatActivity
                 scrollFader.setText(scrollText.getText());
             }
         }
+    }
+
+    protected void setIntendedView() {
+        Intent i = getIntent();
+        Log.d(LOG_TAG, "Intent with type=" + i.getType() + " action="+i.getAction() + " data="+i.getData());
+
+        int viewMode = VIEW_MODE_TALKS;
+        int detailMode = DETAIL_MODE_NONE;
+        long detailId = 0;
+
+        Uri intentURI = i.getData();
+        if (intentURI != null) {
+            java.util.List<String> segments = intentURI.getPathSegments();
+            if (segments.size() >= 2 && segments.get(1).matches("\\d+")) {
+                if (segments.get(0).equals("teacher")) {
+                    viewMode = VIEW_MODE_TEACHERS;
+                    detailMode = DETAIL_MODE_TEACHER;
+                    detailId = Integer.parseInt(segments.get(1));
+                }
+            }
+
+            if (detailMode == DETAIL_MODE_NONE)
+                Log.d(LOG_TAG, "Don't know what to do with intent URI "+intentURI);
+        }
+
+        searchCluster.setVisibility(View.GONE);
+        header.setVisibility(View.GONE);
+        setViewMode(viewMode);
+        setDetailMode(detailMode, detailId);
     }
 
     void setViewMode(int viewMode) {
