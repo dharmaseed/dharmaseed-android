@@ -46,6 +46,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
+                <data android:scheme="http" />
                 <data android:host="dharmaseed.org" />
                 <data android:pathAdvancedPattern="/teacher/[0-9]+[?/]*.*" />
             </intent-filter>
@@ -66,6 +67,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
+                <data android:scheme="http" />
                 <data android:host="dharmaseed.org" />
                 <data android:pathAdvancedPattern="/talks/[0-9]+[?/]*.*" />
             </intent-filter>
