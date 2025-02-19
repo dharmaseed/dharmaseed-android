@@ -251,7 +251,6 @@ public class NavigationActivity extends AppCompatActivity
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                Log.d(LOG_TAG, "scroll position changed: " + firstVisibleItem);
                 View item = listView.getChildAt(0);
                 if (item != null)
                     updateScrollLabel(item);
@@ -265,11 +264,13 @@ public class NavigationActivity extends AppCompatActivity
             case VIEW_MODE_TALKS:
             case VIEW_MODE_TEACHER_TALKS:
             case VIEW_MODE_CENTER_TALKS:
+                // use date as a scroll label for lists of talks
                 scrollId = R.id.item_view_detail3;
                 break;
 
             case VIEW_MODE_CENTERS:
             case VIEW_MODE_TEACHERS:
+                // use the teacher / center name as a scroll label
                 scrollId = R.id.item_view_title;
                 break;
         }

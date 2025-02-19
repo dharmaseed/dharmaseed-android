@@ -8,6 +8,11 @@ import android.widget.TextView;
 
 
 public class TextViewFader {
+    /*
+    TextView that fades in when the label changes and fades out
+    again when the label remains unchanged for a certain period
+     */
+
     private static final String LOG_TAG = "TextViewFader";
 
     protected boolean hidden, initialised;
@@ -30,7 +35,6 @@ public class TextViewFader {
         if (view.getText().equals(text))
             return;
 
-        Log.d(LOG_TAG, "setting text: '" + text + "'");
         view.setText(text);
         if (initialised) {
             if (hidden)
