@@ -74,7 +74,7 @@ public class DBManager extends AbstractDBManager {
              * 1. remove all files from assets/teacher_photos
              * 2. uncomment the line below
              * 3. increment DB_VERSION (if you intend to get a new .db file to be rolled out to all users)
-             * 4. start the app on a completely fresh VM
+             * 4. start the app on a completely fresh VM (Wipe Data in Device Manager)
              * 5. after the refresh is done, copy
              *    - Dharmaseed.db (/data/user/0/org.dharmaseed.android/databases/Dharmaseed.db)
              *    - teacher photos (/data/user/0/org.dharmaseed.android/files/teacher-*.png)

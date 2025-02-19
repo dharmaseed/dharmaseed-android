@@ -31,7 +31,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import android.os.StrictMode;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.view.KeyEvent;
@@ -52,13 +51,14 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
-import android.widget.Switch;
+import android.widget.AbsListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 
 public class NavigationActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -79,6 +79,7 @@ public class NavigationActivity extends AppCompatActivity
     DBManager dbManager;
     CursorAdapter cursorAdapter;
     SwipeRefreshLayout refreshLayout;
+    TextViewFader scrollFader;
 
     private int viewMode;
 
@@ -154,7 +155,7 @@ public class NavigationActivity extends AppCompatActivity
         if (dbManager.shouldSync()) {
             fetchNewDataFromServer();
         } else {
-            Log.i("onResume", "Don't need to fetch new data from server");
+            Log.i(LOG_TAG, "onResume: don't need to fetch new data from server");
         }
         updateDisplayedData();
 
@@ -202,9 +203,10 @@ public class NavigationActivity extends AppCompatActivity
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        // Configure list view
+        // Configure list view and scroll label
         listView = (ListView) findViewById(R.id.talks_list_view);
         listView.setOnItemClickListener(this);
+        scrollFader = new TextViewFader(findViewById(R.id.fadeLabel));
 
         // Initialize UI state
         starFilterOn = false;
@@ -224,7 +226,7 @@ public class NavigationActivity extends AppCompatActivity
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                Log.i("refresh", "onrefresh");
+                Log.i(LOG_TAG, "onrefresh");
                 fetchNewDataFromServer();
             }
         });
@@ -238,11 +240,46 @@ public class NavigationActivity extends AppCompatActivity
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.i("navigationActivity", "Received update broadcast");
+                Log.i(LOG_TAG, "Received update broadcast");
                 updateDisplayedData();
             }
         }, new IntentFilter("updateDisplayedData"));
 
+        listView.setOnScrollListener(new ListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {}
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                View item = listView.getChildAt(0);
+                if (item != null)
+                    updateScrollLabel(item);
+            }
+        });
+    }
+
+    private void updateScrollLabel(View item) {
+        int scrollId = -1;
+        switch(viewMode) {
+            case VIEW_MODE_TALKS:
+            case VIEW_MODE_TEACHER_TALKS:
+            case VIEW_MODE_CENTER_TALKS:
+                // use date as a scroll label for lists of talks
+                scrollId = R.id.item_view_detail3;
+                break;
+
+            case VIEW_MODE_CENTERS:
+            case VIEW_MODE_TEACHERS:
+                // use the teacher / center name as a scroll label
+                scrollId = R.id.item_view_title;
+                break;
+        }
+        if (scrollId > 0) {
+            TextView scrollText = item.findViewById(scrollId);
+            if (scrollText != null) {
+                scrollFader.setText(scrollText.getText());
+            }
+        }
     }
 
     void setViewMode(int viewMode) {
@@ -253,6 +290,9 @@ public class NavigationActivity extends AppCompatActivity
         this.viewMode = viewMode;
         header.setVisibility(View.GONE);
         extraSearchTerms = "";
+        clearSearch(false);
+        scrollFader.reset();
+
         switch(viewMode) {
 
             case VIEW_MODE_TALKS:
@@ -296,7 +336,8 @@ public class NavigationActivity extends AppCompatActivity
             // Clear search and filters
             starFilterOn = false;
             setStarFilterButton();
-            clearSearch(searchCluster);
+            clearSearch();
+            scrollFader.reset();
 
             switch (detailMode)
             {
@@ -394,7 +435,7 @@ public class NavigationActivity extends AppCompatActivity
     public void fetchNewDataFromServer() {
 
         // Fetch new data from the server
-        Log.i("navigationActivity", "fetchNewDataFromServer()");
+        Log.i(LOG_TAG, "fetchNewDataFromServer()");
         if(teacherFetcherTask == null || teacherFetcherTask.getStatus() == AsyncTask.Status.FINISHED) {
             refreshLayout.setRefreshing(true);
             teacherFetcherTask = new TeacherFetcherTask(dbManager, this, this);
@@ -458,11 +499,21 @@ public class NavigationActivity extends AppCompatActivity
         return true;
     }
 
-    public void clearSearch(View v) {
+    public void clearSearch(boolean updateData) {
         searchCluster.setVisibility(View.GONE);
         searchBox.setText("");
-        updateDisplayedData();
-        resetListToTop();
+        if (updateData) {
+            updateDisplayedData();
+            resetListToTop();
+        }
+    }
+
+    public void clearSearch(View view) {
+        clearSearch();
+    }
+
+    public void clearSearch() {
+        clearSearch(true);
     }
 
     @Override
@@ -479,7 +530,7 @@ public class NavigationActivity extends AppCompatActivity
 //                return true;
 
             case R.id.action_search:
-                Log.i("nav", "Search!");
+                Log.i(LOG_TAG, "Search!");
                 EditText searchBox = (EditText) findViewById(R.id.nav_search_text);
                 if (searchCluster.getVisibility() == View.GONE) {
                     searchCluster.setVisibility(View.VISIBLE);
@@ -489,7 +540,7 @@ public class NavigationActivity extends AppCompatActivity
                             getSystemService(Context.INPUT_METHOD_SERVICE);
                     keyboard.showSoftInput(searchBox, 0);
                 } else {
-                    clearSearch(searchCluster);
+                    clearSearch();
                 }
                 return true;
 
@@ -521,7 +572,7 @@ public class NavigationActivity extends AppCompatActivity
     // Called when an item in the main list view is clicked
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Log.d("onItemClick", "selected " + position + ", " + id);
+        Log.d(LOG_TAG, "onItemClick: selected " + position + ", " + id);
         Context ctx = parent.getContext();
 
         switch(viewMode) {
@@ -626,7 +677,7 @@ public class NavigationActivity extends AppCompatActivity
 
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        Log.i("onEditorAction", v.getText().toString());
+        Log.i(LOG_TAG, "onEditorAction: " + v.getText().toString());
 
         // Close keyboard
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -647,7 +698,7 @@ public class NavigationActivity extends AppCompatActivity
     // Search box edit text focus listener
     @Override
     public void onFocusChange(View v, boolean hasFocus) {
-        Log.i("focusChange", hasFocus+"");
+        Log.i(LOG_TAG, "focusChange: " + hasFocus);
         if (hasFocus) {
             ((EditText)v).setCursorVisible(true);
         } else {
