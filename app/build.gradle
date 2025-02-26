@@ -31,10 +31,47 @@ android {
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+
+    /*
+    For signing to work, create a file ~/.gradle/gradle.properties containing:
+
+    DS_STORE_FILE=../../relative/path/to/your/store.jks
+    DS_STORE_PASSWORD=*****
+    DS_KEY_ALIAS=*****
+    DS_KEY_PASSWORD=*****
+
+    (adapted from https://stackoverflow.com/a/21020469)
+    NOTES:
+     - no quotes around any ***** values
+     - the DS_STORE_FILE path is relative to the directory containing this file
+     */
+    signingConfigs {
+        if (project.hasProperty('DS_STORE_FILE')) {
+            defaultConfig {
+                storeFile file(DS_STORE_FILE)
+                storePassword DS_STORE_PASSWORD
+                keyAlias DS_KEY_ALIAS
+                keyPassword DS_KEY_PASSWORD
+
+                // Optional, specify signing versions used
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (project.hasProperty('DS_STORE_FILE')) {
+                signingConfig signingConfigs.defaultConfig
+            }
+        }
+        debug {
+            if (project.hasProperty('DS_STORE_FILE')) {
+                signingConfig signingConfigs.defaultConfig
+            }
         }
     }
     namespace 'org.dharmaseed.android'

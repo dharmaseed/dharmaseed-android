@@ -28,8 +28,11 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ProgressBar;
+import android.util.Log;
 
 public class TalkCursorAdapter extends StarCursorAdapter {
+
+    static final String LOG_TAG = "TalkCursorAdapter";
 
     public TalkCursorAdapter(DBManager dbManager, NavigationActivity context, int layout, Cursor c) {
         super(dbManager, DBManager.C.TalkStars.TABLE_NAME, context, layout, c);
@@ -51,10 +54,20 @@ public class TalkCursorAdapter extends StarCursorAdapter {
         final int talkID = cursor.getInt(cursor.getColumnIndexOrThrow(DBManager.C.Talk.ID));
         final Talk talk = Talk.lookup(dbManager, context, talkID);
 
+        if (talk == null) {
+            // this has happened in production - presumably because of talks being removed
+            // from the DB while the list view is being populated during app startup...
+            Log.d(LOG_TAG, "Talk #" + talkID + " has vanished!");
+            view.setVisibility(View.GONE);
+            return;
+        } else {
+            view.setVisibility(View.VISIBLE);
+        }
+
         // Set talk title and teacher name
-        final TextView title=(TextView)view.findViewById(R.id.item_view_title);
-        final TextView teacher=(TextView)view.findViewById(R.id.item_view_detail1);
-        final TextView center=(TextView)view.findViewById(R.id.item_view_detail2);
+        final TextView title = view.findViewById(R.id.item_view_title);
+        final TextView teacher = view.findViewById(R.id.item_view_detail1);
+        final TextView center = view.findViewById(R.id.item_view_detail2);
         title.setText(talk.getTitle());
         teacher.setText(talk.getAllTeacherNames());
         center.setText(talk.getCenterName());
