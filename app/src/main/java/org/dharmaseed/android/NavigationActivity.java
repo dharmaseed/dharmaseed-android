@@ -291,16 +291,20 @@ public class NavigationActivity extends AppCompatActivity
         Uri intentURI = i.getData();
         if (intentURI != null) {
             java.util.List<String> segments = intentURI.getPathSegments();
+
+            // go to teachers list
+            if (segments.size() == 1 && segments.get(0).equals("teachers")) {
+                viewMode = VIEW_MODE_TEACHERS;
+            }
+
             if (segments.size() >= 2 && segments.get(1).matches("\\d+")) {
+                // detail view for a specific teacher
                 if (segments.get(0).equals("teacher")) {
                     viewMode = VIEW_MODE_TEACHERS;
                     detailMode = DETAIL_MODE_TEACHER;
                     detailId = Integer.parseInt(segments.get(1));
                 }
             }
-
-            if (detailMode == DETAIL_MODE_NONE)
-                Log.d(LOG_TAG, "Don't know what to do with intent URI "+intentURI);
         }
 
         searchCluster.setVisibility(View.GONE);
