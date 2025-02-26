@@ -502,6 +502,12 @@ public class NavigationActivity extends AppCompatActivity
             return;
         }
 
+        if (getIntent().getData() != null) {
+            // activity was triggered by opening a link
+            super.onBackPressed();
+            return;
+        }
+
         switch (viewMode)
         {
             case VIEW_MODE_TALKS:
