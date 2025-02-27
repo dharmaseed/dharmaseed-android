@@ -27,6 +27,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.cursoradapter.widget.CursorAdapter;
@@ -115,6 +116,7 @@ public class NavigationActivity extends AppCompatActivity
 
     boolean starFilterOn;
     private boolean downloadFilterOn, historyFilterOn;
+    private boolean backButtonAlreadyPressed;
 
     private TalkRepository talkRepository;
     private TeacherRepository teacherRepository;
@@ -238,6 +240,7 @@ public class NavigationActivity extends AppCompatActivity
         starFilterOn = false;
         downloadFilterOn = false;
         historyFilterOn = false;
+        backButtonAlreadyPressed = false;
         extraSearchTerms = "";
         talkRepository = new TalkRepository(dbManager);
         teacherRepository = new TeacherRepository(dbManager);
@@ -512,8 +515,21 @@ public class NavigationActivity extends AppCompatActivity
 
         if (viewHistory.size() <= 1) {
             // nothing to go back to
-            if (getIntent().getData() != null)
-                super.onBackPressed();  // exit activity if app was opened via link
+            if (backButtonAlreadyPressed || getIntent().getData() != null) {
+                // exit activity if app was opened via link or back button pressed twice
+                super.onBackPressed();
+            } else {
+                // wait for second "back" within 2s to exit
+                backButtonAlreadyPressed = true;
+                showToast("Press back again to exit");
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        backButtonAlreadyPressed = false;
+                    }
+                }, 2000);
+            }
+
             return;
         }
         viewHistory.pop();
