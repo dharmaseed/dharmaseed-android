@@ -137,7 +137,9 @@ public class PlayTalkActivity extends AppCompatActivity
         // Turn on action bar up/home button
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
+            // hide back button if the activity was launched by clicking on a link
+            boolean showBackArrow = (getIntent().getData() == null);
+            actionBar.setDisplayHomeAsUpEnabled(showBackArrow);
         }
 
         // Set the talk title
