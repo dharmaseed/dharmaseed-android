@@ -25,6 +25,7 @@ import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.graphics.drawable.Animatable;
 import android.os.AsyncTask;
+import android.net.Uri;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -77,29 +78,33 @@ public class PlayTalkActivity extends AppCompatActivity
 
     static final String LOG_TAG = "PlayTalkActivity";
 
-    // request code for writing external storage (the number is arbitrary)
-    static final int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 9087;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
+        getIntendedTalk();
+        if (talkMissing())
+            finish();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
-        // Turn on action bar up/home button
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
-
+    protected void getIntendedTalk() {
         // Get the ID of the talk to display
         Intent i = getIntent();
-        talkID = (int) i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, 0);
+        Log.d(LOG_TAG, "Intent with type=" + i.getType() + " action="+i.getAction() + " data="+i.getData());
+        Uri talkURI = i.getData();
+        if (talkURI != null) {
+            java.util.List<String> segments = talkURI.getPathSegments();
+            if (segments.size() >= 2 &&
+                    segments.get(0).equals("talks") &&
+                    segments.get(1).matches("\\d+")) {
+                talkID = Integer.parseInt(segments.get(1));
+            } else
+                Log.d(LOG_TAG, "Failed to get talkID from URI "+talkURI);
+        } else {
+            talkID = (int) i.getLongExtra(NavigationActivity.TALK_DETAIL_EXTRA, -1);
+            if (talkID < 0)
+                talkID = i.getIntExtra(NavigationActivity.TALK_DETAIL_EXTRA, -1);
+        }
 
         dbManager = DBManager.getInstance(this);
 
@@ -109,8 +114,33 @@ public class PlayTalkActivity extends AppCompatActivity
         // to hit the DB again, since we already have that talk saved
         if (talk == null || talk.getId() != talkID) {
             talk = Talk.lookup(dbManager, getApplicationContext(), talkID);
-
         } // else we already have the talk, just re-draw the page
+    }
+
+    protected boolean talkMissing() {
+        if (talk == null) {
+            final String talkError = "Sorry - unable to play talk #" + talkID + "!";
+            Log.d(LOG_TAG, talkError);
+            showToast(talkError, Toast.LENGTH_SHORT);
+        }
+        return (talk == null);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (talkMissing())
+            return;
+
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+
+        // Turn on action bar up/home button
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            // hide back button if the activity was launched by clicking on a link
+            boolean showBackArrow = (getIntent().getData() == null);
+            actionBar.setDisplayHomeAsUpEnabled(showBackArrow);
+        }
 
         // Set the talk title
         TextView titleView = (TextView) findViewById(R.id.play_talk_talk_title);

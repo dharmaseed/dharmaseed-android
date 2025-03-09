@@ -24,8 +24,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.cursoradapter.widget.CursorAdapter;
@@ -56,6 +58,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -81,20 +84,29 @@ public class NavigationActivity extends AppCompatActivity
     SwipeRefreshLayout refreshLayout;
     TextViewFader scrollFader;
 
-    private int viewMode;
+    private class ViewMode {
+        private static final int VIEW_MODE_TALKS          = 0;
+        private static final int VIEW_MODE_TEACHERS       = 1;
+        private static final int VIEW_MODE_CENTERS        = 2;
 
-    private static final int VIEW_MODE_TALKS          = 0;
-    private static final int VIEW_MODE_TEACHERS       = 1;
-    private static final int VIEW_MODE_CENTERS        = 2;
-    private static final int VIEW_MODE_TEACHER_TALKS  = 3;
-    private static final int VIEW_MODE_CENTER_TALKS   = 4;
+        private static final int DETAIL_MODE_NONE    = 0;
+        private static final int DETAIL_MODE_TEACHER = 1;
+        private static final int DETAIL_MODE_CENTER  = 2;
 
-    private static final int DETAIL_MODE_NONE    = 0;
-    private static final int DETAIL_MODE_TEACHER = 1;
-    private static final int DETAIL_MODE_CENTER  = 2;
+        public ViewMode(int mode) {
+            this(mode, DETAIL_MODE_NONE, 0);
+        }
 
-    int detailMode;
-    long detailId;
+        public ViewMode(int mode, int detail, long detailId) {
+            this.mode = mode;
+            this.detail = detail;
+            this.detailId = detailId;
+        }
+
+        public int mode, detail;
+        public long detailId;
+    }
+    private LinkedList<ViewMode> viewHistory;
 
     TalkFetcherTask talkFetcherTask;
     TeacherFetcherTask teacherFetcherTask;
@@ -104,10 +116,19 @@ public class NavigationActivity extends AppCompatActivity
 
     boolean starFilterOn;
     private boolean downloadFilterOn, historyFilterOn;
+    private boolean backButtonAlreadyPressed;
 
     private TalkRepository talkRepository;
     private TeacherRepository teacherRepository;
     private CenterRepository centerRepository;
+
+    protected ViewMode getCurrentViewMode() {
+        if (viewHistory.size() > 0) {
+            return viewHistory.getFirst();
+        } else {
+            return new ViewMode(ViewMode.VIEW_MODE_TALKS);
+        }
+    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -118,9 +139,11 @@ public class NavigationActivity extends AppCompatActivity
         outState.putBoolean("StarFilterOn", starFilterOn);
         outState.putBoolean("DownloadFilterOn", downloadFilterOn);
         outState.putBoolean("HistoryFilterOn", historyFilterOn);
-        outState.putInt("ViewMode", viewMode);
-        outState.putInt("DetailMode", detailMode);
-        outState.putLong("DetailId", detailId);
+
+        ViewMode vm = getCurrentViewMode();
+        outState.putInt("ViewMode", vm.mode);
+        outState.putInt("DetailMode", vm.detail);
+        outState.putLong("DetailId", vm.detailId);
 
         // Save list position in the object as well to handle the case when the activity is
         // only being paused, not destroyed. This happens, for example, when navigating to
@@ -135,9 +158,14 @@ public class NavigationActivity extends AppCompatActivity
         searchCluster.setVisibility(savedInstanceState.getBoolean("SearchClusterVisible") ? View.VISIBLE : View.GONE);
         extraSearchTerms = savedInstanceState.getString("ExtraSearchTerms");
         header.setVisibility(savedInstanceState.getBoolean("HeaderVisible") ? View.VISIBLE : View.GONE);
-        setViewMode(savedInstanceState.getInt("ViewMode"));
-        setDetailMode(savedInstanceState.getInt("DetailMode"), savedInstanceState.getLong("DetailId"));
         savedListPosition = savedInstanceState.getInt("ListViewPosition");
+
+        ViewMode vm = new ViewMode(
+                savedInstanceState.getInt("ViewMode"),
+                savedInstanceState.getInt("DetailMode"),
+                savedInstanceState.getLong("DetailId")
+        );
+        setViewMode(vm);
 
         starFilterOn = savedInstanceState.getBoolean("StarFilterOn");
         setStarFilterButton();
@@ -212,14 +240,12 @@ public class NavigationActivity extends AppCompatActivity
         starFilterOn = false;
         downloadFilterOn = false;
         historyFilterOn = false;
-        searchCluster.setVisibility(View.GONE);
-        header.setVisibility(View.GONE);
-        setViewMode(VIEW_MODE_TALKS);
-        setDetailMode(DETAIL_MODE_NONE);
+        backButtonAlreadyPressed = false;
         extraSearchTerms = "";
         talkRepository = new TalkRepository(dbManager);
         teacherRepository = new TeacherRepository(dbManager);
         centerRepository = new CenterRepository(dbManager);
+        setIntendedView();
 
         // Set swipe refresh listener
         refreshLayout = (SwipeRefreshLayout) findViewById(R.id.talks_list_view_swipe_refresh);
@@ -260,16 +286,15 @@ public class NavigationActivity extends AppCompatActivity
 
     private void updateScrollLabel(View item) {
         int scrollId = -1;
-        switch(viewMode) {
-            case VIEW_MODE_TALKS:
-            case VIEW_MODE_TEACHER_TALKS:
-            case VIEW_MODE_CENTER_TALKS:
+        ViewMode v = getCurrentViewMode();
+        switch(v.mode) {
+            case ViewMode.VIEW_MODE_TALKS:
                 // use date as a scroll label for lists of talks
                 scrollId = R.id.item_view_detail3;
                 break;
 
-            case VIEW_MODE_CENTERS:
-            case VIEW_MODE_TEACHERS:
+            case ViewMode.VIEW_MODE_CENTERS:
+            case ViewMode.VIEW_MODE_TEACHERS:
                 // use the teacher / center name as a scroll label
                 scrollId = R.id.item_view_title;
                 break;
@@ -282,80 +307,97 @@ public class NavigationActivity extends AppCompatActivity
         }
     }
 
-    void setViewMode(int viewMode) {
-        setViewMode(viewMode, true);
+    protected void setIntendedView() {
+        viewHistory = new LinkedList();
+        Intent i = getIntent();
+        Log.d(LOG_TAG, "Intent with type=" + i.getType() + " action="+i.getAction() + " data="+i.getData());
+
+        ViewMode vm = new ViewMode(ViewMode.VIEW_MODE_TALKS);
+
+        Uri intentURI = i.getData();
+        if (intentURI != null) {
+            java.util.List<String> segments = intentURI.getPathSegments();
+
+            // go to teachers list
+            if (segments.size() == 1 && segments.get(0).equals("teachers")) {
+                vm.mode = ViewMode.VIEW_MODE_TEACHERS;
+            }
+
+            if (segments.size() >= 2 && segments.get(1).matches("\\d+")) {
+                // detail view for a specific teacher
+                if (segments.get(0).equals("teacher")) {
+                    vm = new ViewMode(
+                            ViewMode.VIEW_MODE_TALKS,
+                            ViewMode.DETAIL_MODE_TEACHER,
+                            Integer.parseInt(segments.get(1))
+                    );
+                }
+            }
+        }
+
+        searchCluster.setVisibility(View.GONE);
+        header.setVisibility(View.GONE);
+        setViewMode(vm);
     }
 
-    void setViewMode(int viewMode, boolean setMenuCheck) {
-        this.viewMode = viewMode;
-        header.setVisibility(View.GONE);
+    void setViewMode(ViewMode view) {
+        setViewMode(view, true);
+    }
+
+    void setViewMode(ViewMode vm, boolean setMenuCheck) {
+        Log.d(LOG_TAG, "setting view mode=" + vm.mode + " detail=" + vm.detail + " detailId=" + vm.detailId);
+        viewHistory.push(vm);
+
+        if (vm.detail == ViewMode.DETAIL_MODE_NONE) {
+            header.setVisibility(View.GONE);
+        } else {
+            // show header in detail mode and reset star button
+            header.setVisibility(View.VISIBLE);
+            starFilterOn = false;
+            setStarFilterButton();
+        }
+
+        // Clear search and filters
         extraSearchTerms = "";
         clearSearch(false);
+
+        // reset scroll label
         scrollFader.reset();
 
-        switch(viewMode) {
-
-            case VIEW_MODE_TALKS:
-            case VIEW_MODE_TEACHER_TALKS:
-            case VIEW_MODE_CENTER_TALKS:
+        // set the main view mode
+        switch(vm.mode) {
+            case ViewMode.VIEW_MODE_TALKS:
                 getSupportActionBar().setTitle("Talks");
                 cursorAdapter = new TalkCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_talks).setChecked(true);
+
+                // show talks of a single teacher
+                if (vm.detail == ViewMode.DETAIL_MODE_TEACHER) {
+                    setTeacherHeader(vm.detailId);
+                }
+
+                // show talks of a single center
+                if (vm.detail == ViewMode.DETAIL_MODE_CENTER) {
+                    setCenterHeader(vm.detailId);
+                }
                 break;
 
-            case VIEW_MODE_TEACHERS:
+            case ViewMode.VIEW_MODE_TEACHERS:
                 getSupportActionBar().setTitle("Teachers");
                 cursorAdapter = new TeacherCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_teachers).setChecked(true);
                 break;
 
-            case VIEW_MODE_CENTERS:
+            case ViewMode.VIEW_MODE_CENTERS:
                 getSupportActionBar().setTitle("Centers");
                 cursorAdapter = new CenterCursorAdapter(dbManager, this, R.layout.main_list_view_item, null);
                 if(setMenuCheck) navigationView.getMenu().findItem(R.id.nav_centers).setChecked(true);
                 break;
         }
         listView.setAdapter(cursorAdapter);
+        updateDisplayedData();
     }
 
-    private void setDetailMode(int detailMode) {
-        setDetailMode(detailMode, 0);
-    }
-
-    private void setDetailMode(int detailMode, long id)
-    {
-        this.detailMode = detailMode;
-        this.detailId = id;
-
-        if (detailMode == DETAIL_MODE_NONE)
-        {
-            header.setVisibility(View.GONE);
-        }
-        else
-        {
-            // Clear search and filters
-            starFilterOn = false;
-            setStarFilterButton();
-            clearSearch();
-            scrollFader.reset();
-
-            switch (detailMode)
-            {
-                case DETAIL_MODE_TEACHER:
-                    setViewMode(VIEW_MODE_TEACHER_TALKS);
-                    setTeacherHeader(id);
-                    break;
-
-                case DETAIL_MODE_CENTER:
-                    setViewMode(VIEW_MODE_CENTER_TALKS);
-                    setCenterHeader(id);
-                    break;
-            }
-
-            header.setVisibility(View.VISIBLE);
-            updateDisplayedData();
-        }
-    }
 
     private void setTeacherHeader(long id)
     {
@@ -363,6 +405,14 @@ public class NavigationActivity extends AppCompatActivity
         Cursor cursor = teacherRepository.getTeacherById(id);
         Teacher teacher = Teacher.create(cursor);
         cursor.close();
+
+        if (teacher.getId() != id) {
+            final String teacherError = "Sorry - unknown teacher #" + id + "!";
+            Log.d(LOG_TAG, teacherError);
+            showToast(teacherError);
+            finish();
+            return;
+        }
 
         headerPrimary.setText(teacher.getName());
 
@@ -463,29 +513,27 @@ public class NavigationActivity extends AppCompatActivity
             return;
         }
 
-        switch (viewMode)
-        {
-            case VIEW_MODE_TALKS:
-                // nowhere to go
-                break;
-            case VIEW_MODE_TEACHERS:
-                setViewMode(VIEW_MODE_TALKS);
-                break;
-            case VIEW_MODE_TEACHER_TALKS:
-                setViewMode(VIEW_MODE_TEACHERS);
-                break;
-            case VIEW_MODE_CENTERS:
-                setViewMode(VIEW_MODE_TALKS);
-                break;
-            case VIEW_MODE_CENTER_TALKS:
-                setViewMode(VIEW_MODE_CENTERS);
-                break;
-            default:
+        if (viewHistory.size() <= 1) {
+            // nothing to go back to
+            if (backButtonAlreadyPressed || getIntent().getData() != null) {
+                // exit activity if app was opened via link or back button pressed twice
                 super.onBackPressed();
-                return;
-        }
+            } else {
+                // wait for second "back" within 2s to exit
+                backButtonAlreadyPressed = true;
+                showToast("Press back again to exit");
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        backButtonAlreadyPressed = false;
+                    }
+                }, 2000);
+            }
 
-        updateDisplayedData();
+            return;
+        }
+        viewHistory.pop();
+        setViewMode(viewHistory.pop());
     }
 
     @Override
@@ -575,21 +623,30 @@ public class NavigationActivity extends AppCompatActivity
         Log.d(LOG_TAG, "onItemClick: selected " + position + ", " + id);
         Context ctx = parent.getContext();
 
-        switch(viewMode) {
-            case VIEW_MODE_TALKS:
-            case VIEW_MODE_TEACHER_TALKS:
-            case VIEW_MODE_CENTER_TALKS:
+        ViewMode vm = getCurrentViewMode();
+        switch(vm.mode) {
+            case ViewMode.VIEW_MODE_TALKS:
                 Intent intent = new Intent(ctx, PlayTalkActivity.class);
                 intent.putExtra(TALK_DETAIL_EXTRA, id);
                 ctx.startActivity(intent);
                 break;
 
-            case VIEW_MODE_TEACHERS:
-                setDetailMode(DETAIL_MODE_TEACHER, id);
+            case ViewMode.VIEW_MODE_TEACHERS:
+                setViewMode(
+                    new ViewMode(
+                            ViewMode.VIEW_MODE_TALKS,
+                            ViewMode.DETAIL_MODE_TEACHER, (int) id
+                    )
+                );
                 break;
 
-            case VIEW_MODE_CENTERS:
-                setDetailMode(DETAIL_MODE_CENTER, id);
+            case ViewMode.VIEW_MODE_CENTERS:
+                setViewMode(
+                    new ViewMode(
+                            ViewMode.VIEW_MODE_TALKS,
+                            ViewMode.DETAIL_MODE_CENTER, (int) id
+                    )
+                );
                 break;
         }
     }
@@ -642,19 +699,16 @@ public class NavigationActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_talks) {
-            setViewMode(VIEW_MODE_TALKS);
+            setViewMode(new ViewMode(ViewMode.VIEW_MODE_TALKS));
         } else if (id == R.id.nav_teachers) {
-            setViewMode(VIEW_MODE_TEACHERS);
+            setViewMode(new ViewMode(ViewMode.VIEW_MODE_TEACHERS));
         } else if (id == R.id.nav_centers) {
-            setViewMode(VIEW_MODE_CENTERS);
+            setViewMode(new ViewMode(ViewMode.VIEW_MODE_CENTERS));
         }
 //        else if (id == R.id.nav_retreats) {
 //            Intent intent = new Intent(this, RetreatSearchActivity.class);
 //            this.startActivity(intent);
 //        }
-        setDetailMode(DETAIL_MODE_NONE);
-
-        updateDisplayedData();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -709,21 +763,26 @@ public class NavigationActivity extends AppCompatActivity
     }
 
     public void updateDisplayedData() {
-        switch (viewMode) {
-            case VIEW_MODE_TALKS:
-                updateDisplayedTalks();
+        ViewMode vm = getCurrentViewMode();
+        switch (vm.mode) {
+            case ViewMode.VIEW_MODE_TALKS:
+                switch (vm.detail) {
+                    case ViewMode.DETAIL_MODE_NONE:
+                        updateDisplayedTalks();
+                        break;
+                    case ViewMode.DETAIL_MODE_TEACHER:
+                        displayTalksByTeacher(vm.detailId);
+                        break;
+                    case ViewMode.DETAIL_MODE_CENTER:
+                        displayTalksByCenter(vm.detailId);
+                        break;
+                }
                 break;
-            case VIEW_MODE_TEACHERS:
+            case ViewMode.VIEW_MODE_TEACHERS:
                 updateDisplayedTeachers();
                 break;
-            case VIEW_MODE_CENTERS:
+            case ViewMode.VIEW_MODE_CENTERS:
                 updateDisplayedCenters();
-                break;
-            case VIEW_MODE_TEACHER_TALKS:
-                displayTalksByTeacher(detailId);
-                break;
-            case VIEW_MODE_CENTER_TALKS:
-                displayTalksByCenter(detailId);
                 break;
         }
     }
@@ -740,8 +799,7 @@ public class NavigationActivity extends AppCompatActivity
         else
         {
             showToast("There was a problem displaying teachers.");
-            setViewMode(VIEW_MODE_TALKS);
-            updateDisplayedData();
+            setViewMode(new ViewMode(ViewMode.VIEW_MODE_TALKS));
         }
     }
 
@@ -758,8 +816,7 @@ public class NavigationActivity extends AppCompatActivity
         else
         {
             showToast("There was a problem with the query");
-            setViewMode(VIEW_MODE_TALKS);
-            updateDisplayedData();
+            setViewMode(new ViewMode(ViewMode.VIEW_MODE_TALKS));
         }
     }
 

@@ -4,7 +4,7 @@ import android.database.Cursor;
 
 public class Teacher
 {
-    private int id;
+    private int id = -1;
 
     private String website;
     private String donationUrl;
