@@ -1,7 +1,11 @@
 package org.dharmaseed.android;
 
 import static androidx.media3.common.C.WAKE_MODE_NETWORK;
+import static androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS;
+import static androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
+
+import static org.dharmaseed.android.PlayTalkActivity.SEEK_AMOUNT_MS;
 
 import android.app.PendingIntent;
 import android.content.Context;
@@ -28,8 +32,12 @@ import androidx.media3.session.DefaultMediaNotificationProvider;
 import androidx.media3.session.MediaNotification;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
+import androidx.media3.session.SessionCommand;
+import androidx.media3.session.SessionCommands;
+import androidx.media3.session.SessionResult;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
@@ -41,6 +49,9 @@ import java.util.Vector;
 public class PlaybackService extends MediaSessionService {
 
     private static final String LOG_TAG = "PlaybackService";
+    private static final String COMMAND_SEEK_BACK = "seek_back";
+    private static final String COMMAND_SEEK_FORWARD = "seek_forward";
+
     private MediaSession mediaSession;
     private Runnable updateTalkProgressTask;
     private Handler handler;
@@ -70,11 +81,27 @@ public class PlaybackService extends MediaSessionService {
                 .setHandleAudioBecomingNoisy(true)
                 .setUseLazyPreparation(true)
                 .setAudioAttributes(audioAttributes, true)
+                .setSeekBackIncrementMs(SEEK_AMOUNT_MS)
+                .setSeekForwardIncrementMs(SEEK_AMOUNT_MS)
                 .build();
 
-        // Create a media session
+        // Create seek back/forward command buttons
+        CommandButton seekBackButton = new CommandButton.Builder()
+                .setDisplayName("Seek Back")
+                .setIconResId(R.drawable.ic_seek_back)
+                .setSessionCommand(new SessionCommand(COMMAND_SEEK_BACK, new Bundle()))
+                .build();
+
+        CommandButton seekForwardButton = new CommandButton.Builder()
+                .setDisplayName("Seek Forward")
+                .setIconResId(R.drawable.ic_seek_forward)
+                .setSessionCommand(new SessionCommand(COMMAND_SEEK_FORWARD, new Bundle()))
+                .build();
+
+        // Create a media session with custom command buttons
         mediaSession = new MediaSession.Builder(this, mediaPlayer)
                 .setCallback(new SessionCallback())
+                .setCustomLayout(ImmutableList.of(seekBackButton, seekForwardButton))
                 .build();
 
         // Set a custom media notification
@@ -168,6 +195,45 @@ public class PlaybackService extends MediaSessionService {
     }
 
     private class SessionCallback implements MediaSession.Callback {
+
+        @OptIn(markerClass = UnstableApi.class) @Override
+        public MediaSession.ConnectionResult onConnect(
+                MediaSession session, MediaSession.ControllerInfo controller) {
+
+            // Add seek forward/back commands to media notification
+            SessionCommands sessionCommands = new SessionCommands.Builder()
+                    .add(new SessionCommand(COMMAND_SEEK_BACK, new Bundle()))
+                    .add(new SessionCommand(COMMAND_SEEK_FORWARD, new Bundle()))
+                    .build();
+
+            // Remove default seek-to-previous commands from media notification
+            Player.Commands playerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
+                    .buildUpon()
+                    .removeAll(COMMAND_SEEK_TO_PREVIOUS, COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                    .build();
+
+            return new MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                    .setAvailablePlayerCommands(playerCommands)
+                    .setAvailableSessionCommands(sessionCommands)
+                    .build();
+        }
+
+        @Override
+        public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,
+                MediaSession.ControllerInfo controller, SessionCommand customCommand, Bundle args) {
+
+            final SessionResult result;
+            if (customCommand.customAction.equals(COMMAND_SEEK_BACK)) {
+                session.getPlayer().seekBack();
+                result = new SessionResult(SessionResult.RESULT_SUCCESS);
+            } else if (customCommand.customAction.equals(COMMAND_SEEK_FORWARD)) {
+                session.getPlayer().seekForward();
+                result = new SessionResult(SessionResult.RESULT_SUCCESS);
+            } else {
+                result = new SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED);
+            }
+            return Futures.immediateFuture(result);
+        }
 
         @Override
         public ListenableFuture<List<MediaItem>> onAddMediaItems(MediaSession mediaSession, MediaSession.ControllerInfo controller, List<MediaItem> mediaItems) {
