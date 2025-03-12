@@ -320,12 +320,12 @@ public class NavigationActivity extends AppCompatActivity
         setIntendedView(getIntent());
     }
 
-    protected void setIntendedView(Intent i) {
-        Log.d(LOG_TAG, "Intent with type=" + i.getType() + " action="+i.getAction() + " data="+i.getData());
+    protected void setIntendedView(Intent intent) {
+        Log.d(LOG_TAG, "Intent with type=" + intent.getType() + " action="+intent.getAction() + " data="+intent.getData());
 
         ViewMode vm = new ViewMode(ViewMode.VIEW_MODE_TALKS);
 
-        Uri intentURI = i.getData();
+        Uri intentURI = intent.getData();
         if (intentURI != null) {
             java.util.List<String> segments = intentURI.getPathSegments();
 
