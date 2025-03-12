@@ -245,6 +245,9 @@ public class NavigationActivity extends AppCompatActivity
         talkRepository = new TalkRepository(dbManager);
         teacherRepository = new TeacherRepository(dbManager);
         centerRepository = new CenterRepository(dbManager);
+
+        // initialize view and view history
+        viewHistory = new LinkedList();
         setIntendedView();
 
         // Set swipe refresh listener
@@ -307,9 +310,17 @@ public class NavigationActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntendedView(intent);
+    }
+
     protected void setIntendedView() {
-        viewHistory = new LinkedList();
-        Intent i = getIntent();
+        setIntendedView(getIntent());
+    }
+
+    protected void setIntendedView(Intent i) {
         Log.d(LOG_TAG, "Intent with type=" + i.getType() + " action="+i.getAction() + " data="+i.getData());
 
         ViewMode vm = new ViewMode(ViewMode.VIEW_MODE_TALKS);
