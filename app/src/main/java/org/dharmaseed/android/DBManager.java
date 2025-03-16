@@ -377,7 +377,6 @@ public class DBManager extends AbstractDBManager {
             Log.i(LOG_TAG, "Updated talk history item for talk "+id+"("+progress+" min)");
         }
         cursor.close();
-        db.close();
     }
 
     public boolean addDownload(Talk talk) {
