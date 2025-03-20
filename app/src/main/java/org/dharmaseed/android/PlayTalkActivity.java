@@ -77,6 +77,7 @@ public class PlayTalkActivity extends AppCompatActivity
     Talk talk;
 
     static final String LOG_TAG = "PlayTalkActivity";
+    public static final int SEEK_AMOUNT_MS = 15000;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -409,11 +410,11 @@ public class PlayTalkActivity extends AppCompatActivity
     }
 
     public void fastForwardButtonClicked(View view) {
-        setTalkProgress(getTalkProgress() + 15000);
+        setTalkProgress(getTalkProgress() + SEEK_AMOUNT_MS);
     }
 
     public void rewindButtonClicked(View view) {
-        setTalkProgress(getTalkProgress() - 15000);
+        setTalkProgress(getTalkProgress() - SEEK_AMOUNT_MS);
     }
 
     @Override
