@@ -24,10 +24,10 @@ android {
     defaultConfig {
         applicationId "org.dharmaseed.android"
         minSdk 21
-        compileSdk 34
-        targetSdk 34
-        versionCode 34
-        versionName "1.8.0"
+        compileSdk 35
+        targetSdk 35
+        versionCode 35
+        versionName "1.8.1"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
