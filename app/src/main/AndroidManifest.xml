@@ -55,8 +55,8 @@
         </activity>
         <activity
             android:name=".PlayTalkActivity"
-            android:label="@string/play_talk_label"
             android:exported="true"
+            android:theme="@style/AppTheme.NoActionBar"
             android:parentActivityName="org.dharmaseed.android.NavigationActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
