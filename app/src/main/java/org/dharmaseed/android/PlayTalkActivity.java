@@ -45,6 +45,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.media3.common.MediaItem;
@@ -83,6 +84,8 @@ public class PlayTalkActivity extends AppCompatActivity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_talk);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.play_toolbar);
+        setSupportActionBar(toolbar);
         getIntendedTalk();
         if (talkMissing())
             finish();
