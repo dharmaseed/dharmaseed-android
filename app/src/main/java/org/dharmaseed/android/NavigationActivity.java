@@ -28,6 +28,9 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.cursoradapter.widget.CursorAdapter;
@@ -35,6 +38,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.ImageSpan;
+import androidx.core.content.ContextCompat;
+import android.graphics.drawable.Drawable;
 import android.view.KeyEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -57,6 +65,7 @@ import android.widget.AbsListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Arrays;
@@ -70,6 +79,7 @@ public class NavigationActivity extends AppCompatActivity
         View.OnFocusChangeListener {
 
     public final static String TALK_DETAIL_EXTRA = "org.dharmaseed.android.TALK_DETAIL";
+    private final static String USER_DB_EXPORT_FILE = "dharmaseed_user_data.sqlite3";
 
     NavigationView navigationView;
     ListView listView;
@@ -260,11 +270,7 @@ public class NavigationActivity extends AppCompatActivity
             }
         });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+        initNavigationDrawer(toolbar);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
@@ -285,6 +291,48 @@ public class NavigationActivity extends AppCompatActivity
                     updateScrollLabel(item);
             }
         });
+    }
+
+    private void initNavigationDrawer(Toolbar toolbar) {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        addDBIcons(
+                navigationView.getMenu().findItem(R.id.nav_export),
+                getString(R.string.drawer_export)
+        );
+
+        addDBIcons(
+                navigationView.getMenu().findItem(R.id.nav_import),
+                getString(R.string.drawer_import)
+        );
+    }
+
+    private void addDBIcons(MenuItem item, String baseText) {
+        if (item == null) return;
+        SpannableStringBuilder sb = new SpannableStringBuilder(baseText + "  &  ");
+        int iconSize = (int) (headerPrimary.getTextSize() * 0.9);
+        addIconToSpan(sb, R.drawable.ic_history_db, baseText.length() + 1, iconSize);
+        addIconToSpan(sb, R.drawable.ic_star_db, baseText.length() + 3, iconSize);
+        item.setTitle(sb);
+    }
+
+    private void addIconToSpan(SpannableStringBuilder sb, int drawableId, int index, int size) {
+        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
+        if (drawable != null) {
+            drawable.setBounds(0, 0, size, size);
+
+            // don't insert beyond the end of the string
+            if (index >= sb.length()) {
+                index = sb.length() - 1;
+            }
+
+            ImageSpan imageSpan = new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM);
+            sb.setSpan(imageSpan, index, index + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
     }
 
     private void updateScrollLabel(View item) {
@@ -709,12 +757,19 @@ public class NavigationActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
+        boolean highlightItem = true;
         if (id == R.id.nav_talks) {
             setViewMode(new ViewMode(ViewMode.VIEW_MODE_TALKS));
         } else if (id == R.id.nav_teachers) {
             setViewMode(new ViewMode(ViewMode.VIEW_MODE_TEACHERS));
         } else if (id == R.id.nav_centers) {
             setViewMode(new ViewMode(ViewMode.VIEW_MODE_CENTERS));
+        } else if (id == R.id.nav_export) {
+            startUserDBExport();
+            highlightItem = false;
+        } else if (id == R.id.nav_import) {
+            startUserDBImport();
+            highlightItem = false;
         }
 //        else if (id == R.id.nav_retreats) {
 //            Intent intent = new Intent(this, RetreatSearchActivity.class);
@@ -723,7 +778,7 @@ public class NavigationActivity extends AppCompatActivity
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
-        return true;
+        return highlightItem;
     }
 
     public void headingDetailCollapseExpandButtonClicked(View view) {
@@ -866,6 +921,80 @@ public class NavigationActivity extends AppCompatActivity
         }
 
         return searchTerms;
+    }
+
+    private final ActivityResultLauncher<String> exportDatabaseLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/x-sqlite3"),
+            uri -> {
+                if (uri != null) {
+                    performUserDBExport(uri);
+                }
+            }
+    );
+
+    private void performUserDBExport(Uri uri) {
+        // We use a new thread because DB operations and file copying (I/O)
+        // in DBManager.exportUserTablesToUri will block the UI thread.
+        new Thread(() -> {
+            try {
+                dbManager.exportUserTablesToUri(uri);
+                Log.i(LOG_TAG, "Successfully exported user DB to " + uri);
+
+                // Success: Switch back to UI thread to show toast
+                runOnUiThread(() -> showToast(getString(R.string.export_success)));
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "Export failed", e);
+
+                // Error: Switch back to UI thread to show toast
+                runOnUiThread(() -> showToast(getString(R.string.export_failed)));
+            }
+        }).start();
+    }
+
+    private void startUserDBExport() {
+        // The "CreateDocument" contract opens the file picker
+        // We pass the suggested filename here
+        exportDatabaseLauncher.launch(USER_DB_EXPORT_FILE);
+    }
+
+    // 1. Add the launcher for picking a file
+    private final ActivityResultLauncher<String[]> importDatabaseLauncher = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(),
+            uri -> {
+                if (uri != null) {
+                    performUserDBImport(uri);
+                }
+            }
+    );
+
+    // 2. Implement the background processing logic
+    private void performUserDBImport(Uri uri) {
+        // We use a new thread because DB operations and file copying (I/O)
+        // in DBManager.importUserTablesFromUri will block the UI thread.
+        new Thread(() -> {
+            try {
+                dbManager.importUserTablesFromUri(uri);
+                Log.i(LOG_TAG, "Successfully imported user DB from " + uri);
+
+                // Success: Switch back to UI thread to refresh data and show toast
+                runOnUiThread(() -> {
+                    updateDisplayedData(); // Refresh current list to show new stars/history
+                    showToast(getString(R.string.import_success));
+                });
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "Import failed", e);
+
+                // Error: Switch back to UI thread to show toast
+                runOnUiThread(() -> showToast(getString(R.string.import_failed)));
+            }
+        }).start();
+    }
+
+    // 3. Update the existing startUserDBImport method
+    public void startUserDBImport() {
+        // Launches the system file picker to select a SQLite database file
+        // We accept any file type or specifically application/x-sqlite3 if supported
+        importDatabaseLauncher.launch(new String[]{"application/x-sqlite3", "application/octet-stream", "*/*"});
     }
 
     /**
