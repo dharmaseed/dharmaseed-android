@@ -44,4 +44,16 @@
             android:title="@string/drawer_centers" />
     </group>
 
+    <group
+        android:id="@+id/menu_bottom"
+        android:checkableBehavior="none">
+        <item
+            android:id="@+id/nav_export"
+            android:icon="@drawable/ic_export_arrow"
+            android:title="@string/drawer_export" />
+        <item
+            android:id="@+id/nav_import"
+            android:icon="@drawable/ic_import_arrow"
+            android:title="@string/drawer_import" />
+    </group>
 </menu>
