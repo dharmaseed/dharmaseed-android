@@ -31,6 +31,12 @@
     <string name="drawer_teachers">Teachers</string>
     <string name="drawer_centers">Centers</string>
     <string name="drawer_retreats">Retreats</string>
+    <string name="drawer_export">Export </string>
+    <string name="drawer_import">Import </string>
+    <string name="export_success">Database exported successfully! 👍</string>
+    <string name="export_failed">Export failed. Please try again. 😖</string>
+    <string name="import_success">Database imported successfully! 👍</string>
+    <string name="import_failed">Import failed. Please try again. 😖</string>
     <string name="retreat_search_label">Retreat Search</string>
     <string name="play_talk_label">Play Talk</string>
     <string name="download_content_desc">Download Talk</string>
