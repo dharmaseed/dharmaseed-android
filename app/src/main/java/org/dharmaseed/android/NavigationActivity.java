@@ -313,10 +313,10 @@ public class NavigationActivity extends AppCompatActivity
 
     private void addDBIcons(MenuItem item, String baseText) {
         if (item == null) return;
-        SpannableStringBuilder sb = new SpannableStringBuilder(baseText + "  &  ");
+        SpannableStringBuilder sb = new SpannableStringBuilder(baseText + "   and  ");
         int iconSize = (int) (headerPrimary.getTextSize() * 0.9);
         addIconToSpan(sb, R.drawable.ic_history_db, baseText.length() + 1, iconSize);
-        addIconToSpan(sb, R.drawable.ic_star_db, baseText.length() + 3, iconSize);
+        addIconToSpan(sb, R.drawable.ic_star_db, 99, iconSize);
         item.setTitle(sb);
     }
 
