@@ -48,6 +48,7 @@
                 <data android:scheme="https" />
                 <data android:scheme="http" />
                 <data android:host="dharmaseed.org" />
+                <data android:host="www.dharmaseed.org" />
                 <data android:path="/teachers/" />
                 <data android:path="/talks/" />
                 <data android:pathPattern="/teacher/..*" />
@@ -71,6 +72,7 @@
                 <data android:scheme="https" />
                 <data android:scheme="http" />
                 <data android:host="dharmaseed.org" />
+                <data android:host="www.dharmaseed.org" />
                 <data android:pathPattern="/talks/..*" />
             </intent-filter>
         </activity>
