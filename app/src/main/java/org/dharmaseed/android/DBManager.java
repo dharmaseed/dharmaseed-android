@@ -25,12 +25,15 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import androidx.annotation.NonNull;
+
+import android.net.Uri;
 import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,16 +91,18 @@ public class DBManager extends AbstractDBManager {
         InputStream dbIn = context.getAssets().open(DB_NAME);
         destFile.getParentFile().mkdirs();
         OutputStream dbOut = new FileOutputStream(destFile);
+        copyStreams(dbIn, dbOut);
+    }
 
+    private void copyStreams(InputStream src, OutputStream dest) throws IOException {
         byte[] buf = new byte[1024];
         int len;
-        while ((len = dbIn.read(buf)) > 0) {
-            dbOut.write(buf, 0, len);
+        while ((len = src.read(buf)) > 0) {
+            dest.write(buf, 0, len);
         }
-
-        dbOut.flush();
-        dbOut.close();
-        dbIn.close();
+        dest.flush();
+        src.close();
+        dest.close();
     }
 
     public static synchronized DBManager getInstance(Context context) {
@@ -413,6 +418,101 @@ public class DBManager extends AbstractDBManager {
         }
         cursor.close();
         return outOfDate;
+    }
+
+    public void exportUserTablesToUri(Uri uri) throws IOException {
+        File tempFile = File.createTempFile("export", ".db", context.getCacheDir());
+        SQLiteDatabase targetDb = SQLiteDatabase.openOrCreateDatabase(tempFile, null);
+        File sourceDbPath = context.getDatabasePath(DB_NAME);
+
+        String[][] userTableSpec = {
+                {C.TalkStars.TABLE_NAME, C.TalkStars.CREATE_TABLE},
+                {C.TeacherStars.TABLE_NAME, C.TeacherStars.CREATE_TABLE},
+                {C.CenterStars.TABLE_NAME, C.CenterStars.CREATE_TABLE},
+                {C.TalkHistory.TABLE_NAME, C.TalkHistory.CREATE_TABLE}
+        };
+        for (String [] userTable: userTableSpec) {
+            String tableName = userTable[0], tableCreate = userTable[1];
+            targetDb.execSQL(tableCreate);
+            targetDb.execSQL(
+                    "ATTACH DATABASE ? AS source_db",
+                    new Object[]{sourceDbPath}
+            );
+
+            // Copy everything in one go
+            targetDb.execSQL(
+                    "INSERT INTO main." + tableName + " SELECT * FROM source_db." + tableName
+            );
+
+            // Detach again
+            targetDb.execSQL("DETACH DATABASE source_db");
+        }
+        targetDb.close();
+
+        // 4. Write DB file to SAF Uri
+        copyStreams(
+                new FileInputStream(tempFile),
+                context.getContentResolver().openOutputStream(uri)
+        );
+
+        tempFile.delete();
+    }
+
+    public void importUserTablesFromUri(Uri uri) throws IOException {
+        SQLiteDatabase db = getWritableDatabase();
+        // Create a temporary file to hold the database being imported
+        File tempFile = File.createTempFile("import", ".db", context.getCacheDir());
+
+        try {
+            // 1. Copy URI content to a temporary file using the existing copyStreams utility
+            InputStream is = context.getContentResolver().openInputStream(uri);
+            if (is == null) throw new IOException("Could not open input stream from URI: " + uri);
+            copyStreams(is, new FileOutputStream(tempFile));
+
+            // 2. Attach the temporary database
+            db.execSQL("ATTACH DATABASE '" + tempFile.getAbsolutePath() + "' AS import_db");
+
+            try {
+                db.beginTransaction();
+
+                // 3. Handle the three Stars tables (Union)
+                // Since these only have one column (_id), INSERT OR IGNORE effectively performs a union
+                String[] starTables = {
+                        C.TalkStars.TABLE_NAME,
+                        C.TeacherStars.TABLE_NAME,
+                        C.CenterStars.TABLE_NAME
+                };
+
+                for (String table : starTables) {
+                    db.execSQL("INSERT OR IGNORE INTO main." + table + " SELECT * FROM import_db." + table);
+                }
+
+                // A. Delete local rows where the imported database has a more recent DATE_TIME
+                final String historyTable = C.TalkHistory.TABLE_NAME;
+                final String idCol = C.TalkHistory.ID;
+                final String dateCol = C.TalkHistory.DATE_TIME;
+
+                db.execSQL("DELETE FROM main." + historyTable + " WHERE " + idCol + " IN (" +
+                        "SELECT imported." + idCol + " FROM import_db." + historyTable + " AS imported " +
+                        "WHERE imported." + dateCol + " > main." + historyTable + "." + dateCol + ")");
+
+                // B. Insert all rows from the imported table that don't exist locally
+                // (This includes the ones we just deleted and brand new ones)
+                db.execSQL("INSERT OR IGNORE INTO main." + historyTable +
+                        " SELECT * FROM import_db." + historyTable);
+
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+                // 5. Detach the database
+                db.execSQL("DETACH DATABASE import_db");
+            }
+        } finally {
+            // Ensure the temporary file is cleaned up
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
     }
 
     /**
