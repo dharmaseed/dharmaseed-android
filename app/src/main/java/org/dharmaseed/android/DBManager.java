@@ -91,21 +91,18 @@ public class DBManager extends AbstractDBManager {
         InputStream dbIn = context.getAssets().open(DB_NAME);
         destFile.getParentFile().mkdirs();
         OutputStream dbOut = new FileOutputStream(destFile);
-        copyStreams(dbIn, dbOut, true);
+        copyStreams(dbIn, dbOut);
     }
 
-    private void copyStreams(InputStream src, OutputStream dest, boolean closeAfterCopy) throws IOException {
+    private void copyStreams(InputStream src, OutputStream dest) throws IOException {
         byte[] buf = new byte[1024];
         int len;
         while ((len = src.read(buf)) > 0) {
             dest.write(buf, 0, len);
         }
         dest.flush();
-
-        if (closeAfterCopy) {
-            src.close();
-            dest.close();
-        }
+        src.close();
+        dest.close();
     }
 
     public static synchronized DBManager getInstance(Context context) {
@@ -455,8 +452,7 @@ public class DBManager extends AbstractDBManager {
         // 4. Write DB file to SAF Uri
         copyStreams(
                 new FileInputStream(tempFile),
-                context.getContentResolver().openOutputStream(uri),
-                true
+                context.getContentResolver().openOutputStream(uri)
         );
 
         tempFile.delete();
@@ -471,7 +467,7 @@ public class DBManager extends AbstractDBManager {
             // 1. Copy URI content to a temporary file using the existing copyStreams utility
             InputStream is = context.getContentResolver().openInputStream(uri);
             if (is == null) throw new IOException("Could not open input stream from URI: " + uri);
-            copyStreams(is, new FileOutputStream(tempFile), true);
+            copyStreams(is, new FileOutputStream(tempFile));
 
             // 2. Attach the temporary database
             db.execSQL("ATTACH DATABASE '" + tempFile.getAbsolutePath() + "' AS import_db");
